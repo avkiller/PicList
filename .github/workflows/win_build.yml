@@ -43,7 +43,7 @@ jobs:
       - name: fix build
         run: |
           git config --global core.autocrlf input
-          npx update-browserslist-db@latest
+          # npx update-browserslist-db@latest
 
       - name: Yarn install windows
         if: matrix.os == 'windows-latest'
