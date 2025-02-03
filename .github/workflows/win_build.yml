@@ -53,6 +53,7 @@ jobs:
 
       - name: Build  & release app
         run: |
+          yarn lint:fix
           yarn build
           # yarn upload-dist
         env:
