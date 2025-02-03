@@ -91,8 +91,8 @@ const config = {
           artifactName: 'PicList-${version}-${arch}.${ext}'
         },
         win: {
+          "sign": false,
           icon: 'build/icons/icon.ico',
-          "signingOptions": [],
           // eslint-disable-next-line no-template-curly-in-string
           artifactName: 'PicList-Setup-${version}-${arch}.exe',
           verifyUpdateCodeSignature: false,
