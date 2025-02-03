@@ -8,7 +8,8 @@ import logger from '@core/picgo/logger'
 export const imgFilePath = path.join(picgo.baseDir, 'imgTemp')
 fs.ensureDirSync(imgFilePath)
 
-const serverPort = 36699
+const serverPort = process.env.ServerPort|9099
+const serverHost = process.env.ServerHost|127.0.0.1
 
 let server: http.Server
 
@@ -28,7 +29,10 @@ export function startFileServer() {
   })
 
   server
-    .listen(serverPort, () => {
+    .listen(
+      serverPort, 
+      serverHost,
+      () => {
       logger.info(`File server is running, http://127.0.0.1:${serverPort}`)
     })
     .on('error', err => {
