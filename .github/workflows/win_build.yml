@@ -9,8 +9,8 @@ on:
 
 env:
   ELECTRON_OUTPUT_PATH: ./dist_electron
-  # CSC_LINK: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
-  # CSC_KEY_PASSWORD: ${{ secrets.P12_PASSWORD }}
+  CSC_LINK: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+  CSC_KEY_PASSWORD: ${{ secrets.P12_PASSWORD }}
 
 # Workflow's jobs
 jobs:
