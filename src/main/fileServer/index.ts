@@ -29,7 +29,7 @@ export function startFileServer() {
 
   server
     .listen(serverPort, () => {
-      logger.info(`File server is running, http://localhost:${serverPort}`)
+      logger.info(`File server is running, http://127.0.0.1:${serverPort}`)
     })
     .on('error', err => {
       logger.error(err)
