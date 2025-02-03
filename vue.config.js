@@ -53,7 +53,7 @@ const config = {
           },
           {
             provider: 'github',
-            owner: 'Kuingsmile',
+            owner: 'avkiller',
             repo: 'PicList',
             releaseType: 'draft'
           }
@@ -91,6 +91,7 @@ const config = {
           artifactName: 'PicList-${version}-${arch}.${ext}'
         },
         win: {
+          sign: false,
           icon: 'build/icons/icon.ico',
           // eslint-disable-next-line no-template-curly-in-string
           artifactName: 'PicList-Setup-${version}-${arch}.exe',
