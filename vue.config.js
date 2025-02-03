@@ -47,7 +47,7 @@ const config = {
             provider: 'github',
             owner: 'avkiller',
             repo: 'PicList',
-            releaseType: 'draft'
+            releaseType: 'release'
           }
         ],
         dmg: {
