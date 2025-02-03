@@ -39,18 +39,10 @@ const config = {
           .end()
       },
       builderOptions: {
-        productName: 'PicList',
-        appId: 'com.kuingsmile.piclist',
+        productName: 'PicListSelf',
+        appId: 'com.avkiller.piclist',
         afterSign: 'scripts/notarize.js',
         publish: [
-          {
-            provider: 's3',
-            bucket: 'piclist-dl',
-            region: 'auto',
-            acl: 'private',
-            endpoint: 'https://7ab4ed5cb1f4052a13d3b573876ecf33.r2.cloudflarestorage.com',
-            path: '/latest'
-          },
           {
             provider: 'github',
             owner: 'avkiller',
