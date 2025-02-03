@@ -11,6 +11,7 @@ env:
   ELECTRON_OUTPUT_PATH: ./dist_electron
   CSC_LINK: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
   CSC_KEY_PASSWORD: ${{ secrets.P12_PASSWORD }}
+  TAG_NAME: "nightly"
 
 # Workflow's jobs
 jobs:
@@ -71,3 +72,12 @@ jobs:
           P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
           BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          
+      - name: Publish Release
+        uses: softprops/action-gh-release@v1
+        with:
+          prerelease: true
+          tag_name: ${{ env.TAG_NAME }}
+          files: |
+            ./dist_electron/*.exe
+            ./dist_electron/latest.yml
