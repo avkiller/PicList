@@ -39,7 +39,7 @@ const config = {
           .end()
       },
       builderOptions: {
-        productName: 'PicListSelf',
+        productName: 'PicList',
         appId: 'com.avkiller.piclist',
         afterSign: 'scripts/notarize.js',
         publish: [
