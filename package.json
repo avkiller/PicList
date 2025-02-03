@@ -14,7 +14,7 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "build": "vue-cli-service electron:build lint:fix",
+    "build": "vue-cli-service electron:build",
     "bump": "bump-version",
     "cz": "git-cz",
     "dev": "vue-cli-service electron:serve",
