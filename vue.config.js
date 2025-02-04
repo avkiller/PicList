@@ -42,6 +42,7 @@ const config = {
         productName: 'PicList',
         appId: 'com.avkiller.piclist',
         afterSign: 'scripts/notarize.js',
+        afterPack: 'scripts/removeLocales.js',
         publish: [
           {
             provider: 'github',
