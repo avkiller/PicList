@@ -1,6 +1,7 @@
 import http from 'http'
 import fs from 'fs-extra'
 import path from 'path'
+import 'dotenv/config'
 
 import picgo from '@core/picgo'
 import logger from '@core/picgo/logger'
@@ -8,8 +9,10 @@ import logger from '@core/picgo/logger'
 export const imgFilePath = path.join(picgo.baseDir, 'imgTemp')
 fs.ensureDirSync(imgFilePath)
 
-const serverPort = process.env.ServerPort|9099
-const serverHost = process.env.ServerHost|127.0.0.1
+// const serverPort = 9099
+// const serverHost = '127.0.0.1'
+const serverPort = process.env.ServerPort ? parseInt(process.env.ServerPort, 10) : 9099;
+const serverHost = process.env.ServerHost || '127.0.0.1';
 
 let server: http.Server
 
