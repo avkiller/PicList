@@ -264,7 +264,7 @@ class LifeCycle {
       openAtLogin: db.get(configPaths.settings.autoStart) || false
     })
     if (process.platform === 'win32') {
-      app.setAppUserModelId('com.kuingsmile.piclist')
+      app.setAppUserModelId('com.avkiller.piclist')
     }
 
     if (process.env.XDG_CURRENT_DESKTOP && process.env.XDG_CURRENT_DESKTOP.includes('Unity')) {
