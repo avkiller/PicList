@@ -22,7 +22,7 @@ async function main(context) {
   console.log('Starting Apple notarization.')
   const appName = context.packager.appInfo.productFilename
   await notarize({
-    appBundleId: 'com.kuingsmile.piclist',
+    appBundleId: 'com.avkiller.piclist',
     appPath: `${appOutDir}/${appName}.app`,
     appleId: XCODE_APP_LOADER_EMAIL,
     appleIdPassword: XCODE_APP_LOADER_PASSWORD,
