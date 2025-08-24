@@ -1,10 +1,11 @@
-import crypto from 'crypto'
-import { clipboard } from 'electron'
-import { EventEmitter } from 'events'
+import crypto from 'node:crypto'
+import { EventEmitter } from 'node:events'
 
 import logger from '@core/picgo/logger'
+import { clipboard, NativeImage } from 'electron'
 
 class ClipboardWatcher extends EventEmitter {
+  // eslint-disable-next-line no-undef
   timer: NodeJS.Timeout | null
   lastImageHash: string | null
 
@@ -14,7 +15,7 @@ class ClipboardWatcher extends EventEmitter {
     this.timer = null
   }
 
-  startListening(watchDelay = 500) {
+  startListening(watchDelay = 1000) {
     this.stopListening(false)
 
     this.timer = setInterval(() => {
@@ -42,7 +43,7 @@ class ClipboardWatcher extends EventEmitter {
     isLog && logger.info('Stop to watch clipboard')
   }
 
-  getImageHash(image: Electron.NativeImage): string {
+  getImageHash(image: NativeImage): string {
     const buffer = image.toBitmap()
     return crypto.createHash('md5').update(buffer).digest('hex')
   }

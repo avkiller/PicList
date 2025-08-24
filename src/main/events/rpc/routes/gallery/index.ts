@@ -1,23 +1,24 @@
-import { clipboard } from 'electron'
-
 import { GalleryDB } from '@core/datastore'
 import picgo from '@core/picgo'
-import logger from '@core/picgo/logger'
-import { IFilter, IObject } from '@picgo/store/dist/types'
 import GuiApi from 'apis/gui'
+import { clipboard } from 'electron'
 
+import type { IIPCEvent } from '#/types/rpc'
+import type { ImgInfo } from '#/types/types'
 import { RPCRouter } from '~/events/rpc/router'
-import {
-  removeFileFromDogeInMain,
-  removeFileFromHuaweiInMain,
-  removeFileFromS3InMain,
-  removeFileFromSFTPInMain
-} from '~/utils/deleteFunc'
+import { configPaths } from '~/utils/configPaths'
+import { ICOREBuildInEvent, IPasteStyle, IRPCActionType, IRPCType } from '~/utils/enum'
 import pasteTemplate from '~/utils/pasteTemplate'
+interface IFilter {
+  orderBy?: 'asc' | 'desc'
+  limit?: number
+  offset?: number
+}
 
-import { ICOREBuildInEvent, IPasteStyle, IRPCActionType, IRPCType } from '#/types/enum'
-import { configPaths } from '#/utils/configPaths'
-
+interface IObject {
+  id?: string
+  [propName: string]: any
+}
 const galleryRouter = new RPCRouter()
 
 const galleryRoutes = [
@@ -25,7 +26,7 @@ const galleryRoutes = [
     action: IRPCActionType.GALLERY_PASTE_TEXT,
     handler: async (_: IIPCEvent, args: [item: ImgInfo, copy?: boolean]) => {
       const [item, copy = true] = args
-      const pasteStyle = picgo.getConfig<IPasteStyle>(configPaths.settings.pasteStyle) || IPasteStyle.MARKDOWN
+      const pasteStyle = picgo.getConfig<string>(configPaths.settings.pasteStyle) || IPasteStyle.MARKDOWN
       const customLink = picgo.getConfig<string>(configPaths.settings.customLink)
       const [txt, shortUrl] = await pasteTemplate(pasteStyle, item, customLink)
       if (copy) {
@@ -88,43 +89,6 @@ const galleryRoutes = [
     handler: async (_: IIPCEvent, args: [value: IObject[]]) => {
       const dbStore = GalleryDB.getInstance()
       return await dbStore.insertMany(args[0])
-    },
-    type: IRPCType.INVOKE
-  },
-  {
-    action: IRPCActionType.GALLERY_LOG_DELETE_MSG,
-    handler: async (_: IIPCEvent, args: [msg: string, logLevel: ILogType]) => {
-      const [msg, logLevel] = args
-      console.log(msg, logLevel)
-      logger[logLevel](msg)
-    }
-  },
-  {
-    action: IRPCActionType.GALLERY_DELETE_SFTP_FILE,
-    handler: async (_: IIPCEvent, args: [config: ISftpPlistConfig, fileName: string]) => {
-      const [config, fileName] = args
-      return await removeFileFromSFTPInMain(config, fileName)
-    },
-    type: IRPCType.INVOKE
-  },
-  {
-    action: IRPCActionType.GALLERY_DELETE_AWS_S3_FILE,
-    handler: async (_: IIPCEvent, args: [configMap: IStringKeyMap]) => {
-      return await removeFileFromS3InMain(args[0])
-    },
-    type: IRPCType.INVOKE
-  },
-  {
-    action: IRPCActionType.GALLERY_DELETE_DOGE_FILE,
-    handler: async (_: IIPCEvent, args: [configMap: IStringKeyMap]) => {
-      return await removeFileFromDogeInMain(args[0])
-    },
-    type: IRPCType.INVOKE
-  },
-  {
-    action: IRPCActionType.GALLERY_DELETE_HUAWEI_OSS_FILE,
-    handler: async (_: IIPCEvent, args: [configMap: IStringKeyMap]) => {
-      return await removeFileFromHuaweiInMain(args[0])
     },
     type: IRPCType.INVOKE
   }

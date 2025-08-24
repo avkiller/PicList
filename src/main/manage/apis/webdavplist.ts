@@ -1,21 +1,20 @@
-import { ipcMain, IpcMainEvent } from 'electron'
-import fs from 'fs-extra'
-import http from 'http'
-import https from 'https'
-import path from 'path'
-import { createClient, WebDAVClient, FileStat, ProgressEvent, AuthType, WebDAVClientOptions } from 'webdav'
+import http from 'node:http'
+import https from 'node:https'
+import path from 'node:path'
 
 import windowManager from 'apis/app/window/windowManager'
+import { ipcMain, IpcMainEvent } from 'electron'
+import fs from 'fs-extra'
+import { AuthType, createClient, FileStat, ProgressEvent, WebDAVClient, WebDAVClientOptions } from 'webdav'
 
+import type { IStringKeyMap } from '#/types/types'
 import UpDownTaskQueue from '~/manage/datastore/upDownTaskQueue'
-import { formatError, getInnerAgent, NewDownloader, ConcurrencyPromisePool } from '~/manage/utils/common'
+import { ConcurrencyPromisePool, formatError, getInnerAgent, NewDownloader } from '~/manage/utils/common'
 import ManageLogger from '~/manage/utils/logger'
-
-import { getAuthHeader } from '@/manage/utils/digestAuth'
-
-import { commonTaskStatus, IWindowList, uploadTaskSpecialStatus } from '#/types/enum'
-import { isImage, formatEndpoint, formatHttpProxy } from '#/utils/common'
-import { cancelDownloadLoadingFileList, refreshDownloadFileTransferList } from '#/utils/static'
+import { formatEndpoint, formatHttpProxy, isImage } from '~/utils/common'
+import { getAuthHeader } from '~/utils/digestAuth'
+import { commonTaskStatus, IWindowList, uploadTaskSpecialStatus } from '~/utils/enum'
+import { cancelDownloadLoadingFileList, refreshDownloadFileTransferList } from '~/utils/static'
 
 class WebdavplistApi {
   endpoint: string
@@ -112,7 +111,7 @@ class WebdavplistApi {
     })
     let res = {} as any
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       success: false,
       finished: false
     }
@@ -157,7 +156,7 @@ class WebdavplistApi {
     })
     let res = {} as any
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       success: false,
       finished: false
     }

@@ -1,28 +1,27 @@
-import dayjs from 'dayjs'
-import { BrowserWindow, clipboard, ipcMain, Notification, WebContents } from 'electron'
-import fs from 'fs-extra'
-import path from 'path'
-import { IPicGo } from 'piclist'
-import util from 'util'
-import writeFile from 'write-file-atomic'
-
-import windowManager from 'apis/app/window/windowManager'
+import path from 'node:path'
+import util from 'node:util'
 
 import db from '@core/datastore'
 import picgo from '@core/picgo'
 import logger from '@core/picgo/logger'
+import windowManager from 'apis/app/window/windowManager'
+import dayjs from 'dayjs'
+import { BrowserWindow, clipboard, ipcMain, IpcMainEvent, Notification, WebContents } from 'electron'
+import fs from 'fs-extra'
+import type { IPicGo } from 'piclist'
+import writeFile from 'write-file-atomic'
 
-import { T } from '~/i18n'
-import { showNotification, getClipboardFilePath, calcDurationRange } from '~/utils/common'
-
-import { GET_RENAME_FILE_NAME, RENAME_FILE_NAME, TALKING_DATA_EVENT } from '#/events/constants'
-import { ICOREBuildInEvent, IWindowList } from '#/types/enum'
-import { configPaths } from '#/utils/configPaths'
-import { CLIPBOARD_IMAGE_FOLDER } from '#/utils/static'
+import type { ImgInfo, IUploadOption } from '#/types/types'
+import { GET_RENAME_FILE_NAME, RENAME_FILE_NAME } from '~/events/constant'
+import { T as $t } from '~/i18n'
+import { getClipboardFilePath, showNotification } from '~/utils/common'
+import { configPaths } from '~/utils/configPaths'
+import { ICOREBuildInEvent, IWindowList } from '~/utils/enum'
+import { CLIPBOARD_IMAGE_FOLDER } from '~/utils/static'
 
 const waitForRename = (window: BrowserWindow, id: number): Promise<string | null> => {
   return new Promise(resolve => {
-    ipcMain.once(`${RENAME_FILE_NAME}${id}`, (_: Event, newName: string) => {
+    ipcMain.once(`${RENAME_FILE_NAME}${id}`, (_: IpcMainEvent, newName: string) => {
       resolve(newName)
       window.close()
     })
@@ -34,21 +33,6 @@ const waitForRename = (window: BrowserWindow, id: number): Promise<string | null
   })
 }
 
-const handleTalkingData = (webContents: WebContents, options: IAnalyticsData) => {
-  const { type, fromClipboard, count, duration } = options
-  const data: ITalkingDataOptions = {
-    EventId: 'upload',
-    Label: type,
-    MapKv: {
-      by: fromClipboard ? 'clipboard' : 'files',
-      count,
-      duration: calcDurationRange(duration || 0),
-      type
-    }
-  }
-  webContents.send(TALKING_DATA_EVENT, data)
-}
-
 class Uploader {
   private webContents: WebContents | null = null
 
@@ -57,7 +41,7 @@ class Uploader {
   }
 
   init() {
-    picgo.on(ICOREBuildInEvent.NOTIFICATION, (message: Electron.NotificationConstructorOptions | undefined) => {
+    picgo.on(ICOREBuildInEvent.NOTIFICATION, (message: any) => {
       new Notification(message).show()
     })
 
@@ -68,8 +52,8 @@ class Uploader {
     picgo.on(ICOREBuildInEvent.BEFORE_TRANSFORM, () => {
       if (db.get(configPaths.settings.uploadNotification)) {
         const notification = new Notification({
-          title: T('UPLOAD_PROGRESS'),
-          body: T('UPLOADING')
+          title: $t('UPLOAD_PROGRESS'),
+          body: $t('UPLOADING')
         })
         notification.show()
       }
@@ -88,7 +72,7 @@ class Uploader {
                 : item.fileName
               if (rename) {
                 const window = windowManager.create(IWindowList.RENAME_WINDOW)!
-                ipcMain.on(GET_RENAME_FILE_NAME, evt => {
+                ipcMain.on(GET_RENAME_FILE_NAME, (evt, _) => {
                   try {
                     if (evt.sender.id === window.webContents.id) {
                       logger.info('rename window ready, wait for rename...')
@@ -165,18 +149,8 @@ class Uploader {
 
   async uploadReturnCtx(img?: IUploadOption, skipProcess = false): Promise<IPicGo | false> {
     try {
-      const startTime = Date.now()
       const ctx = await picgo.uploadReturnCtx(img, skipProcess)
       if (!Array.isArray(ctx.output) || !ctx.output.some((item: ImgInfo) => item.imgUrl)) return false
-
-      if (this.webContents) {
-        handleTalkingData(this.webContents, {
-          fromClipboard: !img,
-          type: db.get(configPaths.picBed.uploader) || db.get(configPaths.picBed.current) || 'smms',
-          count: img ? img.length : 1,
-          duration: Date.now() - startTime
-        } as IAnalyticsData)
-      }
 
       ctx.output.forEach((item: ImgInfo) => {
         item.config = JSON.parse(JSON.stringify(db.get(`picBed.${item.type}`)))
@@ -187,7 +161,7 @@ class Uploader {
       logger.error(e)
       setTimeout(() => {
         showNotification({
-          title: T('UPLOAD_FAILED'),
+          title: $t('UPLOAD_FAILED'),
           body: util.format(e.stack),
           clickToCopy: true
         })
@@ -200,18 +174,8 @@ class Uploader {
 
   async upload(img?: IUploadOption): Promise<ImgInfo[] | false> {
     try {
-      const startTime = Date.now()
       const output = await picgo.upload(img)
       if (!Array.isArray(output) || !output.some((item: ImgInfo) => item.imgUrl)) return false
-
-      if (this.webContents) {
-        handleTalkingData(this.webContents, {
-          fromClipboard: !img,
-          type: db.get(configPaths.picBed.uploader) || db.get(configPaths.picBed.current) || 'smms',
-          count: img ? img.length : 1,
-          duration: Date.now() - startTime
-        } as IAnalyticsData)
-      }
       output.forEach((item: ImgInfo) => {
         item.config = JSON.parse(JSON.stringify(db.get(`picBed.${item.type}`)))
       })
@@ -220,7 +184,7 @@ class Uploader {
       logger.error(e)
       setTimeout(() => {
         showNotification({
-          title: T('UPLOAD_FAILED'),
+          title: $t('UPLOAD_FAILED'),
           body: util.format(e.stack),
           clickToCopy: true
         })

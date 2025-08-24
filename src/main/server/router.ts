@@ -1,3 +1,5 @@
+import type { routeHandler } from '#/types/types'
+
 type HttpMethod = 'GET' | 'POST'
 
 class Router {

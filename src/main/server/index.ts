@@ -1,17 +1,17 @@
-import axios from 'axios'
-import { app } from 'electron'
-import fs from 'fs-extra'
-import http from 'http'
-import multer from 'multer'
-import path from 'path'
+import http from 'node:http'
+import path from 'node:path'
 
 import picgo from '@core/picgo'
 import logger from '@core/picgo/logger'
+import axios from 'axios'
+import { app } from 'electron'
+import fs from 'fs-extra'
+import multer from 'multer'
 
+import type { ErrnoException, IObj, IServerConfig } from '#/types/types'
 import routers from '~/server/routerManager'
-import { handleResponse, ensureHTTPLink } from '~/server/utils'
-
-import { configPaths } from '#/utils/configPaths'
+import { ensureHTTPLink, handleResponse } from '~/server/utils'
+import { configPaths } from '~/utils/configPaths'
 
 const DEFAULT_PORT = 36677
 const DEFAULT_HOST = '0.0.0.0'
@@ -26,7 +26,6 @@ const multerStorage = multer.diskStorage({
     cb(null, serverTempDir)
   },
   filename: function (_req: any, file: { originalname: any }, cb: (arg0: null, arg1: any) => void) {
-    // eslint-disable-next-line no-control-regex
     if (!/[^\u0000-\u00ff]/.test(file.originalname)) {
       file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8')
     }

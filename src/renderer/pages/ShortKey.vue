@@ -1,103 +1,124 @@
 <template>
-  <div id="shortcut-page">
-    <div class="view-title">
-      {{ $T('SETTINGS_SET_SHORTCUT') }}
+  <div class="shortkey-container">
+    <!-- Header -->
+    <div class="shortkey-header">
+      <div class="header-content">
+        <KeyboardIcon :size="24" class="header-icon" />
+        <div>
+          <h1>{{ t('pages.shortKey.title') }}</h1>
+          <p>{{ ' ' }}</p>
+        </div>
+      </div>
     </div>
-    <el-row>
-      <el-col :span="20" :offset="2">
-        <el-table
-          class="shortcut-page-table-border"
-          :data="list"
-          size="small"
-          header-cell-class-name="shortcut-page-table-border"
-          cell-class-name="shortcut-page-table-border"
-        >
-          <el-table-column :label="$T('SHORTCUT_NAME')">
-            <template #default="scope">
-              {{ scope.row.label ? scope.row.label : scope.row.name }}
-            </template>
-          </el-table-column>
-          <el-table-column width="160px" :label="$T('SHORTCUT_BIND')" prop="key" />
-          <el-table-column :label="$T('SHORTCUT_STATUS')">
-            <template #default="scope">
-              <el-tag size="small" :type="scope.row.enable ? 'success' : 'danger'">
-                {{ scope.row.enable ? $T('SHORTCUT_ENABLED') : $T('SHORTCUT_DISABLED') }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column :label="$T('SHORTCUT_SOURCE')" width="100px">
-            <template #default="scope">
-              {{ calcOriginShowName(scope.row.from) }}
-            </template>
-          </el-table-column>
-          <el-table-column :label="$T('SHORTCUT_HANDLE')" width="100px">
-            <template #default="scope">
-              <el-row>
-                <el-button
-                  size="small"
-                  :class="{
-                    disabled: scope.row.enable
-                  }"
-                  type="info"
-                  :link="true"
-                  @click="toggleEnable(scope.row)"
-                >
-                  {{ scope.row.enable ? $T('SHORTCUT_DISABLE') : $T('SHORTCUT_ENABLE') }}
-                </el-button>
-                <el-button
-                  class="edit"
-                  size="small"
-                  type="info"
-                  :link="true"
-                  @click="openKeyBindingDialog(scope.row, scope.$index)"
-                >
-                  {{ $T('SHORTCUT_EDIT') }}
-                </el-button>
-              </el-row>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-col>
-    </el-row>
-    <el-dialog
-      v-model="keyBindingVisible"
-      :title="$T('SHORTCUT_CHANGE_UPLOAD')"
-      :modal-append-to-body="false"
-      append-to-body
-    >
-      <el-form label-position="top" label-width="80px">
-        <el-form-item>
-          <el-input
-            v-model="shortKey"
-            class="align-center"
-            :autofocus="true"
-            @keydown.prevent="keyDetect($event as KeyboardEvent)"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button round @click="cancelKeyBinding">
-          {{ $T('CANCEL') }}
-        </el-button>
-        <el-button type="primary" round @click="confirmKeyBinding">
-          {{ $T('CONFIRM') }}
-        </el-button>
-      </template>
-    </el-dialog>
+
+    <!-- Shortcuts Table Card -->
+    <div class="shortkey-card">
+      <div class="table-container">
+        <table class="shortkey-table">
+          <thead>
+            <tr>
+              <th>{{ t('pages.shortKey.name') }}</th>
+              <th>{{ t('pages.shortKey.bind') }}</th>
+              <th>{{ t('pages.shortKey.status') }}</th>
+              <th>{{ t('pages.shortKey.source') }}</th>
+              <th>{{ t('pages.shortKey.handle') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(item, index) in list" :key="item.name" class="table-row">
+              <td class="name-cell">
+                <div class="shortcut-name">
+                  {{ item.label ? item.label : item.name }}
+                </div>
+              </td>
+              <td class="key-cell">
+                <div class="key-binding">
+                  <kbd v-if="item.key" class="key-display">{{ item.key }}</kbd>
+                  <span v-else class="no-binding">{{ t('pages.shortKey.noBinding') }}</span>
+                </div>
+              </td>
+              <td class="status-cell">
+                <span class="status-badge" :class="{ 'status-enabled': item.enable, 'status-disabled': !item.enable }">
+                  {{ item.enable ? t('pages.shortKey.enabled') : t('pages.shortKey.disabled') }}
+                </span>
+              </td>
+              <td class="source-cell">
+                <span class="source-name">{{ calcOriginShowName(item.from || '') }}</span>
+              </td>
+              <td class="actions-cell">
+                <div class="action-buttons">
+                  <button
+                    class="btn btn-sm"
+                    :class="item.enable ? 'btn-danger' : 'btn-success'"
+                    @click="toggleEnable(item)"
+                  >
+                    {{ item.enable ? t('pages.shortKey.disable') : t('pages.shortKey.enable') }}
+                  </button>
+                  <button class="btn btn-sm btn-secondary" @click="openKeyBindingDialog(item, index)">
+                    <Edit :size="14" />
+                    {{ t('pages.shortKey.edit') }}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Key Binding Modal -->
+    <transition name="modal">
+      <div v-if="keyBindingVisible" class="modal-overlay" @click.self="cancelKeyBinding">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title">
+              {{ t('pages.shortKey.changeUpload') }}
+            </h3>
+            <button class="modal-close" @click="cancelKeyBinding">
+              <XIcon :size="20" />
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label>{{ t('pages.shortKey.keyBinding') }}</label>
+              <input
+                v-model="shortKey"
+                class="form-input key-input"
+                :placeholder="t('pages.shortKey.pressKeys')"
+                readonly
+                @keydown.prevent="keyDetect($event as KeyboardEvent)"
+              />
+              <div class="input-hint">
+                {{ t('pages.shortKey.pressHint') }}
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" @click="cancelKeyBinding">
+              {{ $t('CANCEL') }}
+            </button>
+            <button class="btn btn-primary" @click="confirmKeyBinding">
+              {{ $t('common.confirm') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { onBeforeUnmount, onBeforeMount, ref, watch } from 'vue'
+import { Edit, KeyboardIcon, XIcon } from 'lucide-vue-next'
+import { onBeforeMount, onBeforeUnmount, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-import { T as $T } from '@/i18n'
-import { sendRPC, triggerRPC } from '@/utils/common'
+import { configPaths } from '@/utils/configPaths'
 import { getConfig } from '@/utils/dataSender'
+import { IRPCActionType } from '@/utils/enum'
 import keyBinding from '@/utils/key-binding'
+import type { IShortKeyConfig, IShortKeyConfigs } from '#/types/types'
 
-import { configPaths } from '#/utils/configPaths'
-import { IRPCActionType } from '#/types/enum'
-
+const { t } = useI18n()
 const list = ref<IShortKeyConfig[]>([])
 const keyBindingVisible = ref(false)
 const command = ref('')
@@ -115,7 +136,7 @@ onBeforeMount(async () => {
 })
 
 watch(keyBindingVisible, (val: boolean) => {
-  sendRPC(IRPCActionType.SHORTKEY_TOGGLE_SHORTKEY_MODIFIED_MODE, val)
+  window.electron.sendRPC(IRPCActionType.SHORTKEY_TOGGLE_SHORTKEY_MODIFIED_MODE, val)
 })
 
 function calcOrigin(item: string) {
@@ -130,7 +151,7 @@ function calcOriginShowName(item: string) {
 function toggleEnable(item: IShortKeyConfig) {
   const status = !item.enable
   item.enable = status
-  sendRPC(IRPCActionType.SHORTKEY_BIND_OR_UNBIND, item, item.from)
+  window.electron.sendRPC(IRPCActionType.SHORTKEY_BIND_OR_UNBIND, item, item.from)
 }
 
 function keyDetect(event: KeyboardEvent) {
@@ -151,9 +172,9 @@ async function cancelKeyBinding() {
 
 async function confirmKeyBinding() {
   const oldKey = await getConfig<string>(`settings.shortKey.${command.value}.key`)
-  const config = Object.assign({}, list.value[currentIndex.value])
+  const config = { ...list.value[currentIndex.value] }
   config.key = shortKey.value
-  const result = await triggerRPC<boolean>(IRPCActionType.SHORTKEY_UPDATE, config, oldKey, config.from)
+  const result = await window.electron.triggerRPC<boolean>(IRPCActionType.SHORTKEY_UPDATE, config, oldKey, config.from)
   if (result) {
     keyBindingVisible.value = false
     list.value[currentIndex.value].key = shortKey.value
@@ -161,7 +182,7 @@ async function confirmKeyBinding() {
 }
 
 onBeforeUnmount(() => {
-  sendRPC(IRPCActionType.SHORTKEY_TOGGLE_SHORTKEY_MODIFIED_MODE, false)
+  window.electron.sendRPC(IRPCActionType.SHORTKEY_TOGGLE_SHORTKEY_MODIFIED_MODE, false)
 })
 </script>
 
@@ -171,40 +192,4 @@ export default {
 }
 </script>
 
-<style lang="stylus">
-#shortcut-page
-  .shortcut-page-table-border
-    border-color darken(#eee, 50%)
-  .el-dialog__body
-    padding 10px 20px
-    .el-form-item
-      margin-bottom 0
-  .el-button
-    &.disabled
-      color: #F56C6C
-    &.edit
-      color: #67C23A
-    &--text
-      padding-left 4px
-      padding-right 4px
-  .el-table
-    background-color: transparent
-    color #ddd
-    &::before
-      background-color darken(#eee, 50%)
-    thead
-      color #bbb
-    th,tr
-      background-color: transparent
-    &__body
-      tr.el-table__row--striped
-        td
-          background transparent
-    &--enable-row-hover
-      .el-table__body
-        tr:hover
-          &>td
-            background #333
-  .el-button+.el-button
-    margin-left 4px
-</style>
+<style scoped src="./css/ShortKey.css"></style>

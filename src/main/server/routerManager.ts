@@ -1,24 +1,22 @@
-import { app } from 'electron'
-import fs from 'fs-extra'
-import http from 'http'
-import { marked } from 'marked'
-import path from 'path'
+import http from 'node:http'
+import path from 'node:path'
 
 import { dbPathDir } from '@core/datastore/dbChecker'
 import picgo from '@core/picgo'
 import logger from '@core/picgo/logger'
-
-import { AESHelper } from '~/utils/aesHelper'
-import { changeCurrentUploader } from '~/utils/handleUploaderConfig'
-
 import { uploadChoosedFiles, uploadClipboardFiles } from 'apis/app/uploader/apis'
 import windowManager from 'apis/app/window/windowManager'
+import { app } from 'electron'
+import fs from 'fs-extra'
+import { marked } from 'marked'
 
+import type { IHttpResponse, IStringKeyMap } from '#/types/types'
 import { markdownContent } from '~/server/apiDoc'
 import router from '~/server/router'
 import { deleteChoosedFiles, handleResponse } from '~/server/utils'
-
-import { configPaths } from '#/utils/configPaths'
+import { AESHelper } from '~/utils/aesHelper'
+import { configPaths } from '~/utils/configPaths'
+import { changeCurrentUploader } from '~/utils/handleUploaderConfig'
 
 const appPath = app.getPath('userData')
 const serverTempDir = path.join(appPath, 'serverTemp')

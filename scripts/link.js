@@ -1,4 +1,4 @@
-const pkg = require('../package.json')
+import pkg from '../package.json' with { type: 'json' }
 const version = pkg.version
 // TODO: use the same name format
 const generateURL = (platform, ext, prefix = 'PicList-') => {
@@ -16,6 +16,7 @@ const template = `
 #### Windows
 [PicList-Setup-${version}-ia32.exe](${generateURL('-ia32', '.exe', 'PicList-Setup-')})
 [PicList-Setup-${version}-x64.exe](${generateURL('-x64', '.exe', 'PicList-Setup-')})
+[PicList-Setup-${version}-arm64.exe](${generateURL('-arm64', '.exe', 'PicList-Setup-')})
 [PicList-Setup-${version}.exe](${generateURL('', '.exe', 'PicList-Setup-')})
 
 #### Linux

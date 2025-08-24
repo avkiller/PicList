@@ -1,23 +1,23 @@
-import axios from 'axios'
-import { ipcMain, IpcMainEvent } from 'electron'
-import path from 'path'
-import qiniu from 'qiniu/index'
+import path from 'node:path'
 
 import windowManager from 'apis/app/window/windowManager'
+import axios from 'axios'
+import { ipcMain, IpcMainEvent } from 'electron'
+import qiniu from 'qiniu'
 
+import type { IStringKeyMap } from '#/types/types'
 import UpDownTaskQueue from '~/manage/datastore/upDownTaskQueue'
 import {
-  hmacSha1Base64,
-  getFileMimeType,
-  NewDownloader,
+  ConcurrencyPromisePool,
   formatError,
-  ConcurrencyPromisePool
+  getFileMimeType,
+  hmacSha1Base64,
+  NewDownloader
 } from '~/manage/utils/common'
 import { ManageLogger } from '~/manage/utils/logger'
-
-import { commonTaskStatus, IWindowList, uploadTaskSpecialStatus } from '#/types/enum'
-import { isImage } from '#/utils/common'
-import { cancelDownloadLoadingFileList, refreshDownloadFileTransferList } from '#/utils/static'
+import { isImage } from '~/utils/common'
+import { commonTaskStatus, IWindowList, uploadTaskSpecialStatus } from '~/utils/enum'
+import { cancelDownloadLoadingFileList, refreshDownloadFileTransferList } from '~/utils/static'
 
 class QiniuApi {
   mac: qiniu.auth.digest.Mac
@@ -110,11 +110,11 @@ class QiniuApi {
     })
     if (res?.status === 200 && res?.data?.length) {
       const result = [] as any[]
-      for (let i = 0; i < res.data.length; i++) {
-        const info = await this.getBucketInfo({ bucketName: res.data[i] })
+      for (const dataItem of res.data) {
+        const info = await this.getBucketInfo({ bucketName: dataItem })
         if (!info.success) return []
         result.push({
-          Name: res.data[i],
+          Name: dataItem,
           Location: info.zone,
           CreationDate: new Date().toISOString(),
           Private: info.private
@@ -249,7 +249,7 @@ class QiniuApi {
     })
     let res = {} as any
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       success: false,
       finished: false
     }
@@ -311,7 +311,7 @@ class QiniuApi {
     })
     let res = {} as any
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       success: false,
       finished: false
     }
@@ -387,7 +387,7 @@ class QiniuApi {
     const bucketManager = new qiniu.rs.BucketManager(this.mac, config)
     let res = {} as any
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       isTruncated: false,
       nextMarker: '',
       success: false

@@ -1,17 +1,18 @@
+import { Agent } from 'node:https'
+import path from 'node:path'
+
+import windowManager from 'apis/app/window/windowManager'
 import axios, { AxiosInstance } from 'axios'
 import { ipcMain, IpcMainEvent } from 'electron'
 import FormData from 'form-data'
 import fs from 'fs-extra'
-import path from 'path'
 
-import windowManager from 'apis/app/window/windowManager'
-
-import { getFileMimeType, gotUpload, NewDownloader, ConcurrencyPromisePool, formatError } from '~/manage/utils/common'
-import { ManageLogger } from '~/manage/utils/logger'
+import type { IStringKeyMap } from '#/types/types'
 import UpDownTaskQueue from '~/manage/datastore/upDownTaskQueue'
-
-import { commonTaskStatus, IWindowList } from '#/types/enum'
-import { isImage } from '#/utils/common'
+import { ConcurrencyPromisePool, formatError, getFileMimeType, gotUpload, NewDownloader } from '~/manage/utils/common'
+import { ManageLogger } from '~/manage/utils/logger'
+import { isImage } from '~/utils/common'
+import { commonTaskStatus, IWindowList } from '~/utils/enum'
 
 class SmmsApi {
   baseUrl = 'https://smms.app/api/v2'
@@ -28,7 +29,7 @@ class SmmsApi {
       headers: {
         Authorization: this.token
       },
-      httpsAgent: new (require('https').Agent)({
+      httpsAgent: new Agent({
         keepAlive: true,
         timeout: this.timeout
       })
@@ -66,7 +67,7 @@ class SmmsApi {
     })
     let res = {} as any
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       success: false,
       finished: false
     }
@@ -124,7 +125,7 @@ class SmmsApi {
    */
   async getBucketFileList({ currentPage }: IStringKeyMap): Promise<any> {
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       isTruncated: false,
       nextMarker: '',
       success: false

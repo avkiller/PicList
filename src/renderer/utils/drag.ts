@@ -2,7 +2,7 @@ import { onBeforeUnmount, onMounted } from 'vue'
 
 function disableDrag(e: DragEvent) {
   const dropzone = document.getElementById('upload-area')
-  if (dropzone === null || !dropzone.contains(<Node>e.target)) {
+  if (dropzone === null || !dropzone.contains(e.target as Node)) {
     e.preventDefault()
     e.dataTransfer!.effectAllowed = 'none'
     e.dataTransfer!.dropEffect = 'none'

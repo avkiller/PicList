@@ -5,7 +5,7 @@ const isSpecialKey = (key: string) => {
 }
 
 const keyBinding = (event: KeyboardEvent) => {
-  const meta = process.platform === 'darwin' ? 'Cmd' : 'Super'
+  const meta = window.electron.platform === 'darwin' ? 'Cmd' : 'Super'
   const specialKey = {
     Ctrl: event.ctrlKey,
     Shift: event.shiftKey,

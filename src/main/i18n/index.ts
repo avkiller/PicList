@@ -1,14 +1,32 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { I18n, ObjectAdapter } from '@piclist/i18n'
 import fs from 'fs-extra'
 import yaml from 'js-yaml'
-import path from 'path'
 
-import { ObjectAdapter, I18n } from '@picgo/i18n'
+import type { ILocales, ILocalesKey } from '#/types/i18n'
+import type { II18nItem, IStringKeyMap } from '#/types/types'
 
-import { builtinI18nList } from '#/i18n'
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+const builtinI18nList: II18nItem[] = [
+  {
+    label: '简体中文',
+    value: 'zh-CN'
+  },
+  {
+    label: '繁體中文',
+    value: 'zh-TW'
+  },
+  {
+    label: 'English',
+    value: 'en'
+  }
+]
 class I18nManager {
   private i18n: I18n | null = null
-  private builtinI18nFolder = path.join(__static, 'i18n')
+  private builtinI18nFolder = path.join(__dirname, '../../resources', 'i18n').replace('app.asar', 'app.asar.unpacked')
   private outterI18nFolder = ''
   private localesMap: Map<string, ILocales> = new Map()
   private currentLanguage: string = 'zh-CN'

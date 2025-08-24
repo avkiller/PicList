@@ -1,7 +1,7 @@
-import path from 'path'
-import { app } from 'electron'
+import path from 'node:path'
 
 import { getLogger } from '@core/utils/localLogger'
+import { app } from 'electron'
 
 const STORE_PATH = app.getPath('userData')
 const LOG_PATH = path.join(STORE_PATH, 'piclist-gui-local.log')
@@ -35,8 +35,27 @@ function bootstrapEPIPESuppression() {
     handleProcessError('Detected EPIPE error; suppressing further EPIPE errors')
   }
 
-  require('epipebomb')(process.stdout, logEPIPEErrorOnce)
-  require('epipebomb')(process.stderr, logEPIPEErrorOnce)
+  epipeBomb(process.stdout, logEPIPEErrorOnce)
+  epipeBomb(process.stderr, logEPIPEErrorOnce)
 }
 
 bootstrapEPIPESuppression()
+
+function epipeBomb(stream: any, callback: any) {
+  if (stream == null) stream = process.stdout
+  if (callback == null) callback = process.exit
+
+  function epipeFilter(err: any) {
+    if (err.code === 'EPIPE') return callback()
+
+    // If there's more than one error handler (ie, us),
+    // then the error won't be bubbled up anyway
+    if (stream.listeners('error').length <= 1) {
+      stream.removeAllListeners() // Pretend we were never here
+      stream.emit('error', err) // Then emit as if we were never here
+      stream.on('error', epipeFilter) // Then reattach, ready for the next error!
+    }
+  }
+
+  stream.on('error', epipeFilter)
+}

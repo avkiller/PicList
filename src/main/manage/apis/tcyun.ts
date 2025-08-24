@@ -1,17 +1,17 @@
+import path from 'node:path'
+
+import windowManager from 'apis/app/window/windowManager'
 import COS from 'cos-nodejs-sdk-v5'
 import { ipcMain, IpcMainEvent } from 'electron'
 import fs from 'fs-extra'
-import path from 'path'
 
-import windowManager from 'apis/app/window/windowManager'
-
+import type { IStringKeyMap } from '#/types/types'
+import UpDownTaskQueue from '~/manage/datastore/upDownTaskQueue'
 import { formatError, getFileMimeType } from '~/manage/utils/common'
 import { ManageLogger } from '~/manage/utils/logger'
-import UpDownTaskQueue from '~/manage/datastore/upDownTaskQueue'
-
-import { handleUrlEncode, isImage } from '#/utils/common'
-import { commonTaskStatus, downloadTaskSpecialStatus, IWindowList, uploadTaskSpecialStatus } from '#/types/enum'
-import { cancelDownloadLoadingFileList, refreshDownloadFileTransferList } from '#/utils/static'
+import { handleUrlEncode, isImage } from '~/utils/common'
+import { commonTaskStatus, downloadTaskSpecialStatus, IWindowList, uploadTaskSpecialStatus } from '~/utils/enum'
+import { cancelDownloadLoadingFileList, refreshDownloadFileTransferList } from '~/utils/static'
 
 class TcyunApi {
   ctx: COS
@@ -117,7 +117,7 @@ class TcyunApi {
       }
     })
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       success: false,
       finished: false
     }
@@ -172,7 +172,7 @@ class TcyunApi {
     })
     let res = {} as COS.GetBucketResult
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       success: false,
       finished: false
     }
@@ -346,8 +346,9 @@ class TcyunApi {
           region,
           key: item.Prefix
         }))
-      )
+      ) {
         return false
+      }
     }
     const cycles = Math.ceil(allFileList.Contents.length / 1000)
     for (let i = 0; i < cycles; i++) {

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 
 import { getConfig } from '@/manage/utils/dataSender'
+import type { IStringKeyMap } from '#/types/types'
 
 export const useManageStore = defineStore('manageConfig', {
   state: () => {

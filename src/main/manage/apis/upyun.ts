@@ -1,27 +1,27 @@
+import path from 'node:path'
+
+import windowManager from 'apis/app/window/windowManager'
 import axios from 'axios'
 import { ipcMain, IpcMainEvent } from 'electron'
 import FormData from 'form-data'
 import fs from 'fs-extra'
-import path from 'path'
 import Upyun from 'upyun'
 
-import windowManager from 'apis/app/window/windowManager'
-
+import type { IStringKeyMap } from '#/types/types'
+import UpDownTaskQueue from '~/manage/datastore/upDownTaskQueue'
 import {
-  md5,
-  hmacSha1Base64,
-  getFileMimeType,
-  NewDownloader,
-  gotUpload,
   ConcurrencyPromisePool,
-  formatError
+  formatError,
+  getFileMimeType,
+  gotUpload,
+  hmacSha1Base64,
+  md5,
+  NewDownloader
 } from '~/manage/utils/common'
 import { ManageLogger } from '~/manage/utils/logger'
-import UpDownTaskQueue from '~/manage/datastore/upDownTaskQueue'
-
-import { commonTaskStatus, IWindowList } from '#/types/enum'
-import { isImage } from '#/utils/common'
-import { cancelDownloadLoadingFileList, refreshDownloadFileTransferList } from '#/utils/static'
+import { isImage } from '~/utils/common'
+import { commonTaskStatus, IWindowList } from '~/utils/enum'
+import { cancelDownloadLoadingFileList, refreshDownloadFileTransferList } from '~/utils/static'
 
 class UpyunApi {
   ser: Upyun.Service
@@ -130,7 +130,7 @@ class UpyunApi {
     })
     let res = {} as any
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       success: false,
       finished: false
     }
@@ -183,7 +183,7 @@ class UpyunApi {
     })
     let res = {} as any
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       success: false,
       finished: false
     }
@@ -233,7 +233,7 @@ class UpyunApi {
     const urlPrefix = configMap.customUrl || `http://${bucket}.test.upcdn.net`
     let res = {} as any
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       isTruncated: false,
       nextMarker: '',
       success: false
@@ -341,9 +341,8 @@ class UpyunApi {
     } while (isTruncated)
     if (allFileList.Contents.length > 0) {
       let success = false
-      for (let i = 0; i < allFileList.Contents.length; i++) {
-        const item = allFileList.Contents[i]
-        success = await this.cli.deleteFile(item.key)
+      for (const allFileListItem of allFileList.Contents) {
+        success = await this.cli.deleteFile(allFileListItem.key)
         if (!success) {
           return false
         }

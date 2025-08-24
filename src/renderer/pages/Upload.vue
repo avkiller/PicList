@@ -1,136 +1,188 @@
 <template>
-  <div id="upload-view">
-    <el-row :gutter="16" align="middle">
-      <el-col :span="24">
-        <div class="view-title">
-          <el-tooltip placement="top" effect="light" :content="$T('UPLOAD_VIEW_HINT')" :persistent="false" teleported>
-            <span id="upload-view-title" @click="handlePicBedNameClick(picBedName, picBedConfigName)">
-              {{ picBedName }} - {{ picBedConfigName || 'Default' }}
-            </span>
-          </el-tooltip>
-          <el-icon style="cursor: pointer; margin-left: 4px" @click="handleChangePicBed">
-            <CaretBottom />
-          </el-icon>
-          <el-button
-            type="primary"
-            round
-            size="small"
-            class="quick-upload"
-            style="margin-left: 6px"
-            @click="handleImageProcess"
+  <div class="upload-container">
+    <!-- Header Card -->
+    <div class="upload-card header-card">
+      <div class="card-header">
+        <div class="provider-section">
+          <button
+            class="provider-button"
+            :title="t('pages.upload.uploadViewHint')"
+            @click="handlePicBedNameClick(picBedName, picBedConfigName)"
           >
-            {{ $T('UPLOAD_PAGE_IMAGE_PROCESS_NAME') }}
-          </el-button>
-        </div>
-        <div
-          id="upload-area"
-          :class="{ 'is-dragover': dragover }"
-          @drop.prevent="onDrop"
-          @dragover.prevent="dragover = true"
-          @dragleave.prevent="dragover = false"
-        >
-          <div id="upload-dragger" @click="openUplodWindow">
-            <el-icon>
-              <UploadFilled />
-            </el-icon>
-            <div class="upload-dragger__text">
-              {{ $T('DRAG_FILE_TO_HERE') }}
-              <span>{{ $T('CLICK_TO_UPLOAD') }}</span>
+            <div class="provider-info">
+              <span class="provider-name">{{ picBedName }}</span>
+              <span class="provider-config">{{ picBedConfigName || 'Default' }}</span>
             </div>
-            <input id="file-uploader" type="file" multiple @change="onChange" />
+            <EditIcon :size="16" class="provider-arrow" />
+          </button>
+        </div>
+        <div class="header-actions">
+          <button class="action-button secondary" @click="handleImageProcess">
+            <Settings :size="16" />
+            <span>{{ t('pages.upload.imageProcessName') }}</span>
+          </button>
+          <button class="action-button" @click="handleChangePicBed">
+            <ArrowLeftRightIcon :size="16" />
+            <span>{{ t('pages.upload.changePicBed') }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Upload Card -->
+    <div class="upload-card main-card">
+      <div
+        id="upload-area"
+        class="upload-zone"
+        :class="{ 'drag-active': dragover }"
+        @drop.prevent="onDrop"
+        @dragover.prevent="dragover = true"
+        @dragleave.prevent="dragover = false"
+        @click="openUplodWindow"
+      >
+        <div class="upload-content">
+          <div class="upload-icon">
+            <UploadCloudIcon :size="48" />
+          </div>
+          <div class="upload-text">
+            <h3 class="upload-title">
+              {{ t('pages.upload.dragFileToHere') }}
+            </h3>
+            <p class="upload-subtitle">
+              {{ t('pages.upload.clickToUpload') }}
+            </p>
+            <div class="upload-formats">
+              <span class="format-label">{{ t('pages.upload.uploadHint') }}</span>
+            </div>
           </div>
         </div>
-        <el-progress
-          :percentage="progress"
-          :show-text="false"
-          class="upload-progress"
-          :class="{ show: showProgress }"
-          :status="showError ? 'exception' : undefined"
-        />
-        <div class="paste-style">
-          <div class="el-col-12">
-            <div class="paste-style__text">
-              {{ $T('LINK_FORMAT') }}
-            </div>
-            <el-radio-group v-model="pasteStyle" size="small" @change="handlePasteStyleChange">
-              <el-radio-button v-for="(item, key) in pasteFormatList" :key="key" :value="key" :title="item">
-                {{ key }}
-              </el-radio-button>
-            </el-radio-group>
-            <el-radio-group v-model="useShortUrl" size="small" @change="handleUseShortUrlChange">
-              <el-radio-button :value="true" style="border-radius: 5px">
-                {{ $T('UPLOAD_SHORT_URL') }}
-              </el-radio-button>
-              <el-radio-button :value="false" style="border-radius: 5px">
-                {{ $T('UPLOAD_NORMAL_URL') }}
-              </el-radio-button>
-            </el-radio-group>
+        <input id="file-uploader" ref="fileInput" type="file" multiple style="display: none" @change="onChange" />
+      </div>
+
+      <!-- Progress Bar -->
+      <transition name="progress">
+        <div v-if="showProgress" class="progress-container">
+          <div class="progress-bar">
+            <div class="progress-fill" :class="{ 'progress-error': showError }" :style="{ width: `${progress}%` }" />
           </div>
-          <div class="el-col-8">
-            <div class="paste-style__text">
-              {{ $T('QUICK_UPLOAD') }}
-            </div>
-            <el-button
-              type="primary"
-              round
-              size="small"
-              class="quick-upload"
-              style="width: 50%"
-              @click="uploadClipboardFiles"
+          <span class="progress-text">
+            {{ showError ? t('pages.upload.uploadFailed') : `${progress}%` }}
+          </span>
+        </div>
+      </transition>
+    </div>
+
+    <!-- Quick Actions Card -->
+    <div class="upload-card actions-card">
+      <div class="card-header">
+        <h4 class="card-title">
+          {{ t('pages.upload.quickUpload') }}
+        </h4>
+      </div>
+      <div class="quick-actions">
+        <button class="quick-action-button" @click="uploadClipboardFiles">
+          <ClipboardIcon :size="20" />
+          <span>{{ t('pages.upload.clipboardPicture') }}</span>
+        </button>
+        <button class="quick-action-button" @click="uploadURLFiles">
+          <LinkIcon :size="20" />
+          <span>{{ t('pages.upload.urlUpload') }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Settings Card -->
+    <div class="upload-card settings-card">
+      <div class="card-header">
+        <h4 class="card-title">
+          {{ t('pages.upload.linkFormat') }}
+        </h4>
+      </div>
+      <div class="settings-content">
+        <!-- Format Options -->
+        <div class="setting-group">
+          <label class="setting-label">{{ t('pages.upload.outputFormat') }}</label>
+          <div class="format-buttons">
+            <button
+              v-for="(format, key) in pasteFormatList"
+              :key="key"
+              class="format-button"
+              :class="{ active: pasteStyle === key }"
+              :title="format"
+              @click="updatePasteStyle(key)"
             >
-              {{ $T('CLIPBOARD_PICTURE') }}
-            </el-button>
-            <el-button
-              type="primary"
-              round
-              size="small"
-              class="quick-upload"
-              style="width: 46%; margin-left: 6px"
-              @click="uploadURLFiles"
-            >
-              URL
-            </el-button>
+              {{ key }}
+            </button>
           </div>
         </div>
-      </el-col>
-    </el-row>
-    <el-dialog
-      v-model="imageProcessDialogVisible"
-      :title="$T('UPLOAD_PAGE_IMAGE_PROCESS_DIALOG_TITLE')"
-      width="50%"
-      draggable
-      center
-      align-center
-      append-to-body
-    >
-      <ImageProcessSetting v-model="imageProcessDialogVisible" />
-    </el-dialog>
+
+        <!-- URL Length Options -->
+        <div class="setting-group">
+          <label class="setting-label">{{ t('pages.upload.urlType.title') }}</label>
+          <div class="url-toggle">
+            <button class="toggle-button" :class="{ active: !useShortUrl }" @click="updateUrlType(false)">
+              <span>{{ t('pages.upload.urlType.normal') }}</span>
+            </button>
+            <button class="toggle-button" :class="{ active: useShortUrl }" @click="updateUrlType(true)">
+              <span>{{ t('pages.upload.urlType.short') }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Image Process Dialog -->
+    <transition name="modal">
+      <div v-if="imageProcessDialogVisible" class="modal-overlay" @click.stop>
+        <div class="modal-container" @click.stop>
+          <div class="modal-header">
+            <h3 class="modal-title">
+              {{ t('pages.imageProcess.title') }}
+            </h3>
+            <button class="modal-close" @click="imageProcessDialogVisible = false">
+              <XIcon :size="20" />
+            </button>
+          </div>
+          <div class="modal-content">
+            <ImageProcessSetting v-model="imageProcessDialogVisible" />
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ipcRenderer, IpcRendererEvent } from 'electron'
-import { ElMessage as $message } from 'element-plus'
-import { UploadFilled, CaretBottom } from '@element-plus/icons-vue'
-import { ref, onBeforeMount, onBeforeUnmount, watch } from 'vue'
+import {
+  ArrowLeftRightIcon,
+  ClipboardIcon,
+  EditIcon,
+  LinkIcon,
+  Settings,
+  UploadCloudIcon,
+  XIcon
+} from 'lucide-vue-next'
+import { onBeforeMount, onBeforeUnmount, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 import ImageProcessSetting from '@/components/ImageProcessSetting.vue'
-import { T as $T } from '@/i18n'
+import useMessage from '@/hooks/useMessage'
 import { PICBEDS_PAGE } from '@/router/config'
 import $bus from '@/utils/bus'
-import { sendRPC, triggerRPC } from '@/utils/common'
+import { isUrl } from '@/utils/common'
+import { configPaths } from '@/utils/configPaths'
+import { SHOW_INPUT_BOX, SHOW_INPUT_BOX_RESPONSE } from '@/utils/constant'
 import { getConfig, saveConfig } from '@/utils/dataSender'
-import { picBedGlobal, updatePicBedGlobal } from '@/utils/global'
-
-import { SHOW_INPUT_BOX, SHOW_INPUT_BOX_RESPONSE } from '#/events/constants'
-import { IPasteStyle, IRPCActionType } from '#/types/enum'
-import { isUrl } from '#/utils/common'
-import { configPaths } from '#/utils/configPaths'
 import { useDragEventListeners } from '@/utils/drag'
+import { IPasteStyle, IRPCActionType } from '@/utils/enum'
+import { picBedGlobal, updatePicBedGlobal } from '@/utils/global'
+import type { IFileWithPath, IUploaderConfigItem } from '#/types/types'
 
 useDragEventListeners()
 const $router = useRouter()
+const { t } = useI18n()
+const message = useMessage()
 
 const imageProcessDialogVisible = ref(false)
 const useShortUrl = ref(false)
@@ -141,8 +193,9 @@ const showError = ref(false)
 const pasteStyle = ref('')
 const picBedName = ref('')
 const picBedConfigName = ref('')
+const fileInput = ref<HTMLInputElement>()
 
-const pasteFormatList = ref({
+const pasteFormatList = ref<Record<string, string>>({
   [IPasteStyle.MARKDOWN]: '![alt](url)',
   [IPasteStyle.HTML]: '<img src="url"/>',
   [IPasteStyle.URL]: 'http://test.com/test.png',
@@ -154,25 +207,22 @@ watch(picBedGlobal, () => {
   getDefaultPicBed()
 })
 
-onBeforeMount(() => {
-  updatePicBedGlobal()
-  ipcRenderer.on('uploadProgress', (_event: IpcRendererEvent, _progress: number) => {
-    if (_progress !== -1) {
-      showProgress.value = true
-      progress.value = _progress
-    } else {
-      progress.value = 100
-      showError.value = true
-    }
-  })
-  getUseShortUrl()
-  getPasteStyle()
+let removeUploadProgressListenerCallback: () => void = () => {}
+let removeSyncPicBedListenerCallback: () => void = () => {}
+
+function uploadProgressHandler(p: number): void {
+  if (p !== -1) {
+    showProgress.value = true
+    progress.value = p
+  } else {
+    progress.value = 100
+    showError.value = true
+  }
+}
+
+function syncPicBedHandler(): void {
   getDefaultPicBed()
-  ipcRenderer.on('syncPicBed', () => {
-    getDefaultPicBed()
-  })
-  $bus.on(SHOW_INPUT_BOX_RESPONSE, handleInputBoxValue)
-})
+}
 
 const handleImageProcess = () => {
   imageProcessDialogVisible.value = true
@@ -196,7 +246,10 @@ async function handlePicBedNameClick(_picBedName: string, picBedConfigName: stri
   const formatedpicBedConfigName = picBedConfigName || 'Default'
   const currentPicBed = await getConfig<string>(configPaths.picBed.current)
   const currentPicBedConfig = ((await getConfig<any[]>(`uploader.${currentPicBed}`)) as any) || {}
-  const configList = await triggerRPC<IUploaderConfigItem>(IRPCActionType.PICBED_GET_CONFIG_LIST, currentPicBed)
+  const configList = await window.electron.triggerRPC<IUploaderConfigItem>(
+    IRPCActionType.PICBED_GET_CONFIG_LIST,
+    currentPicBed
+  )
   const currentConfigList = configList?.configList ?? []
   const config = currentConfigList.find((item: any) => item._configName === formatedpicBedConfigName)
   $router.push({
@@ -211,12 +264,6 @@ async function handlePicBedNameClick(_picBedName: string, picBedConfigName: stri
   })
 }
 
-onBeforeUnmount(() => {
-  $bus.off(SHOW_INPUT_BOX_RESPONSE)
-  ipcRenderer.removeAllListeners('uploadProgress')
-  ipcRenderer.removeAllListeners('syncPicBed')
-})
-
 function onDrop(e: DragEvent) {
   dragover.value = false
 
@@ -230,9 +277,9 @@ function onDrop(e: DragEvent) {
     } else if (items[0].type === 'text/plain') {
       const str = e.dataTransfer.getData(items[0].type)
       if (isUrl(str)) {
-        sendRPC(IRPCActionType.UPLOAD_CHOOSED_FILES, [{ path: str }])
+        window.electron.sendRPC(IRPCActionType.UPLOAD_CHOOSED_FILES, [{ path: str }])
       } else {
-        $message.error($T('TIPS_DRAG_VALID_PICTURE_OR_URL'))
+        message.error(t('pages.upload.dragValidPictureOrUrl'))
       }
     }
   }
@@ -244,23 +291,23 @@ function handleURLDrag(items: DataTransferItemList, dataTransfer: DataTransfer) 
   const urlString = dataTransfer.getData(items[1].type)
   const urlMatch = urlString.match(/<img.*src="(.*?)"/)
   if (urlMatch) {
-    sendRPC(IRPCActionType.UPLOAD_CHOOSED_FILES, [
+    window.electron.sendRPC(IRPCActionType.UPLOAD_CHOOSED_FILES, [
       {
         path: urlMatch[1]
       }
     ])
   } else {
-    $message.error($T('TIPS_DRAG_VALID_PICTURE_OR_URL'))
+    message.error(t('pages.upload.dragValidPictureOrUrl'))
   }
 }
 
 function openUplodWindow() {
-  document.getElementById('file-uploader')!.click()
+  fileInput.value?.click()
 }
 
 function onChange(e: any) {
   ipcSendFiles(e.target.files)
-  ;(document.getElementById('file-uploader') as HTMLInputElement).value = ''
+  ;(fileInput.value as HTMLInputElement).value = ''
 }
 
 function ipcSendFiles(files: FileList) {
@@ -268,11 +315,11 @@ function ipcSendFiles(files: FileList) {
   Array.from(files).forEach(item => {
     const obj = {
       name: item.name,
-      path: item.path
+      path: window.electron.showFilePath(item)
     }
     sendFiles.push(obj)
   })
-  sendRPC(IRPCActionType.UPLOAD_CHOOSED_FILES, sendFiles)
+  window.electron.sendRPC(IRPCActionType.UPLOAD_CHOOSED_FILES, sendFiles)
 }
 
 async function getPasteStyle() {
@@ -284,41 +331,43 @@ async function getUseShortUrl() {
   useShortUrl.value = (await getConfig(configPaths.settings.useShortUrl)) || false
 }
 
-async function handleUseShortUrlChange() {
+function updatePasteStyle(style: string) {
+  pasteStyle.value = style
   saveConfig({
-    [configPaths.settings.useShortUrl]: useShortUrl.value
+    [configPaths.settings.pasteStyle]: style || IPasteStyle.MARKDOWN
   })
 }
 
-function handlePasteStyleChange(val: string | number | boolean | undefined) {
+function updateUrlType(shortUrl: boolean) {
+  useShortUrl.value = shortUrl
   saveConfig({
-    [configPaths.settings.pasteStyle]: val || IPasteStyle.MARKDOWN
+    [configPaths.settings.useShortUrl]: shortUrl
   })
 }
 
 function uploadClipboardFiles() {
-  sendRPC(IRPCActionType.UPLOAD_CLIPBOARD_FILES_FROM_UPLOAD_PAGE)
+  window.electron.sendRPC(IRPCActionType.UPLOAD_CLIPBOARD_FILES_FROM_UPLOAD_PAGE)
 }
 
 async function uploadURLFiles() {
   const str = await navigator.clipboard.readText()
   $bus.emit(SHOW_INPUT_BOX, {
     value: isUrl(str) ? str : '',
-    title: $T('TIPS_INPUT_URL'),
-    placeholder: $T('TIPS_HTTP_PREFIX')
+    title: t('pages.upload.inputUrlTip'),
+    placeholder: t('pages.upload.httpPrefixTip')
   })
 }
 
 function handleInputBoxValue(val: string) {
   if (val === '') return
   if (isUrl(val)) {
-    sendRPC(IRPCActionType.UPLOAD_CHOOSED_FILES, [
+    window.electron.sendRPC(IRPCActionType.UPLOAD_CHOOSED_FILES, [
       {
         path: val
       }
     ])
   } else {
-    $message.error($T('TIPS_INPUT_VALID_URL'))
+    message.error(t('pages.upload.inputValidUrl'))
   }
 }
 
@@ -333,8 +382,24 @@ async function getDefaultPicBed() {
 }
 
 async function handleChangePicBed() {
-  sendRPC(IRPCActionType.SHOW_UPLOAD_PAGE_MENU)
+  window.electron.sendRPC(IRPCActionType.SHOW_UPLOAD_PAGE_MENU)
 }
+
+onBeforeUnmount(() => {
+  $bus.off(SHOW_INPUT_BOX_RESPONSE)
+  removeUploadProgressListenerCallback()
+  removeSyncPicBedListenerCallback()
+})
+
+onBeforeMount(() => {
+  updatePicBedGlobal()
+  getUseShortUrl()
+  getPasteStyle()
+  getDefaultPicBed()
+  removeUploadProgressListenerCallback = window.electron.ipcRendererOn('uploadProgress', uploadProgressHandler)
+  removeSyncPicBedListenerCallback = window.electron.ipcRendererOn('syncPicBed', syncPicBedHandler)
+  $bus.on(SHOW_INPUT_BOX_RESPONSE, handleInputBoxValue)
+})
 </script>
 
 <script lang="ts">
@@ -343,83 +408,4 @@ export default {
 }
 </script>
 
-<style lang="stylus">
-.view-title
-  display flex
-  color #eee
-  font-size 20px
-  text-align center
-  margin 10px auto
-  align-items center
-  justify-content center
-#upload-view-title
-  &:hover
-    cursor pointer
-    color #409EFF
-#upload-view
-  position absolute
-  left 142px
-  right 0
-  height 100%
-  .view-title
-    margin 10vh auto 10px
-  #upload-area
-    height 50vh
-    border 2px dashed #dddddd
-    border-radius 8px
-    text-align center
-    width 60vw
-    margin 0 auto
-    color #dddddd
-    cursor pointer
-    transition all .2s ease-in-out
-    align-items center
-    #upload-dragger
-      height 100%
-      item-align center
-    &.is-dragover,
-    &:hover
-      border 2px dashed #A4D8FA
-      background-color rgba(164, 216, 250, 0.3)
-      color #fff
-    i
-      height 80%
-      font-size 10vh
-      margin 0
-    span
-      color #409EFF
-  #file-uploader
-    display none
-  .upload-progress
-    opacity 0
-    transition all .2s ease-in-out
-    width 450px
-    margin 20px auto 0
-    &.show
-      opacity 1
-    .el-progress-bar__inner
-      transition all .2s ease-in-out
-  .paste-style
-    justify-content center
-    text-align center
-    margin-top 16px
-    display flex
-    align-items flex-end
-    &__text
-      font-size 12px
-      color #eeeeee
-      margin-bottom 4px
-  .el-radio-button:first-child
-    .el-radio-button__inner
-      border-left none
-  .el-radio-button:first-child
-    .el-radio-button__inner
-      border-left none
-      border-radius 14px 0 0 14px
-  .el-radio-button:last-child
-    .el-radio-button__inner
-      border-left none
-      border-radius 0 14px 14px 0
-  .el-icon-caret-bottom
-    cursor pointer
-</style>
+<style scoped src="./css/UploadPage.css"></style>

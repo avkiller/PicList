@@ -1,15 +1,20 @@
-import { globalShortcut } from 'electron'
-
-import shortKeyService from 'apis/app/shortKey/shortKeyService'
-import GuiApi from 'apis/gui'
-
 import bus from '@core/bus'
 import db from '@core/datastore'
-import logger from '@core/picgo/logger'
 import picgo from '@core/picgo'
+import logger from '@core/picgo/logger'
+import shortKeyService from 'apis/app/shortKey/shortKeyService'
+import GuiApi from 'apis/gui'
+import { globalShortcut } from 'electron'
 
-import { TOGGLE_SHORTKEY_MODIFIED_MODE } from '#/events/constants'
-import { configPaths } from '#/utils/configPaths'
+import type {
+  IKeyCommandType,
+  IPluginShortKeyConfig,
+  IShortKeyConfig,
+  IShortKeyConfigs,
+  IShortKeyHandler
+} from '#/types/types'
+import { TOGGLE_SHORTKEY_MODIFIED_MODE } from '~/events/constant'
+import { configPaths } from '~/utils/configPaths'
 
 class ShortKeyHandler {
   private isInModifiedMode: boolean = false
@@ -19,9 +24,9 @@ class ShortKeyHandler {
     })
   }
 
-  init() {
+  async init() {
     this.initBuiltInShortKey()
-    this.initPluginsShortKey()
+    await this.initPluginsShortKey()
   }
 
   private initBuiltInShortKey() {
@@ -39,11 +44,11 @@ class ShortKeyHandler {
       })
   }
 
-  private initPluginsShortKey() {
+  private async initPluginsShortKey() {
     // get enabled plugin
     const pluginList = picgo.pluginLoader.getList()
     for (const item of pluginList) {
-      const plugin = picgo.pluginLoader.getPlugin(item)
+      const plugin = await picgo.pluginLoader.getPlugin(item)
       // if a plugin has commands
       if (plugin && plugin.commands) {
         if (typeof plugin.commands !== 'function') {
@@ -151,8 +156,8 @@ class ShortKeyHandler {
     }
   }
 
-  registerPluginShortKey(pluginName: string) {
-    const plugin = picgo.pluginLoader.getPlugin(pluginName)
+  async registerPluginShortKey(pluginName: string) {
+    const plugin = await picgo.pluginLoader.getPlugin(pluginName)
     if (plugin && plugin.commands) {
       if (typeof plugin.commands !== 'function') {
         logger.warn(`${pluginName}'s commands is not a function`)

@@ -1,7 +1,10 @@
-import { JSONStore } from '@picgo/store'
-import { IJSON } from '@picgo/store/dist/types'
+import { JSONStore } from '@piclist/store'
 
-import { IManageApiType, IManageConfigType } from '#/types/manage'
+import type { IManageApiType, IManageConfigType } from '#/types/manage'
+import type { IStringKeyMap } from '#/types/types'
+interface IJSON {
+  [propsName: string]: string | number | IJSON
+}
 
 class ManageDB {
   readonly #ctx: IManageApiType

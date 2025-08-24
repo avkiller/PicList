@@ -1,16 +1,17 @@
+import path from 'node:path'
+
+import db from '@core/datastore'
+import logger from '@core/picgo/logger'
+import { Octokit } from '@octokit/rest'
 import axios from 'axios'
 import { app } from 'electron'
 import fs from 'fs-extra'
 import { HttpsProxyAgent } from 'hpagent'
-import path from 'path'
-import { Octokit } from '@octokit/rest'
-import { createClient, AuthType, WebDAVClientOptions } from 'webdav'
+import { AuthType, createClient, WebDAVClientOptions } from 'webdav'
 
-import db from '@core/datastore'
-import logger from '@core/picgo/logger'
-
-import { configPaths } from '#/utils/configPaths'
-import { formatEndpoint } from '#/utils/common'
+import type { ISyncConfig } from '#/types/types'
+import { formatEndpoint } from '~/utils/common'
+import { configPaths } from '~/utils/configPaths'
 
 const STORE_PATH = app.getPath('userData')
 
@@ -409,4 +410,4 @@ async function downloadFile(fileName: string[]): Promise<number> {
   return (await Promise.all(fileName.map(downloadFunc))).reduce((a, b) => a + b, 0)
 }
 
-export { uploadFile, downloadFile }
+export { downloadFile, uploadFile }

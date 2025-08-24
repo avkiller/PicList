@@ -1,14 +1,17 @@
-import fs from 'fs-extra'
-import yaml from 'js-yaml'
-import path from 'path'
-import os from 'os'
+import os from 'node:os'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { dbPathChecker } from '@core/datastore/dbChecker'
+import fs from 'fs-extra'
+import yaml from 'js-yaml'
 
+import type { ILocales } from '#/types/i18n'
 import { i18nManager } from '~/i18n'
 
 const configPath = dbPathChecker()
 const CONFIG_DIR = path.dirname(configPath)
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 function beforeOpen() {
   if (process.platform === 'darwin') {
@@ -45,7 +48,12 @@ function copyFileOutsideOfElectronAsar(sourceInAsarArchive: string, destOutsideA
 function resolveMacWorkFlow() {
   const dest = `${os.homedir()}/Library/Services/Upload pictures with PicList.workflow`
   try {
-    copyFileOutsideOfElectronAsar(path.join(__static, 'Upload pictures with PicList.workflow'), dest)
+    copyFileOutsideOfElectronAsar(
+      path
+        .join(__dirname, '../../resources', 'Upload pictures with PicList.workflow')
+        .replace('app.asar', 'app.asar.unpacked'),
+      dest
+    )
   } catch (e) {
     console.log(e)
   }
@@ -81,11 +89,11 @@ function resolveClipboardImageGenerator() {
   }
 
   function getClipboardFiles() {
-    const files = ['/linux.sh', '/mac.applescript', '/windows.ps1', '/windows10.ps1', '/wsl.sh']
+    const files = ['linux.sh', 'mac.applescript', 'windows.ps1', 'windows10.ps1', 'wsl.sh']
 
     return files.map(item => {
       return {
-        origin: path.join(__static, item),
+        origin: path.join(__dirname, '../../resources', item).replace('app.asar', 'app.asar.unpacked'),
         dest: path.join(CONFIG_DIR, item)
       }
     })

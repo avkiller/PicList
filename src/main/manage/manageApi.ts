@@ -1,21 +1,21 @@
-import { ipcMain } from 'electron'
-import { EventEmitter } from 'events'
-import fs from 'fs-extra'
-import { get, set, unset } from 'lodash'
-import { homedir } from 'os'
-import path from 'path'
+import { EventEmitter } from 'node:events'
+import { homedir } from 'node:os'
+import path from 'node:path'
 
 import windowManager from 'apis/app/window/windowManager'
+import { ipcMain } from 'electron'
+import fs from 'fs-extra'
+import { get, set, unset } from 'lodash-es'
 
+import type { IManageApiType, IManageConfigType, IManageError, IPicBedMangeConfig } from '#/types/manage'
+import type { IStringKeyMap } from '#/types/types'
 import API from '~/manage/apis/api'
 import ManageDB from '~/manage/datastore/db'
 import { managePathChecker } from '~/manage/datastore/dbChecker'
-import { isInputConfigValid, formatError } from '~/manage/utils/common'
+import { formatError, isInputConfigValid } from '~/manage/utils/common'
 import { ManageLogger } from '~/manage/utils/logger'
-
-import { IWindowList } from '#/types/enum'
-import { IManageApiType, IManageConfigType, IManageError, IPicBedMangeConfig } from '#/types/manage'
-import { cancelDownloadLoadingFileList, refreshDownloadFileTransferList } from '#/utils/static'
+import { IWindowList } from '~/utils/enum'
+import { cancelDownloadLoadingFileList, refreshDownloadFileTransferList } from '~/utils/static'
 
 export class ManageApi extends EventEmitter implements IManageApiType {
   private _config!: Partial<IManageConfigType>
@@ -414,7 +414,7 @@ export class ManageApi extends EventEmitter implements IManageApiType {
    **/
   async getBucketFileList(param?: IStringKeyMap): Promise<IStringKeyMap | IManageError> {
     const defaultResponse = {
-      fullList: <any>[],
+      fullList: [] as any,
       isTruncated: false,
       nextMarker: '',
       success: false

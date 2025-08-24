@@ -1,20 +1,20 @@
 // a singleton class to manage the up/down task queue
 // qiniu tcyun aliyun smms imgur github upyun
 
+import path from 'node:path'
+
 import { app } from 'electron'
 import fs from 'fs-extra'
-import path from 'path'
 
-import { commonTaskStatus, downloadTaskSpecialStatus, uploadTaskSpecialStatus } from '#/types/enum'
-import { IDownloadTask, IUploadTask } from '#/types/manage'
+import type { IDownloadTask, IUploadTask } from '#/types/manage'
+import { commonTaskStatus, downloadTaskSpecialStatus, uploadTaskSpecialStatus } from '~/utils/enum'
 
 class UpDownTaskQueue {
-  /* eslint-disable */
   private static instance: UpDownTaskQueue
-  /* eslint-enable */
-  private uploadTaskQueue = <IUploadTask[]>[]
 
-  private downloadTaskQueue = <IDownloadTask[]>[]
+  private uploadTaskQueue = [] as IUploadTask[]
+
+  private downloadTaskQueue = [] as IDownloadTask[]
 
   private persistPath = path.join(app.getPath('userData'), 'UpDownTaskQueue.json')
 

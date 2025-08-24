@@ -14,8 +14,10 @@
     >
       <img
         v-if="!dragover && !isShowingProgress"
-        :src="logoPath ? logoPath : require('../assets/squareLogo.png')"
+        :src="logoPath ? logoPath : './squareLogo.png'"
         style="width: 100%; height: 100%; border-radius: 50%"
+        draggable="false"
+        @dragstart.prevent
       />
       <div id="upload-dragger" @dblclick="openUploadWindow">
         <input id="file-uploader" type="file" multiple @change="onChange" />
@@ -25,18 +27,14 @@
 </template>
 
 <script lang="ts" setup>
-import { ElMessage as $message } from 'element-plus'
-import { ipcRenderer, IpcRendererEvent } from 'electron'
-import { IConfig } from 'piclist'
-import { onBeforeUnmount, onBeforeMount, ref, watch } from 'vue'
+import type { IConfig } from 'piclist'
+import { onBeforeMount, onBeforeUnmount, ref, watch } from 'vue'
 
-import { T as $T } from '@/i18n/index'
-import { sendRPC, triggerRPC } from '@/utils/common'
+import { isUrl } from '@/utils/common'
 import { getConfig } from '@/utils/dataSender'
+import { IRPCActionType } from '@/utils/enum'
 import { osGlobal } from '@/utils/global'
-
-import { isUrl } from '#/utils/common'
-import { IRPCActionType } from '#/types/enum'
+import type { IFileWithPath } from '#/types/types'
 
 const logoPath = ref('')
 const dragover = ref(false)
@@ -48,34 +46,31 @@ const wY = ref(-1)
 const screenX = ref(-1)
 const screenY = ref(-1)
 
+let removeListeners: () => void = () => {}
+
 async function initLogoPath() {
   const config = await getConfig<IConfig>()
   if (config) {
     if (config.settings?.isCustomMiniIcon && config.settings?.customMiniIcon) {
       logoPath.value =
         'data:image/jpg;base64,' +
-        (await triggerRPC(IRPCActionType.MANAGE_CONVERT_PATH_TO_BASE64, config.settings.customMiniIcon))
+        (await window.electron.triggerRPC(IRPCActionType.MANAGE_CONVERT_PATH_TO_BASE64, config.settings.customMiniIcon))
     }
   }
 }
 
-onBeforeMount(async () => {
+const uploadProgressHandler = (p: number) => {
+  if (p !== -1) {
+    isShowingProgress.value = true
+    progress.value = p
+  } else {
+    progress.value = 100
+  }
+}
+
+const updateMiniIconHandler = async () => {
   await initLogoPath()
-  ipcRenderer.on('uploadProgress', (_: IpcRendererEvent, _progress: number) => {
-    if (_progress !== -1) {
-      isShowingProgress.value = true
-      progress.value = _progress
-    } else {
-      progress.value = 100
-    }
-  })
-  ipcRenderer.on('updateMiniIcon', async () => {
-    await initLogoPath()
-  })
-  window.addEventListener('mousedown', handleMouseDown, false)
-  window.addEventListener('mousemove', handleMouseMove, false)
-  window.addEventListener('mouseup', handleMouseUp, false)
-})
+}
 
 watch(progress, val => {
   if (val === 100) {
@@ -101,9 +96,7 @@ function onDrop(e: DragEvent) {
     } else if (items[0].type === 'text/plain') {
       const str = e.dataTransfer!.getData(items[0].type)
       if (isUrl(str)) {
-        sendRPC(IRPCActionType.UPLOAD_CHOOSED_FILES, [{ path: str }])
-      } else {
-        $message.error($T('TIPS_DRAG_VALID_PICTURE_OR_URL'))
+        window.electron.sendRPC(IRPCActionType.UPLOAD_CHOOSED_FILES, [{ path: str }])
       }
     }
   }
@@ -115,13 +108,11 @@ function handleURLDrag(items: DataTransferItemList, dataTransfer: DataTransfer) 
   const urlString = dataTransfer.getData(items[1].type)
   const urlMatch = urlString.match(/<img.*src="(.*?)"/)
   if (urlMatch) {
-    sendRPC(IRPCActionType.UPLOAD_CHOOSED_FILES, [
+    window.electron.sendRPC(IRPCActionType.UPLOAD_CHOOSED_FILES, [
       {
         path: urlMatch[1]
       }
     ])
-  } else {
-    $message.error($T('TIPS_DRAG_VALID_PICTURE_OR_URL'))
   }
 }
 
@@ -141,11 +132,11 @@ function ipcSendFiles(files: FileList) {
   Array.from(files).forEach(item => {
     const obj = {
       name: item.name,
-      path: item.path
+      path: window.electron.showFilePath(item)
     }
     sendFiles.push(obj)
   })
-  sendRPC(IRPCActionType.UPLOAD_CHOOSED_FILES, sendFiles)
+  window.electron.sendRPC(IRPCActionType.UPLOAD_CHOOSED_FILES, sendFiles)
 }
 
 function handleMouseDown(e: MouseEvent) {
@@ -162,7 +153,7 @@ function handleMouseMove(e: MouseEvent) {
   if (draggingState.value) {
     const xLoc = e.screenX - wX.value
     const yLoc = e.screenY - wY.value
-    sendRPC(IRPCActionType.SET_MINI_WINDOW_POS, {
+    window.electron.sendRPC(IRPCActionType.SET_MINI_WINDOW_POS, {
       x: xLoc,
       y: yLoc,
       width: 64,
@@ -184,25 +175,40 @@ function handleMouseUp(e: MouseEvent) {
 }
 
 function openContextMenu() {
-  sendRPC(IRPCActionType.SHOW_MINI_PAGE_MENU)
+  window.electron.sendRPC(IRPCActionType.SHOW_MINI_PAGE_MENU)
 }
 
+onBeforeMount(async () => {
+  await initLogoPath()
+  removeListeners = window.electron.ipcRendererOn('uploadProgress', uploadProgressHandler)
+  window.electron.ipcRendererOn('updateMiniIcon', updateMiniIconHandler)
+  window.addEventListener('mousedown', handleMouseDown, false)
+  window.addEventListener('mousemove', handleMouseMove, false)
+  window.addEventListener('mouseup', handleMouseUp, false)
+})
+
 onBeforeUnmount(() => {
-  ipcRenderer.removeAllListeners('uploadProgress')
-  ipcRenderer.removeAllListeners('updateMiniIcon')
+  removeListeners()
+  window.electron.ipcRendererRemoveAllListeners('updateMiniIcon')
   window.removeEventListener('mousedown', handleMouseDown, false)
   window.removeEventListener('mousemove', handleMouseMove, false)
   window.removeEventListener('mouseup', handleMouseUp, false)
 })
 </script>
+
 <script lang="ts">
 export default {
   name: 'MiniPage'
 }
 </script>
+
 <style lang="stylus">
+html, body, #app
+  background: transparent
 #mini-page
-  background #409EFF
+  background: #409EFF;
+  border-radius: 32px;
+  overflow: hidden;
   color #FFF
   height 100vh
   width 100vw
@@ -217,6 +223,7 @@ export default {
   border 4px solid #fff
   box-sizing border-box
   cursor pointer
+
   &.linux
     border-radius 0
     background-size 100vh 100vw
@@ -236,4 +243,10 @@ export default {
       background rgba(0,0,0,0.3)
   #file-uploader
     display none
+  #mini-page img
+    width 100%
+    height 100%
+    border-radius 50%
+    display block
+    image-rendering: -webkit-optimize-contrast
 </style>

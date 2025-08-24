@@ -1,29 +1,45 @@
+import db from '@core/datastore'
+import windowManager from 'apis/app/window/windowManager'
 import { screen } from 'electron'
 
-import db from '@core/datastore'
-
-import windowManager from 'apis/app/window/windowManager'
-
-import { IWindowList } from '#/types/enum'
-import { configPaths } from '#/utils/configPaths'
+import { configPaths } from '~/utils/configPaths'
+import { IWindowList } from '~/utils/enum'
 
 export function openMiniWindow(hideSettingWindow: boolean = true) {
   const miniWindow = windowManager.get(IWindowList.MINI_WINDOW)!
-  miniWindow.removeAllListeners()
+
+  miniWindow.removeAllListeners('close')
+  miniWindow.removeAllListeners('move')
+
   if (db.get(configPaths.settings.miniWindowOntop)) {
     miniWindow.setAlwaysOnTop(true)
   }
   const { width, height } = screen.getPrimaryDisplay().workAreaSize
   const lastPosition = db.get(configPaths.settings.miniWindowPosition)
-  if (lastPosition) {
-    miniWindow.setPosition(lastPosition[0], lastPosition[1])
-  } else {
-    miniWindow.setPosition(width - 100, height - 100)
-  }
   const setPositionFunc = () => {
     const position = miniWindow.getPosition()
     db.set(configPaths.settings.miniWindowPosition, position)
   }
+  if (lastPosition) {
+    if (lastPosition[0] < 0 || lastPosition[0] > width || lastPosition[1] < 0 || lastPosition[1] > height) {
+      miniWindow.setPosition(width - 100, height - 100)
+      db.set(configPaths.settings.miniWindowPosition, [width - 100, height - 100])
+    } else if (
+      lastPosition[0] + miniWindow.getSize()[0] > width ||
+      lastPosition[1] + miniWindow.getSize()[1] > height
+    ) {
+      miniWindow.setPosition(width - miniWindow.getSize()[0], height - miniWindow.getSize()[1])
+      db.set(configPaths.settings.miniWindowPosition, [
+        width - miniWindow.getSize()[0],
+        height - miniWindow.getSize()[1]
+      ])
+    } else {
+      miniWindow.setPosition(lastPosition[0], lastPosition[1])
+    }
+  } else {
+    miniWindow.setPosition(width - 100, height - 100)
+  }
+
   miniWindow.on('close', setPositionFunc)
   miniWindow.on('move', setPositionFunc)
   miniWindow.show()

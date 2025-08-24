@@ -1,0 +1,30 @@
+import OSS from 'ali-oss'
+
+import type { IAliYunConfig, PartialKeys } from '#/types/types'
+import { deleteFailedLog, deleteLog } from '~/utils/deleteLog'
+
+interface IConfigMap {
+  fileName: string
+  config: PartialKeys<IAliYunConfig, 'path'>
+}
+
+export default class AliyunApi {
+  static #getKey(fileName: string, path?: string): string {
+    return path && path !== '/' ? `${path.replace(/^\/+|\/+$/, '')}/${fileName}` : fileName
+  }
+
+  static async delete(configMap: IConfigMap): Promise<boolean> {
+    const { fileName, config } = configMap
+    try {
+      const client = new OSS({ ...config, region: config.area })
+      const key = AliyunApi.#getKey(fileName, config.path)
+      const result = await client.delete(key)
+      const ok = result.res.status === 204
+      deleteLog(fileName, 'Aliyun', ok)
+      return ok
+    } catch (error: any) {
+      deleteFailedLog(fileName, 'Aliyun', error)
+      return false
+    }
+  }
+}

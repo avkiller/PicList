@@ -1,8 +1,9 @@
 // fork from https://github.com/sindresorhus/macos-version
 // cause I can't change it to common-js module
 
-import fs from 'fs'
-import process from 'process'
+import fs from 'node:fs'
+import process from 'node:process'
+
 import semver from 'semver'
 
 export const isMacOS = process.platform === 'darwin'

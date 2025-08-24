@@ -1,14 +1,16 @@
+import path from 'node:path'
+import util from 'node:util'
+
 import chalk from 'chalk'
 import dayjs from 'dayjs'
 import fs from 'fs-extra'
-import path from 'path'
 import { ILogColor, ILogger } from 'piclist/dist/types'
-import util from 'util'
 
-import { ILogType } from '#/types/enum'
-import { IManageApiType, Undefinable } from '#/types/manage'
-import { enforceNumber, isDev } from '#/utils/common'
-import { configPaths } from '#/utils/configPaths'
+import type { IManageApiType, Undefinable } from '#/types/manage'
+import type { ILogArgvType, ILogArgvTypeWithError } from '#/types/types'
+import { enforceNumber } from '~/utils/common'
+import { configPaths } from '~/utils/configPaths'
+import { ILogType } from '~/utils/enum'
 
 export class ManageLogger implements ILogger {
   readonly #level = {
@@ -26,7 +28,7 @@ export class ManageLogger implements ILogger {
     this.#ctx = ctx
   }
 
-  #handleLog(type: ILogType, ...msg: ILogArgvTypeWithError[]): void {
+  #handleLog(type: string, ...msg: ILogArgvTypeWithError[]): void {
     const logHeader = chalk[this.#level[type] as ILogColor](`[PicList ${type.toUpperCase()}]`)
     console.log(logHeader, ...msg)
     this.#logLevel = this.#ctx.getConfig(configPaths.settings.logLevel)
@@ -139,7 +141,7 @@ export class ManageLogger implements ILogger {
   }
 
   debug(...msq: ILogArgvType[]): void {
-    if (isDev) {
+    if (process.env.NODE_ENV === 'development') {
       this.#handleLog(ILogType.info, ...msq)
     }
   }

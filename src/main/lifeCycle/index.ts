@@ -1,25 +1,26 @@
-import axios from 'axios'
-import fs from 'fs-extra'
-import { app, globalShortcut, protocol, Notification, dialog, screen, shell } from 'electron'
-import { UpdateInfo, autoUpdater } from 'electron-updater'
-import path from 'path'
-import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
+import '~/lifeCycle/errorHandler'
+
+import path from 'node:path'
 
 import bus from '@core/bus'
 import db from '@core/datastore'
 import picgo from '@core/picgo'
 import logger from '@core/picgo/logger'
-
 import { remoteNoticeHandler } from 'apis/app/remoteNotice'
 import shortKeyHandler from 'apis/app/shortKey/shortKeyHandler'
 import { createTray, setDockMenu } from 'apis/app/system'
 import { uploadChoosedFiles, uploadClipboardFiles } from 'apis/app/uploader/apis'
 import windowManager from 'apis/app/window/windowManager'
+import axios from 'axios'
+import { app, dialog, globalShortcut, Notification, protocol, screen, shell } from 'electron'
+import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
+import updater from 'electron-updater'
+import fs from 'fs-extra'
 
 import busEventList from '~/events/busEventList'
+import { rpcServer } from '~/events/rpc'
 import { startFileServer, stopFileServer } from '~/fileServer'
-import { T } from '~/i18n'
-import '~/lifeCycle/errorHandler'
+import { T as $t } from '~/i18n'
 import fixPath from '~/lifeCycle/fixPath'
 import UpDownTaskQueue from '~/manage/datastore/upDownTaskQueue'
 import getManageApi from '~/manage/Main'
@@ -28,14 +29,14 @@ import server from '~/server/index'
 import webServer from '~/server/webServer'
 import beforeOpen from '~/utils/beforeOpen'
 import clipboardPoll from '~/utils/clipboardPoll'
+import { configPaths } from '~/utils/configPaths'
+import { II18nLanguage, IRemoteNoticeTriggerHook, ISartMode, IWindowList } from '~/utils/enum'
 import { getUploadFiles } from '~/utils/handleArgv'
 import { initI18n } from '~/utils/handleI18n'
+import { notificationList } from '~/utils/notification'
+import { MemoryMonitor } from '~/utils/performanceOptimizer'
+import { CLIPBOARD_IMAGE_FOLDER } from '~/utils/static'
 import updateChecker from '~/utils/updateChecker'
-
-import { II18nLanguage, IRemoteNoticeTriggerHook, ISartMode, IWindowList } from '#/types/enum'
-import { configPaths } from '#/utils/configPaths'
-import { CLIPBOARD_IMAGE_FOLDER } from '#/utils/static'
-import { rpcServer } from '~/events/rpc'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -58,15 +59,15 @@ const handleStartUpFiles = (argv: string[], cwd: string) => {
   return false
 }
 
-autoUpdater.setFeedURL({
+updater.autoUpdater.setFeedURL({
   provider: 'generic',
   url: 'https://release.piclist.cn/latest',
   channel: 'latest'
 })
 
-autoUpdater.autoDownload = false
+updater.autoUpdater.autoDownload = false
 
-autoUpdater.on('update-available', async (info: UpdateInfo) => {
+updater.autoUpdater.on('update-available', async (info: updater.UpdateInfo) => {
   const lang = db.get(configPaths.settings.language) || II18nLanguage.ZH_CN
   let updateLog = ''
   try {
@@ -96,21 +97,21 @@ autoUpdater.on('update-available', async (info: UpdateInfo) => {
   dialog
     .showMessageBox({
       type: 'info',
-      title: T('FIND_NEW_VERSION'),
+      title: $t('FIND_NEW_VERSION'),
       buttons: ['Yes', 'Go to download page'],
       message:
-        T('TIPS_FIND_NEW_VERSION', {
+        $t('TIPS_FIND_NEW_VERSION', {
           v: info.version
         }) +
         '\n\n' +
         displayLog +
         truncatedNote,
-      checkboxLabel: T('NO_MORE_NOTICE'),
+      checkboxLabel: $t('NO_MORE_NOTICE'),
       checkboxChecked: false
     })
     .then(result => {
       if (result.response === 0) {
-        autoUpdater.downloadUpdate()
+        updater.autoUpdater.downloadUpdate()
       } else {
         shell.openExternal('https://github.com/Kuingsmile/PicList/releases/latest')
       }
@@ -121,7 +122,7 @@ autoUpdater.on('update-available', async (info: UpdateInfo) => {
     })
 })
 
-autoUpdater.on('download-progress', progressObj => {
+updater.autoUpdater.on('download-progress', progressObj => {
   const percent = {
     progress: progressObj.percent
   }
@@ -129,19 +130,19 @@ autoUpdater.on('download-progress', progressObj => {
   window.webContents.send('updateProgress', percent)
 })
 
-autoUpdater.on('update-downloaded', () => {
+updater.autoUpdater.on('update-downloaded', () => {
   dialog
     .showMessageBox({
       type: 'info',
-      title: T('UPDATE_DOWNLOADED'),
+      title: $t('UPDATE_DOWNLOADED'),
       buttons: ['Yes', 'No'],
-      message: T('TIPS_UPDATE_DOWNLOADED')
+      message: $t('TIPS_UPDATE_DOWNLOADED')
     })
     .then(result => {
       const window = windowManager.get(IWindowList.SETTING_WINDOW)!
       window.webContents.send('updateProgress', { progress: 100 })
       if (result.response === 0) {
-        autoUpdater.quitAndInstall()
+        updater.autoUpdater.quitAndInstall()
       }
     })
     .catch(err => {
@@ -149,8 +150,8 @@ autoUpdater.on('update-downloaded', () => {
     })
 })
 
-autoUpdater.on('error', err => {
-  console.log(err)
+updater.autoUpdater.on('error', err => {
+  logger.error(err)
 })
 
 class LifeCycle {
@@ -164,11 +165,19 @@ class LifeCycle {
     initI18n()
     rpcServer.start()
     busEventList.listen()
+
+    if (process.env.NODE_ENV === 'development') {
+      MemoryMonitor.start(30000)
+    }
   }
 
   #onReady() {
     const readyFunction = async () => {
-      createProtocol('picgo')
+      if (process.env.NODE_ENV !== 'production') {
+        installExtension(VUEJS_DEVTOOLS).catch(err => {
+          logger.error('An error occurred: ', err)
+        })
+      }
       windowManager.create(IWindowList.TRAY_WINDOW)
       windowManager.create(IWindowList.SETTING_WINDOW)
       const isAutoListenClipboard = db.get(configPaths.settings.isAutoListenClipboard) || false
@@ -192,7 +201,7 @@ class LifeCycle {
       const currentPicBedConfig = db.get(`picBed.${currentPicBed}`)?._configName || 'Default'
       const tooltip = `${currentPicBed} ${currentPicBedConfig}`
       if (process.platform === 'darwin') {
-        isHideDock ? app.dock.hide() : setDockMenu()
+        isHideDock ? app.dock?.hide() : setDockMenu()
         startMode !== ISartMode.NO_TRAY && createTray(tooltip)
       } else {
         createTray(tooltip)
@@ -210,9 +219,9 @@ class LifeCycle {
         handleStartUpFiles(process.argv, process.cwd())
       }
 
-      if (global.notificationList && global.notificationList?.length > 0) {
-        while (global.notificationList?.length) {
-          const option = global.notificationList.pop()
+      if (notificationList && notificationList.length > 0) {
+        while (notificationList.length) {
+          const option = notificationList.pop()
           const notice = new Notification(option!)
           notice.show()
         }
@@ -229,7 +238,21 @@ class LifeCycle {
         const { width, height } = screen.getPrimaryDisplay().workAreaSize
         const lastPosition = db.get(configPaths.settings.miniWindowPosition)
         if (lastPosition) {
-          miniWindow.setPosition(lastPosition[0], lastPosition[1])
+          if (lastPosition[0] < 0 || lastPosition[0] > width || lastPosition[1] < 0 || lastPosition[1] > height) {
+            miniWindow.setPosition(width - 100, height - 100)
+            db.set(configPaths.settings.miniWindowPosition, [width - 100, height - 100])
+          } else if (
+            lastPosition[0] + miniWindow.getSize()[0] > width ||
+            lastPosition[1] + miniWindow.getSize()[1] > height
+          ) {
+            miniWindow.setPosition(width - miniWindow.getSize()[0], height - miniWindow.getSize()[1])
+            db.set(configPaths.settings.miniWindowPosition, [
+              width - miniWindow.getSize()[0],
+              height - miniWindow.getSize()[1]
+            ])
+          } else {
+            miniWindow.setPosition(lastPosition[0], lastPosition[1])
+          }
         } else {
           miniWindow.setPosition(width - 100, height - 100)
         }
@@ -267,7 +290,6 @@ class LifeCycle {
       }
     })
     app.on('activate', () => {
-      createProtocol('picgo')
       if (!windowManager.has(IWindowList.TRAY_WINDOW)) {
         windowManager.create(IWindowList.TRAY_WINDOW)
       }
@@ -302,6 +324,7 @@ class LifeCycle {
       server.shutdown()
       webServer.stop()
       stopFileServer()
+      MemoryMonitor.stop()
     })
     // Exit cleanly on request from parent process in development mode.
     if (isDevelopment) {
@@ -332,6 +355,6 @@ class LifeCycle {
   }
 }
 
-const bootstrap = new LifeCycle()
+const lifeCycle = new LifeCycle()
 
-export { bootstrap }
+export { lifeCycle }

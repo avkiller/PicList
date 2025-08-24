@@ -1,22 +1,23 @@
+import crypto from 'node:crypto'
+import http from 'node:http'
+import https from 'node:https'
+import path from 'node:path'
+import { Stream } from 'node:stream'
+import { promisify } from 'node:util'
+
 import axios from 'axios'
-import crypto from 'crypto'
 import { app } from 'electron'
 import fs from 'fs-extra'
 import got, { OptionsOfTextResponseBody, RequestError } from 'got'
-import { HttpsProxyAgent, HttpProxyAgent } from 'hpagent'
-import http from 'http'
-import https from 'https'
-import mime from 'mime-types'
+import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
+import mime from 'mime'
 import Downloader from 'nodejs-file-downloader'
-import path from 'path'
-import { Stream } from 'stream'
-import { promisify } from 'util'
 
+import type { IHTTPProxy, IStringKeyMap } from '#/types/types'
 import UpDownTaskQueue from '~/manage/datastore/upDownTaskQueue'
 import { ManageLogger } from '~/manage/utils/logger'
-
-import { commonTaskStatus, downloadTaskSpecialStatus, uploadTaskSpecialStatus } from '#/types/enum'
-import { formatHttpProxy } from '#/utils/common'
+import { formatHttpProxy } from '~/utils/common'
+import { commonTaskStatus, downloadTaskSpecialStatus, uploadTaskSpecialStatus } from '~/utils/enum'
 
 export const getFSFile = async (filePath: string, stream: boolean = false): Promise<IStringKeyMap> => {
   try {
@@ -37,7 +38,7 @@ export function isInputConfigValid(config: any): boolean {
   return typeof config === 'object' && !Array.isArray(config) && Object.keys(config).length > 0
 }
 
-export const getFileMimeType = (filePath: string): string => mime.lookup(filePath) || 'application/octet-stream'
+export const getFileMimeType = (filePath: string): string => mime.getType(filePath) || 'application/octet-stream'
 
 const getTempDirPath = () => {
   return path.join(app.getPath('temp'), 'piclistTemp')
@@ -55,14 +56,14 @@ export const downloadFileFromUrl = async (urls: string[]) => {
   const tempPath = getTempDirPath()
   await checkTempFolderExist(tempPath)
   const result = [] as string[]
-  for (let i = 0; i < urls.length; i++) {
+  for (const url of urls) {
     const finishDownload = promisify(Stream.finished)
-    const fileName = path.basename(urls[i]).split('?')[0]
+    const fileName = path.basename(url).split('?')[0]
     const filePath = path.join(tempPath, fileName)
     const writer = fs.createWriteStream(filePath)
     const res = await axios({
       method: 'get',
-      url: urls[i],
+      url,
       responseType: 'stream'
     })
     res.data.pipe(writer)

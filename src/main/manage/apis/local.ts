@@ -1,16 +1,17 @@
+import path from 'node:path'
+
+import * as fsWalk from '@nodelib/fs.walk'
+import windowManager from 'apis/app/window/windowManager'
 import { ipcMain, IpcMainEvent } from 'electron'
 import fs from 'fs-extra'
-import path from 'path'
-import * as fsWalk from '@nodelib/fs.walk'
 
-import windowManager from 'apis/app/window/windowManager'
+import type { IStringKeyMap } from '#/types/types'
 import UpDownTaskQueue from '~/manage/datastore/upDownTaskQueue'
 import { formatError } from '~/manage/utils/common'
 import ManageLogger from '~/manage/utils/logger'
-
-import { commonTaskStatus, downloadTaskSpecialStatus, IWindowList, uploadTaskSpecialStatus } from '#/types/enum'
-import { isImage } from '#/utils/common'
-import { cancelDownloadLoadingFileList, refreshDownloadFileTransferList } from '#/utils/static'
+import { isImage } from '~/utils/common'
+import { commonTaskStatus, downloadTaskSpecialStatus, IWindowList, uploadTaskSpecialStatus } from '~/utils/enum'
+import { cancelDownloadLoadingFileList, refreshDownloadFileTransferList } from '~/utils/static'
 
 class LocalApi {
   logger: ManageLogger
@@ -86,7 +87,7 @@ class LocalApi {
     })
     let res = {} as any
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       success: false,
       finished: false
     }
@@ -132,7 +133,7 @@ class LocalApi {
       }
     })
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       success: false,
       finished: false
     }

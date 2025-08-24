@@ -1,12 +1,11 @@
 import { RPCRouter } from '~/events/rpc/router'
 import {
+  pluginGetListFunc,
   pluginImportLocalFunc,
   pluginInstallFunc,
-  pluginGetListFunc,
   pluginUpdateAllFunc
 } from '~/events/rpc/routes/plugin/utils'
-
-import { IRPCActionType } from '#/types/enum'
+import { IRPCActionType } from '~/utils/enum'
 
 const pluginRouter = new RPCRouter()
 

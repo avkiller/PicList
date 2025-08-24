@@ -1,12 +1,13 @@
-import { app } from 'electron'
-import fs from 'fs-extra'
-import dayjs from 'dayjs'
-import path from 'path'
-import writeFile from 'write-file-atomic'
+import path from 'node:path'
 
 import { getLogger } from '@core/utils/localLogger'
+import dayjs from 'dayjs'
+import { app } from 'electron'
+import fs from 'fs-extra'
+import writeFile from 'write-file-atomic'
 
-import { T } from '~/i18n'
+import { T as $t } from '~/i18n'
+import { notificationList } from '~/utils/notification'
 
 const STORE_PATH = app.getPath('userData')
 
@@ -18,12 +19,9 @@ let _configFilePath = ''
 let hasCheckPath = false
 
 const errorMsg = {
-  broken: T('TIPS_PICGO_CONFIG_FILE_BROKEN_WITH_DEFAULT'),
-  brokenButBackup: T('TIPS_PICGO_CONFIG_FILE_BROKEN_WITH_BACKUP')
+  broken: $t('TIPS_PICGO_CONFIG_FILE_BROKEN_WITH_DEFAULT'),
+  brokenButBackup: $t('TIPS_PICGO_CONFIG_FILE_BROKEN_WITH_BACKUP')
 }
-
-/** ensure notification list */
-if (!global.notificationList) global.notificationList = []
 
 function dbChecker() {
   if (process.type !== 'renderer') {
@@ -43,7 +41,7 @@ function dbChecker() {
     }
     let configFile: string = '{}'
     const optionsTpl = {
-      title: T('TIPS_NOTICE'),
+      title: $t('TIPS_NOTICE'),
       body: ''
     }
     // config save bak
@@ -60,19 +58,19 @@ function dbChecker() {
           JSON.parse(configFile)
           writeFile.sync(configFilePath, configFile, { encoding: 'utf-8' })
           const stats = fs.statSync(configFileBackupPath)
-          optionsTpl.body = `${errorMsg.brokenButBackup}\n${T('TIPS_PICGO_BACKUP_FILE_VERSION', {
+          optionsTpl.body = `${errorMsg.brokenButBackup}\n${$t('TIPS_PICGO_BACKUP_FILE_VERSION', {
             v: dayjs(stats.mtime).format('YYYY-MM-DD HH:mm:ss')
           })}`
-          global.notificationList?.push(optionsTpl)
+          notificationList.push(optionsTpl)
           return
         } catch (e) {
           optionsTpl.body = errorMsg.broken
-          global.notificationList?.push(optionsTpl)
+          notificationList.push(optionsTpl)
           return
         }
       }
       optionsTpl.body = errorMsg.broken
-      global.notificationList?.push(optionsTpl)
+      notificationList.push(optionsTpl)
       return
     }
     writeFile.sync(configFileBackupPath, configFile, { encoding: 'utf-8' })
@@ -110,10 +108,10 @@ function dbPathChecker(): string {
     const logger = getLogger(piclistLogPath, 'PicList')
     if (!hasCheckPath) {
       const optionsTpl = {
-        title: T('TIPS_NOTICE'),
-        body: T('TIPS_CUSTOM_CONFIG_FILE_PATH_ERROR')
+        title: $t('TIPS_NOTICE'),
+        body: $t('TIPS_CUSTOM_CONFIG_FILE_PATH_ERROR')
       }
-      global.notificationList?.push(optionsTpl)
+      notificationList.push(optionsTpl)
       hasCheckPath = true
     }
     logger('error', e)

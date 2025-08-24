@@ -1,6 +1,10 @@
 import picgo from '@core/picgo'
 
+import type { IIPCEvent } from '#/types/rpc'
+import type { IStringKeyMap } from '#/types/types'
 import { RPCRouter } from '~/events/rpc/router'
+import deleteRoutes from '~/events/rpc/routes/picbed/delete'
+import { IRPCActionType, IRPCType } from '~/utils/enum'
 import {
   deleteUploaderConfig,
   getUploaderConfigList,
@@ -8,7 +12,6 @@ import {
   selectUploaderConfig,
   updateUploaderConfig
 } from '~/utils/handleUploaderConfig'
-import { IRPCActionType, IRPCType } from '#/types/enum'
 
 const picbedRouter = new RPCRouter()
 
@@ -92,6 +95,8 @@ const picbedRoutes = [
   }
 ]
 
-picbedRouter.addBatch(picbedRoutes)
+const picBedsRoutes = [...picbedRoutes, ...deleteRoutes]
+
+picbedRouter.addBatch(picBedsRoutes)
 
 export { picbedRouter }

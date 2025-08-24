@@ -1,39 +1,62 @@
-import crypto from 'crypto'
-import path from 'path'
 import { v4 as uuidv4 } from 'uuid'
 
-import { availableIconList } from '@/manage/utils/icon'
 import { getConfig } from '@/manage/utils/dataSender'
+import { availableIconList } from '@/manage/utils/icon'
+import { isNeedToShorten, safeSliceF } from '@/utils/common'
+import type { IStringKeyMap } from '#/types/types'
 
-import { handleUrlEncode, safeSliceF, isNeedToShorten } from '#/utils/common'
+export const isUrlEncode = (url: string): boolean => {
+  url = url || ''
+  try {
+    return url !== decodeURI(url)
+  } catch {
+    return false
+  }
+}
 
+export const handleUrlEncode = (url: string): string => (isUrlEncode(url) ? url : encodeURI(url))
+
+const mask = 0b111111
+const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 export function randomStringGenerator(length: number): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  return Array.from({ length })
-    .map(() => chars.charAt(Math.floor(Math.random() * chars.length)))
-    .join('')
+  const out = new Array(length)
+  let i = 0
+  let pool = 0
+  let bits = 0
+  while (i < length) {
+    if (bits < 6) {
+      pool = (pool << 30) | ((Math.random() * 0x40000000) >>> 0)
+      bits += 30
+      continue
+    }
+    const idx = pool & mask
+    pool >>>= 6
+    bits -= 6
+    if (idx < 62) out[i++] = chars[idx]
+  }
+  return out.join('')
 }
 
 export function renameFileNameWithTimestamp(oldName: string): string {
-  return `${Math.floor(Date.now() / 1000)}${randomStringGenerator(5)}${path.extname(oldName)}`
+  return `${Math.floor(Date.now() / 1000)}${randomStringGenerator(5)}${window.node.path.extname(oldName)}`
 }
 
 export function renameFileNameWithRandomString(oldName: string, length: number = 5): string {
-  return `${randomStringGenerator(length)}${path.extname(oldName)}`
+  return `${randomStringGenerator(length)}${window.node.path.extname(oldName)}`
 }
 
 function renameFormatHelper(num: number): string {
   return num.toString().length === 1 ? `0${num}` : num.toString()
 }
 
-function getMd5(input: crypto.BinaryLike): string {
-  return crypto.createHash('md5').update(input).digest('hex')
+function getMd5(input: any): string {
+  return window.node.crypto.createHash('md5').update(input).digest('hex')
 }
 
 export function renameFileNameWithCustomString(oldName: string, customFormat: string, affixFileName?: string): string {
   const date = new Date()
   const year = date.getFullYear().toString()
-  const fileBaseName = path.basename(oldName, path.extname(oldName))
+  const fileBaseName = window.node.path.basename(oldName, window.node.path.extname(oldName))
   const conversionMap: { [key: string]: () => string } = {
     '{Y}': () => year,
     '{y}': () => year.slice(2),
@@ -47,8 +70,8 @@ export function renameFileNameWithCustomString(oldName: string, customFormat: st
     '{md5-16}': () => getMd5(fileBaseName).slice(0, 16),
     '{filename}': () =>
       affixFileName
-        ? path.basename(affixFileName, path.extname(affixFileName))
-        : path.basename(oldName, path.extname(oldName)),
+        ? window.node.path.basename(affixFileName, window.node.path.extname(affixFileName))
+        : window.node.path.basename(oldName, window.node.path.extname(oldName)),
     '{uuid}': () => uuidv4().replace(/-/g, ''),
     '{timestamp}': () => date.getTime().toString()
   }
@@ -58,7 +81,7 @@ export function renameFileNameWithCustomString(oldName: string, customFormat: st
   ) {
     return oldName
   }
-  const ext = path.extname(oldName)
+  const ext = window.node.path.extname(oldName)
   let newName =
     Object.keys(conversionMap).reduce((acc, cur) => {
       return acc.replace(new RegExp(cur, 'g'), conversionMap[cur]())
@@ -111,7 +134,7 @@ export async function formatLink(url: string, fileName: string, type: string, fo
 }
 
 export function getFileIconPath(fileName: string) {
-  const ext = path.extname(fileName).slice(1).toLowerCase()
+  const ext = window.node.path.extname(fileName).slice(1).toLowerCase()
   return availableIconList.includes(ext) ? `${ext}.webp` : 'unknown.webp'
 }
 
@@ -124,9 +147,9 @@ export function formatFileSize(size: number) {
 }
 
 export function formatFileName(fileName: string, length: number = 20) {
-  let ext = path.extname(fileName)
+  let ext = window.node.path.extname(fileName)
   ext = ext.length > 5 ? ext.slice(ext.length - 5) : ext
-  const name = path.basename(fileName, ext)
+  const name = window.node.path.basename(fileName, ext)
   return isNeedToShorten(fileName, length) ? `${safeSliceF(name, length - 3 - ext.length)}...${ext}` : fileName
 }
 
@@ -148,17 +171,6 @@ export function isValidUrl(str: string) {
     return false
   }
 }
-
-export const svg = `
-  <path class="path" d="
-    M 30 15
-    L 28 17
-    M 25.61 25.61
-    A 15 15, 0, 0, 1, 15 30
-    A 15 15, 0, 1, 1, 27.99 7.5
-    L 15 15
-  " style="stroke-width: 4px; fill: rgba(0, 0, 0, 0)"/>
-  `
 
 export function customStrMatch(str: string, pattern: string): boolean {
   if (!str || !pattern) return false

@@ -1,25 +1,25 @@
+import path from 'node:path'
+
+import windowManager from 'apis/app/window/windowManager'
 import { ipcMain, IpcMainEvent } from 'electron'
 import FormData from 'form-data'
 import fs from 'fs-extra'
 import got from 'got'
-import path from 'path'
 
-import windowManager from 'apis/app/window/windowManager'
-
+import type { IStringKeyMap } from '#/types/types'
 import UpDownTaskQueue from '~/manage/datastore/upDownTaskQueue'
 import {
   ConcurrencyPromisePool,
   formatError,
+  getAgent,
   getFileMimeType,
   getOptions,
-  getAgent,
   gotUpload,
   NewDownloader
 } from '~/manage/utils/common'
 import ManageLogger from '~/manage/utils/logger'
-
-import { commonTaskStatus, IWindowList } from '#/types/enum'
-import { formatHttpProxy, isImage } from '#/utils/common'
+import { formatHttpProxy, isImage } from '~/utils/common'
+import { commonTaskStatus, IWindowList } from '~/utils/enum'
 
 class ImgurApi {
   userName: string
@@ -108,7 +108,7 @@ class ImgurApi {
     })
     let res = {} as any
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       success: false,
       finished: false
     }

@@ -1,11 +1,15 @@
+import picgo from '@core/picgo'
 import { v4 as uuid } from 'uuid'
 
-import picgo from '@core/picgo'
-
-import { setTrayToolTip } from '~/utils/common'
-
-import { trimValues } from '#/utils/common'
-import { configPaths } from '#/utils/configPaths'
+import type {
+  IPicGoPluginConfig,
+  IPicGoPluginOriginConfig,
+  IStringKeyMap,
+  IUploaderConfigItem,
+  IUploaderConfigListItem
+} from '#/types/types'
+import { setTrayToolTip, trimValues } from '~/utils/common'
+import { configPaths } from '~/utils/configPaths'
 
 export const handleConfigWithFunction = (config: IPicGoPluginOriginConfig[]): IPicGoPluginConfig[] => {
   for (const i in config) {
@@ -13,7 +17,7 @@ export const handleConfigWithFunction = (config: IPicGoPluginOriginConfig[]): IP
       config[i].default = config[i].default()
     }
     if (typeof config[i].choices === 'function') {
-      // eslint-disable-next-line @typescript-eslint/ban-types
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
       config[i].choices = (config[i].choices as Function)()
     }
   }
@@ -21,17 +25,13 @@ export const handleConfigWithFunction = (config: IPicGoPluginOriginConfig[]): IP
 }
 
 export const completeUploaderMetaConfig = (originData: IStringKeyMap): IUploaderConfigListItem => {
-  return Object.assign(
-    {
-      _configName: 'Default'
-    },
-    trimValues(originData),
-    {
-      _id: uuid(),
-      _createdAt: Date.now(),
-      _updatedAt: Date.now()
-    }
-  )
+  return {
+    _configName: 'Default',
+    ...trimValues(originData),
+    _id: uuid(),
+    _createdAt: Date.now(),
+    _updatedAt: Date.now()
+  }
 }
 
 /**
@@ -218,4 +218,10 @@ export const resetUploaderConfig = (type: string, id: string) => {
   picgo.saveConfig({
     [`uploader.${type}.configList`]: configList
   })
+  const currentDefault = picgo.getConfig<IStringKeyMap>(`picBed.${type}`) ?? {}
+  if (currentDefault._id === id) {
+    picgo.saveConfig({
+      [`picBed.${type}`]: configList
+    })
+  }
 }

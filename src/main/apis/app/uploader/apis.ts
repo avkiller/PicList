@@ -1,21 +1,19 @@
-import { Notification, WebContents } from 'electron'
-import fs from 'fs-extra'
-import { cloneDeep } from 'lodash'
-
-import picgo from '@core/picgo'
 import db, { GalleryDB } from '@core/datastore'
-
+import picgo from '@core/picgo'
 import uploader from 'apis/app/uploader'
 import windowManager from 'apis/app/window/windowManager'
+import { Notification, WebContents } from 'electron'
+import fs from 'fs-extra'
+import { cloneDeep } from 'lodash-es'
+import type { IPicGo } from 'piclist'
 
-import { T } from '~/i18n/index'
+import type { IFileWithPath, ImgInfo, IStringKeyMap, IUploadOption } from '#/types/types'
+import { T as $t } from '~/i18n/index'
 import { handleCopyUrl, handleUrlEncodeWithSetting } from '~/utils/common'
-import pasteTemplate from '~/utils/pasteTemplate'
-
-import { IPasteStyle, IWindowList } from '#/types/enum'
-import { configPaths } from '#/utils/configPaths'
+import { configPaths } from '~/utils/configPaths'
+import { IPasteStyle, IWindowList } from '~/utils/enum'
 import { changeCurrentUploader } from '~/utils/handleUploaderConfig'
-import { IPicGo } from 'piclist'
+import pasteTemplate from '~/utils/pasteTemplate'
 
 const handleClipboardUploading = async (): Promise<false | ImgInfo[]> => {
   const useBuiltinClipboard =
@@ -63,7 +61,7 @@ export const uploadClipboardFiles = async (): Promise<IStringKeyMap> => {
           : !!db.get(configPaths.settings.uploadResultNotification)
       if (isShowResultNotification) {
         const notification = new Notification({
-          title: T('UPLOAD_SUCCEED'),
+          title: $t('UPLOAD_SUCCEED'),
           body: shortUrl || img[0].imgUrl!
           // icon: img[0].imgUrl
         })
@@ -71,7 +69,7 @@ export const uploadClipboardFiles = async (): Promise<IStringKeyMap> => {
           notification.show()
         }, 100)
       }
-      await GalleryDB.getInstance().insert(img[0])
+      const inserted = await GalleryDB.getInstance().insert(img[0])
       // trayWindow just be created in mac/windows, not in linux
       trayWindow?.webContents?.send('clipboardFiles', [])
       trayWindow?.webContents?.send('uploadFiles', img)
@@ -79,13 +77,13 @@ export const uploadClipboardFiles = async (): Promise<IStringKeyMap> => {
         windowManager.get(IWindowList.SETTING_WINDOW)!.webContents?.send('updateGallery')
       }
       return {
-        url: handleUrlEncodeWithSetting(img[0].imgUrl as string),
-        fullResult: img[0]
+        url: handleUrlEncodeWithSetting(inserted.imgUrl as string),
+        fullResult: inserted
       }
     } else {
       const notification = new Notification({
-        title: T('UPLOAD_FAILED'),
-        body: T('TIPS_UPLOAD_NOT_PICTURES')
+        title: $t('UPLOAD_FAILED'),
+        body: $t('TIPS_UPLOAD_NOT_PICTURES')
       })
       notification.show()
       return {
@@ -143,7 +141,7 @@ export const uploadChoosedFiles = async (
           : !!db.get(configPaths.settings.uploadResultNotification)
       if (isShowResultNotification) {
         const notification = new Notification({
-          title: T('UPLOAD_SUCCEED'),
+          title: $t('UPLOAD_SUCCEED'),
           body: shortUrl || imgs[i].imgUrl!
           // icon: files[i].path
         })
@@ -151,10 +149,10 @@ export const uploadChoosedFiles = async (
           notification.show()
         }, i * 100)
       }
-      await GalleryDB.getInstance().insert(imgs[i])
+      const inserted = await GalleryDB.getInstance().insert(imgs[i])
       result.push({
-        url: handleUrlEncodeWithSetting(imgs[i].imgUrl!),
-        fullResult: imgs[i]
+        url: handleUrlEncodeWithSetting(inserted.imgUrl!),
+        fullResult: inserted
       })
     }
     handleCopyUrl(pasteText.join('\n'))
@@ -213,8 +211,8 @@ export const handleSecondaryUpload = async (
             trayWindow?.webContents?.send('uploadFiles', secondImgs)
           }
         } else {
-          for (let i = 0; i < secondImgs.length; i++) {
-            await GalleryDB.getInstance().insert(secondImgs[i])
+          for (const secondImgsItem of secondImgs) {
+            await GalleryDB.getInstance().insert(secondImgsItem)
           }
           if (uploadType === 'tray') {
             trayWindow?.webContents?.send('dragFiles', secondImgs)

@@ -1,14 +1,38 @@
-import axios from 'axios'
-import { clipboard, Notification, dialog, Tray } from 'electron'
-import FormData from 'form-data'
-import fs from 'fs-extra'
+import path from 'node:path'
 
 import db from '@core/datastore'
 import logger from '@core/picgo/logger'
+import axios from 'axios'
+import { clipboard, Notification, Tray } from 'electron'
+import FormData from 'form-data'
+import fs from 'fs-extra'
+import { isReactive, isRef, toRaw, unref } from 'vue'
 
-import { IShortUrlServer } from '#/types/enum'
-import { handleUrlEncode } from '#/utils/common'
-import { configPaths } from '#/utils/configPaths'
+import type { IHTTPProxy, IPrivateShowNotificationOption, IStringKeyMap } from '#/types/types'
+import { configPaths } from '~/utils/configPaths'
+import { IShortUrlServer } from '~/utils/enum'
+
+/**
+ * get raw data from reactive or ref
+ */
+export const getRawData = (args: any): any => {
+  if (isRef(args)) return unref(args)
+  if (isReactive(args)) return toRaw(args)
+  if (Array.isArray(args)) return args.map(getRawData)
+  if (typeof args === 'object' && args !== null) {
+    const data = {} as Record<string, any>
+    for (const key in args) {
+      data[key] = getRawData(args[key])
+    }
+    return data
+  }
+  return args
+}
+
+const getExtension = (fileName: string) => path.extname(fileName).slice(1)
+
+export const isImage = (fileName: string) =>
+  ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'ico', 'svg', 'avif'].includes(getExtension(fileName))
 
 export let tray: Tray
 
@@ -46,7 +70,6 @@ export const showNotification = (
   const notification = new Notification({
     title: options.title,
     body: options.body
-    // icon: options.icon || undefined
   })
   const handleClick = () => {
     if (options.clickToCopy) {
@@ -61,31 +84,6 @@ export const showNotification = (
     notification.removeListener('click', handleClick)
   })
   notification.show()
-}
-
-export const showMessageBox = (options: any) => {
-  return new Promise<IShowMessageBoxResult>(async resolve => {
-    dialog.showMessageBox(options).then(res => {
-      resolve({
-        result: res.response,
-        checkboxChecked: res.checkboxChecked
-      })
-    })
-  })
-}
-
-export const calcDurationRange = (duration: number) => {
-  if (duration < 1000) return 500
-  if (duration < 1500) return 1000
-  if (duration < 3000) return 2000
-  if (duration < 5000) return 3000
-  if (duration < 7000) return 5000
-  if (duration < 10000) return 8000
-  if (duration < 12000) return 10000
-  if (duration < 20000) return 15000
-  if (duration < 30000) return 20000
-  // max range
-  return 100000
 }
 
 /**
@@ -130,12 +128,9 @@ export const getClipboardFilePath = (): string => {
   return ''
 }
 
-export const handleUrlEncodeWithSetting = (url: string) =>
-  db.get(configPaths.settings.encodeOutputURL) ? handleUrlEncode(url) : url
-
 const c1nApi = 'https://c1n.cn/link/short'
 
-const generateC1NShortUrl = async (url: string) => {
+const createC1NShortUrl = async (url: string) => {
   const c1nToken = db.get(configPaths.settings.c1nToken) || ''
   if (!c1nToken) {
     logger.warn('c1n token is not set')
@@ -158,7 +153,7 @@ const generateC1NShortUrl = async (url: string) => {
   return url
 }
 
-const generateYOURLSShortUrl = async (url: string) => {
+const createYOURLSShortLink = async (url: string) => {
   let domain = db.get(configPaths.settings.yourlsDomain) || ''
   const signature = db.get(configPaths.settings.yourlsSignature) || ''
 
@@ -190,7 +185,7 @@ const generateYOURLSShortUrl = async (url: string) => {
   return url
 }
 
-const generateCFWORKERShortUrl = async (url: string) => {
+const createShortUrlForCFWorker = async (url: string) => {
   let cfWorkerHost = db.get(configPaths.settings.cfWorkerHost) || ''
   cfWorkerHost = cfWorkerHost.replace(/\/$/, '')
   if (!cfWorkerHost) {
@@ -210,7 +205,7 @@ const generateCFWORKERShortUrl = async (url: string) => {
   return url
 }
 
-const generateSinkShortUrl = async (url: string) => {
+const createShortUrlFromSink = async (url: string) => {
   let sinkDomain = db.get(configPaths.settings.sinkDomain) || ''
   const sinkToken = db.get(configPaths.settings.sinkToken) || ''
   if (!sinkDomain || !sinkToken) {
@@ -242,14 +237,87 @@ export const generateShortUrl = async (url: string) => {
   const server = db.get(configPaths.settings.shortUrlServer) || IShortUrlServer.C1N
   switch (server) {
     case IShortUrlServer.C1N:
-      return generateC1NShortUrl(url)
+      return createC1NShortUrl(url)
     case IShortUrlServer.YOURLS:
-      return generateYOURLSShortUrl(url)
+      return createYOURLSShortLink(url)
     case IShortUrlServer.CFWORKER:
-      return generateCFWORKERShortUrl(url)
+      return createShortUrlForCFWorker(url)
     case IShortUrlServer.SINK:
-      return generateSinkShortUrl(url)
+      return createShortUrlFromSink(url)
     default:
       return url
   }
 }
+
+export const isUrl = (url: string): boolean => {
+  try {
+    return Boolean(new URL(url))
+  } catch {
+    return false
+  }
+}
+
+export const isUrlEncode = (url: string): boolean => {
+  url = url || ''
+  try {
+    return url !== decodeURI(url)
+  } catch {
+    return false
+  }
+}
+
+export const handleUrlEncode = (url: string): string => (isUrlEncode(url) ? url : encodeURI(url))
+
+export const handleUrlEncodeWithSetting = (url: string) =>
+  db.get(configPaths.settings.encodeOutputURL) ? handleUrlEncode(url) : url
+
+export const handleStreamlinePluginName = (name: string) => name.replace(/(@[^/]+\/)?picgo-plugin-/, '')
+export const simpleClone = (obj: any) => JSON.parse(JSON.stringify(obj))
+export const enforceNumber = (num: number | string) => (isNaN(+num) ? 0 : +num)
+
+export const trimValues = <T extends IStringKeyMap>(
+  obj: T
+): { [K in keyof T]: T[K] extends string ? string : T[K] } => {
+  return Object.fromEntries(
+    Object.entries(obj).map(([key, value]) => [key, typeof value === 'string' ? value.trim() : value])
+  ) as { [K in keyof T]: T[K] extends string ? string : T[K] }
+}
+
+export const formatEndpoint = (endpoint: string, sslEnabled: boolean): string => {
+  const hasProtocol = /^https?:\/\//.test(endpoint)
+  if (!hasProtocol) {
+    return `${sslEnabled ? 'https' : 'http'}://${endpoint}`
+  }
+  return sslEnabled ? endpoint.replace(/^http:\/\//, 'https://') : endpoint.replace(/^https:\/\//, 'http://')
+}
+
+export const formatHttpProxy = (
+  proxy: string | undefined,
+  type: 'object' | 'string'
+): IHTTPProxy | undefined | string => {
+  if (!proxy) return undefined
+  if (/^https?:\/\//.test(proxy)) {
+    const { protocol, hostname, port } = new URL(proxy)
+    return type === 'string'
+      ? `${protocol}//${hostname}:${port}`
+      : {
+          host: hostname,
+          port: Number(port),
+          protocol: protocol.slice(0, -1)
+        }
+  }
+  const [host, port] = proxy.split(':')
+  return type === 'string'
+    ? `http://${host}:${port}`
+    : {
+        host,
+        port: port ? Number(port) : 80,
+        protocol: 'http'
+      }
+}
+
+export function encodeFilePath(filePath: string) {
+  return filePath.replace(/\\/g, '/').split('/').map(encodeURIComponent).join('/')
+}
+
+export const trimPath = (path: string) => path.replace(/^\/+|\/+$/g, '').replace(/\/+/g, '/')

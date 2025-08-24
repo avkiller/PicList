@@ -1,20 +1,21 @@
+import { IpcMainEvent } from 'electron'
+
+import type { IToolboxCheckArgs, IToolboxCheckerMap, IToolboxFixMap } from '#/types/rpc'
+import { RPCRouter } from '~/events/rpc/router'
 import { checkClipboardUploadMap, fixClipboardUploadMap } from '~/events/rpc/routes/toolbox/checkClipboardUpload'
 import { checkFileMap, fixFileMap } from '~/events/rpc/routes/toolbox/checkFile'
 import { checkProxyMap } from '~/events/rpc/routes/toolbox/checkProxy'
-import { RPCRouter } from '~/events/rpc/router'
-
-import { IRPCActionType, IRPCType, IToolboxItemType } from '#/types/enum'
-import { IpcMainEvent } from 'electron'
+import { IRPCActionType, IRPCType } from '~/utils/enum'
 
 const toolboxRouter = new RPCRouter()
 
-const toolboxCheckMap: Partial<IToolboxCheckerMap<IToolboxItemType>> = {
+const toolboxCheckMap: Partial<IToolboxCheckerMap<string>> = {
   ...checkFileMap,
   ...checkClipboardUploadMap,
   ...checkProxyMap
 }
 
-const toolboxFixMap: Partial<IToolboxFixMap<IToolboxItemType>> = {
+const toolboxFixMap: Partial<IToolboxFixMap<string>> = {
   ...fixFileMap,
   ...fixClipboardUploadMap
 }
@@ -22,7 +23,7 @@ const toolboxFixMap: Partial<IToolboxFixMap<IToolboxItemType>> = {
 toolboxRouter
   .add(
     IRPCActionType.TOOLBOX_CHECK,
-    async (event, args) => {
+    async (event: any, args: IToolboxCheckArgs) => {
       const [type] = args as IToolboxCheckArgs
       if (type) {
         const handler = toolboxCheckMap[type]
@@ -32,7 +33,7 @@ toolboxRouter
       } else {
         // do check all
         for (const key in toolboxCheckMap) {
-          const handler = toolboxCheckMap[key as IToolboxItemType]
+          const handler = toolboxCheckMap[key]
           if (handler) {
             handler(event as IpcMainEvent)
           }
@@ -43,7 +44,7 @@ toolboxRouter
   )
   .add(
     IRPCActionType.TOOLBOX_CHECK_FIX,
-    async (event, args) => {
+    async (event: any, args: IToolboxCheckArgs) => {
       const [type] = args as IToolboxCheckArgs
       const handler = toolboxFixMap[type]
       if (handler) {

@@ -1,5 +1,7 @@
 import logger from '@core/picgo/logger'
 
+import type { IShortKeyHandler } from '#/types/types'
+
 class ShortKeyService {
   private commandList: Map<string, IShortKeyHandler> = new Map()
   registerCommand(command: string, handler: IShortKeyHandler) {

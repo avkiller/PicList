@@ -1,13 +1,30 @@
-import { IObject, IResult, IGetResult, IFilter } from '@picgo/store/dist/types'
+import { IRPCActionType } from '@/utils/enum'
+import type { IGalleryDB } from '#/types/extra-vue'
 
-import { triggerRPC } from '@/utils/common'
+interface IFilter {
+  orderBy?: 'asc' | 'desc'
+  limit?: number
+  offset?: number
+}
 
-import { IRPCActionType } from '#/types/enum'
-import { IGalleryDB } from '#/types/extra-vue'
+interface IGetResult<T> {
+  total: number
+  data: IResult<T>[]
+}
+interface IObject {
+  id?: string
+  [propName: string]: any
+}
+
+type IResult<T> = T & {
+  id: string
+  createdAt: number
+  updatedAt: number
+}
 
 export class GalleryDB implements IGalleryDB {
-  async #actionHandler<T>(method: IRPCActionType, ...args: any[]): Promise<T | undefined> {
-    return await triggerRPC<T>(method, ...args)
+  async #actionHandler<T>(method: string, ...args: any[]): Promise<T | undefined> {
+    return await window.electron.triggerRPC<T>(method, ...args)
   }
 
   async get<T>(filter?: IFilter): Promise<IGetResult<T> | undefined> {

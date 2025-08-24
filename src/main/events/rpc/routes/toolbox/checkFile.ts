@@ -1,18 +1,16 @@
-import { IpcMainEvent } from 'electron'
-import fs from 'fs-extra'
-import path from 'path'
+import path from 'node:path'
 
+import { DB_PATH, GalleryDB } from '@core/datastore'
 import { dbPathChecker } from '@core/datastore/dbChecker'
-import { GalleryDB, DB_PATH } from '@core/datastore'
+import type { IpcMainEvent } from 'electron'
+import fs from 'fs-extra'
 
+import type { IToolboxCheckerMap, IToolboxFixMap } from '#/types/rpc'
 import { sendToolboxResWithType } from '~/events/rpc/routes/toolbox/utils'
-import { T } from '~/i18n'
+import { T as $t } from '~/i18n'
+import { IToolboxItemCheckStatus, IToolboxItemType } from '~/utils/enum'
 
-import { IToolboxItemCheckStatus, IToolboxItemType } from '#/types/enum'
-
-export const checkFileMap: IToolboxCheckerMap<
-  IToolboxItemType.IS_CONFIG_FILE_BROKEN | IToolboxItemType.IS_GALLERY_FILE_BROKEN
-> = {
+export const checkFileMap: IToolboxCheckerMap<string> = {
   [IToolboxItemType.IS_CONFIG_FILE_BROKEN]: async (event: IpcMainEvent) => {
     const sendToolboxRes = sendToolboxResWithType(IToolboxItemType.IS_CONFIG_FILE_BROKEN)
     sendToolboxRes(event, {
@@ -24,7 +22,7 @@ export const checkFileMap: IToolboxCheckerMap<
         await fs.readJSON(configFilePath)
         sendToolboxRes(event, {
           status: IToolboxItemCheckStatus.SUCCESS,
-          msg: T('TOOLBOX_CHECK_CONFIG_FILE_PATH_TIPS', {
+          msg: $t('TOOLBOX_CHECK_CONFIG_FILE_PATH_TIPS', {
             path: configFilePath
           }),
           value: configFilePath
@@ -33,7 +31,7 @@ export const checkFileMap: IToolboxCheckerMap<
     } catch (e) {
       sendToolboxRes(event, {
         status: IToolboxItemCheckStatus.ERROR,
-        msg: T('TOOLBOX_CHECK_CONFIG_FILE_BROKEN_TIPS'),
+        msg: $t('TOOLBOX_CHECK_CONFIG_FILE_BROKEN_TIPS'),
         value: path.dirname(configFilePath)
       })
     }
@@ -47,7 +45,7 @@ export const checkFileMap: IToolboxCheckerMap<
     if (galleryDB.errorList.length === 0) {
       sendToolboxRes(event, {
         status: IToolboxItemCheckStatus.SUCCESS,
-        msg: T('TOOLBOX_CHECK_GALLERY_FILE_PATH_TIPS', {
+        msg: $t('TOOLBOX_CHECK_GALLERY_FILE_PATH_TIPS', {
           path: DB_PATH
         }),
         value: path.dirname(DB_PATH)
@@ -55,16 +53,14 @@ export const checkFileMap: IToolboxCheckerMap<
     } else {
       sendToolboxRes(event, {
         status: IToolboxItemCheckStatus.ERROR,
-        msg: T('TOOLBOX_CHECK_GALLERY_FILE_BROKEN_TIPS'),
+        msg: $t('TOOLBOX_CHECK_GALLERY_FILE_BROKEN_TIPS'),
         value: path.dirname(DB_PATH)
       })
     }
   }
 }
 
-export const fixFileMap: IToolboxFixMap<
-  IToolboxItemType.IS_CONFIG_FILE_BROKEN | IToolboxItemType.IS_GALLERY_FILE_BROKEN
-> = {
+export const fixFileMap: IToolboxFixMap<string> = {
   [IToolboxItemType.IS_CONFIG_FILE_BROKEN]: async () => {
     try {
       fs.unlinkSync(dbPathChecker())

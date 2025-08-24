@@ -1,24 +1,24 @@
+import path from 'node:path'
+
+import windowManager from 'apis/app/window/windowManager'
 import { ipcMain, IpcMainEvent } from 'electron'
 import fs from 'fs-extra'
 import got from 'got'
-import path from 'path'
 
-import windowManager from 'apis/app/window/windowManager'
-
+import type { IStringKeyMap } from '#/types/types'
 import UpDownTaskQueue from '~/manage/datastore/upDownTaskQueue'
 import {
-  gotUpload,
-  NewDownloader,
+  ConcurrencyPromisePool,
+  formatError,
   getAgent,
   getOptions,
-  ConcurrencyPromisePool,
-  formatError
+  gotUpload,
+  NewDownloader
 } from '~/manage/utils/common'
 import { ManageLogger } from '~/manage/utils/logger'
-
-import { commonTaskStatus, IWindowList } from '#/types/enum'
-import { formatHttpProxy, isImage, trimPath } from '#/utils/common'
-import { cancelDownloadLoadingFileList, refreshDownloadFileTransferList } from '#/utils/static'
+import { formatHttpProxy, isImage, trimPath } from '~/utils/common'
+import { commonTaskStatus, IWindowList } from '~/utils/enum'
+import { cancelDownloadLoadingFileList, refreshDownloadFileTransferList } from '~/utils/static'
 
 class GithubApi {
   token: string
@@ -197,7 +197,7 @@ class GithubApi {
     })
     let res = {} as any
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       success: false,
       finished: false
     }
@@ -248,7 +248,7 @@ class GithubApi {
     })
     let res = {} as any
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       success: false,
       finished: false
     }

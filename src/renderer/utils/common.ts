@@ -1,18 +1,4 @@
-import { ipcRenderer } from 'electron'
 import { isReactive, isRef, toRaw, unref } from 'vue'
-
-import { RPC_ACTIONS, RPC_ACTIONS_INVOKE } from '#/events/constants'
-import { IRPCActionType } from '#/types/enum'
-
-export const handleTalkingDataEvent = (data: ITalkingDataOptions) => {
-  try {
-    const { EventId, Label = '', MapKv = {} } = data
-    MapKv.from = window.location.href
-    window.TDAPP.onEvent(EventId, Label, MapKv)
-  } catch (e) {
-    console.error(e)
-  }
-}
 
 /**
  * get raw data from reactive or ref
@@ -31,19 +17,51 @@ export const getRawData = (args: any): any => {
   return args
 }
 
-export function sendToMain(channel: string, ...args: any[]) {
-  const data = getRawData(args)
-  ipcRenderer.send(channel, ...data)
+export const isUrl = (url: string): boolean => {
+  try {
+    return Boolean(new URL(url))
+  } catch {
+    return false
+  }
 }
 
-export function sendRPC(action: IRPCActionType, ...args: any[]): void {
-  ipcRenderer.send(RPC_ACTIONS, action, getRawData(args))
+export const isUrlEncode = (url: string): boolean => {
+  url = url || ''
+  try {
+    return url !== decodeURI(url)
+  } catch {
+    return false
+  }
 }
 
-export function sendRpcSync(action: IRPCActionType, ...args: any[]) {
-  return ipcRenderer.sendSync(RPC_ACTIONS, action, getRawData(args))
+export const handleUrlEncode = (url: string): string => (isUrlEncode(url) ? url : encodeURI(url))
+
+export const handleStreamlinePluginName = (name: string) => name.replace(/(@[^/]+\/)?picgo-plugin-/, '')
+export const enforceNumber = (num: number | string) => (isNaN(+num) ? 0 : +num)
+
+export function isNeedToShorten(alias: string, cutOff = 20) {
+  return [...alias].reduce((len, char) => len + (char.charCodeAt(0) > 255 ? 2 : 1), 0) > cutOff
 }
 
-export async function triggerRPC<T>(action: IRPCActionType, ...args: any[]): Promise<T | undefined> {
-  return await ipcRenderer.invoke(RPC_ACTIONS_INVOKE, action, getRawData(args))
+export function safeSliceF(str: string, total: number) {
+  let result = ''
+  let totalLen = 0
+  for (const s of str) {
+    if (totalLen >= total) {
+      break
+    }
+    result += s
+    totalLen += s.charCodeAt(0) > 255 ? 2 : 1
+  }
+  return result
 }
+
+export const formatEndpoint = (endpoint: string, sslEnabled: boolean): string => {
+  const hasProtocol = /^https?:\/\//.test(endpoint)
+  if (!hasProtocol) {
+    return `${sslEnabled ? 'https' : 'http'}://${endpoint}`
+  }
+  return sslEnabled ? endpoint.replace(/^http:\/\//, 'https://') : endpoint.replace(/^https:\/\//, 'http://')
+}
+
+export const trimPath = (path: string) => path.replace(/^\/+|\/+$/g, '').replace(/\/+/g, '/')

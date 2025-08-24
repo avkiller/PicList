@@ -13,12 +13,6 @@ const darwin = [
     ext: '.dmg',
     arch: '-x64',
     'version-file': 'latest-mac.yml'
-  },
-  {
-    appNameWithPrefix: 'PicList-',
-    ext: '.dmg',
-    arch: '-universal',
-    'version-file': 'latest-mac.yml'
   }
 ]
 
@@ -56,10 +50,16 @@ const win32 = [
     ext: '.exe',
     arch: '', // 32 & 64
     'version-file': 'latest.yml'
+  },
+  {
+    appNameWithPrefix: 'PicList-Setup-',
+    ext: '.exe',
+    arch: '-arm64',
+    'version-file': 'latest.yml'
   }
 ]
 
-module.exports = {
+export default {
   darwin,
   linux,
   win32

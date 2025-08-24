@@ -1,24 +1,24 @@
+import path from 'node:path'
+
 import OSS from 'ali-oss'
+import windowManager from 'apis/app/window/windowManager'
 import axios from 'axios'
 import { ipcMain, IpcMainEvent } from 'electron'
-import { XMLParser } from 'fast-xml-parser'
-import path from 'path'
+import * as fastxml from 'fast-xml-parser'
 
-import windowManager from 'apis/app/window/windowManager'
-
+import type { IStringKeyMap } from '#/types/types'
 import UpDownTaskQueue from '~/manage/datastore/upDownTaskQueue'
-import { ManageLogger } from '~/manage/utils/logger'
 import {
-  hmacSha1Base64,
-  getFileMimeType,
+  ConcurrencyPromisePool,
   formatError,
-  NewDownloader,
-  ConcurrencyPromisePool
+  getFileMimeType,
+  hmacSha1Base64,
+  NewDownloader
 } from '~/manage/utils/common'
-
-import { commonTaskStatus, IWindowList, uploadTaskSpecialStatus } from '#/types/enum'
-import { isImage } from '#/utils/common'
-import { cancelDownloadLoadingFileList, refreshDownloadFileTransferList } from '#/utils/static'
+import { ManageLogger } from '~/manage/utils/logger'
+import { isImage } from '~/utils/common'
+import { commonTaskStatus, IWindowList, uploadTaskSpecialStatus } from '~/utils/enum'
+import { cancelDownloadLoadingFileList, refreshDownloadFileTransferList } from '~/utils/static'
 
 // 坑爹阿里云 返回数据类型标注和实际各种不一致
 class AliyunApi {
@@ -159,7 +159,7 @@ class AliyunApi {
     })
 
     if (res?.status === 200) {
-      const parser = new XMLParser()
+      const parser = new fastxml.XMLParser()
       const result = parser.parse(res.data)
 
       if (result.ListCnameResult?.Cname) {
@@ -227,7 +227,7 @@ class AliyunApi {
     })
     let res = {} as any
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       success: false,
       finished: false
     }
@@ -282,7 +282,7 @@ class AliyunApi {
     })
     let res = {} as any
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       success: false,
       finished: false
     }

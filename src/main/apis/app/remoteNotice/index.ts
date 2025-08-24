@@ -1,12 +1,14 @@
+import path from 'node:path'
+
+import windowManager from 'apis/app/window/windowManager'
 import axios from 'axios'
 import { app, clipboard, dialog, shell } from 'electron'
 import fs from 'fs-extra'
-import path from 'path'
 import { gte, lte } from 'semver'
 
-import windowManager from 'apis/app/window/windowManager'
+import type { IRemoteNotice, IRemoteNoticeAction, IRemoteNoticeLocalCountStorage } from '#/types/types'
 import { showNotification } from '~/utils/common'
-import { IRemoteNoticeActionType, IRemoteNoticeTriggerCount, IRemoteNoticeTriggerHook } from '#/types/enum'
+import { IRemoteNoticeActionType, IRemoteNoticeTriggerCount } from '~/utils/enum'
 
 // for test
 const REMOTE_NOTICE_URL = 'https://release.piclist.cn/remote-notice.json'
@@ -161,7 +163,7 @@ class RemoteNoticeHandler {
     }
   }
 
-  triggerHook(hook: IRemoteNoticeTriggerHook) {
+  triggerHook(hook: string) {
     if (!this.remoteNotice || !this.remoteNotice.list) {
       return
     }

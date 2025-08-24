@@ -1,5 +1,5 @@
-const ncu = require('npm-check-updates')
-const axios = require('axios')
+import axios from 'axios'
+import { run } from 'npm-check-updates'
 
 async function getRepositoryInfo(packageName) {
   try {
@@ -18,7 +18,7 @@ async function getRepositoryInfo(packageName) {
 }
 
 async function checkUpdates() {
-  const updated = await ncu.run({
+  const updated = await run({
     packageFile: './package.json',
     upgrade: false
   })

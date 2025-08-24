@@ -1,13 +1,13 @@
-import fs from 'fs-extra'
-import { DBStore, JSONStore } from '@picgo/store'
-
 import { dbPathChecker, dbPathDir, getGalleryDBPath } from '@core/datastore/dbChecker'
+import { DBStore, JSONStore } from '@piclist/store'
+import fs from 'fs-extra'
+import type { IConfig } from 'piclist'
 
-import { T } from '~/i18n'
-import { configPaths } from '#/utils/configPaths'
-import { IJSON } from '@picgo/store/dist/types'
-import { IConfig } from 'piclist'
-
+import { T as $t } from '~/i18n'
+import { configPaths } from '~/utils/configPaths'
+interface IJSON {
+  [propsName: string]: string | number | IJSON
+}
 const STORE_PATH = dbPathDir()
 
 if (!fs.pathExistsSync(STORE_PATH)) {
@@ -37,7 +37,7 @@ class ConfigStore {
         enable: true,
         key: 'CommandOrControl+Alt+P',
         name: 'upload',
-        label: T('QUICK_UPLOAD')
+        label: $t('QUICK_UPLOAD')
       })
     }
     this.read()

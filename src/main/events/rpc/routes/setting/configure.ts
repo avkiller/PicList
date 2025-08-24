@@ -1,10 +1,11 @@
-import { app } from 'electron'
-import fs from 'fs-extra'
-import path from 'path'
+import path from 'node:path'
 
 import logger from '@core/picgo/logger'
+import { app } from 'electron'
+import fs from 'fs-extra'
+
+import { IRPCActionType, IRPCType } from '~/utils/enum'
 import { downloadFile, uploadFile } from '~/utils/syncSettings'
-import { IRPCActionType, IRPCType } from '#/types/enum'
 
 const STORE_PATH = app.getPath('userData')
 

@@ -1,18 +1,16 @@
-import { Notification } from 'electron'
-
+import db, { GalleryDB } from '@core/datastore'
 import picgo from '@core/picgo'
 import logger from '@core/picgo/logger'
-import db, { GalleryDB } from '@core/datastore'
-
 import windowManager from 'apis/app/window/windowManager'
+import ALLApi from 'apis/delete/allApi'
+import GuiApi from 'apis/gui'
+import { Notification } from 'electron'
 
-import GuiApi from '~/apis/gui'
-import { T } from '~/i18n/index'
-import { configPaths } from '#/utils/configPaths'
-import { picBedsCanbeDeleted } from '#/utils/static'
-import { ICOREBuildInEvent, IWindowList } from '#/types/enum'
-
-import ALLApi from '@/apis/allApi'
+import type { IHttpResponse, ImgInfo, IObj } from '#/types/types'
+import { T as $t } from '~/i18n/index'
+import { configPaths } from '~/utils/configPaths'
+import { ICOREBuildInEvent, IWindowList } from '~/utils/enum'
+import { picBedsCanbeDeleted } from '~/utils/static'
 
 export const handleResponse = ({
   response,
@@ -56,8 +54,8 @@ export const deleteChoosedFiles = async (list: ImgInfo[]): Promise<boolean[]> =>
           if (item.type !== undefined && picBedsCanbeDeleted.includes(item.type)) {
             const noteFunc = (value: boolean) => {
               const notification = new Notification({
-                title: T('MANAGE_BUCKET_BATCH_DELETE_ERROR_MSG_MSG2'),
-                body: T(value ? 'GALLERY_SYNC_DELETE_NOTICE_SUCCEED' : 'GALLERY_SYNC_DELETE_NOTICE_FAILED')
+                title: $t('MANAGE_BUCKET_BATCH_DELETE_ERROR_MSG_MSG2'),
+                body: $t(value ? 'GALLERY_SYNC_DELETE_NOTICE_SUCCEED' : 'GALLERY_SYNC_DELETE_NOTICE_FAILED')
               })
               notification.show()
             }

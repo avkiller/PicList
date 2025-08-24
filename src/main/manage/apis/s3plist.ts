@@ -1,40 +1,40 @@
+import http, { AgentOptions } from 'node:http'
+import https from 'node:https'
+import path from 'node:path'
+
 import {
-  S3Client,
-  ListBucketsCommand,
-  ListObjectsV2Command,
-  GetBucketLocationCommand,
   _Object,
   CommonPrefix,
-  ListObjectsV2CommandOutput,
   CopyObjectCommand,
-  GetObjectCommand,
+  CreateBucketCommand,
   DeleteObjectCommand,
   DeleteObjectsCommand,
+  GetBucketLocationCommand,
+  GetObjectCommand,
+  ListBucketsCommand,
+  ListObjectsV2Command,
+  ListObjectsV2CommandOutput,
+  PutBucketAclCommand,
   PutObjectCommand,
-  S3ClientConfig,
-  CreateBucketCommand,
   PutPublicAccessBlockCommand,
-  PutBucketAclCommand
+  S3Client,
+  S3ClientConfig
 } from '@aws-sdk/client-s3'
-import { Upload, Progress } from '@aws-sdk/lib-storage'
+import { Progress, Upload } from '@aws-sdk/lib-storage'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { NodeHttpHandler } from '@smithy/node-http-handler'
+import windowManager from 'apis/app/window/windowManager'
 import { ipcMain, IpcMainEvent } from 'electron'
 import fs from 'fs-extra'
-import http, { AgentOptions } from 'http'
-import https from 'https'
-import path from 'path'
 
-import windowManager from 'apis/app/window/windowManager'
-
+import type { IStringKeyMap } from '#/types/types'
 import UpDownTaskQueue from '~/manage/datastore/upDownTaskQueue'
-import { formatError, getAgent, getFileMimeType, NewDownloader, ConcurrencyPromisePool } from '~/manage/utils/common'
+import { ConcurrencyPromisePool, formatError, getAgent, getFileMimeType, NewDownloader } from '~/manage/utils/common'
 import { dogecloudApi, DogecloudToken, getTempToken } from '~/manage/utils/dogeAPI'
 import { ManageLogger } from '~/manage/utils/logger'
-
-import { commonTaskStatus, IWindowList, uploadTaskSpecialStatus } from '#/types/enum'
-import { isImage, formatEndpoint, formatHttpProxy } from '#/utils/common'
-import { cancelDownloadLoadingFileList, refreshDownloadFileTransferList } from '#/utils/static'
+import { formatEndpoint, formatHttpProxy, isImage } from '~/utils/common'
+import { commonTaskStatus, IWindowList, uploadTaskSpecialStatus } from '~/utils/enum'
+import { cancelDownloadLoadingFileList, refreshDownloadFileTransferList } from '~/utils/static'
 
 class S3plistApi {
   baseOptions: S3ClientConfig
@@ -179,7 +179,7 @@ class S3plistApi {
     const { BucketName, region, acl, endpoint } = configMap
     try {
       await this.getDogeCloudToken()
-      const options = Object.assign({}, this.baseOptions) as S3ClientConfig
+      const options = { ...this.baseOptions } as S3ClientConfig
       options.region = String(region) || 'us-east-1'
       const client = new S3Client(options)
       const command = new ListBucketsCommand({})
@@ -255,7 +255,7 @@ class S3plistApi {
       }
       return []
     }
-    const options = Object.assign({}, this.baseOptions) as S3ClientConfig
+    const options = { ...this.baseOptions } as S3ClientConfig
     const result: IStringKeyMap[] = []
     const endpoint = (options.endpoint as string) || ''
     options.region = endpoint.includes('cloudflarestorage') ? 'auto' : 'us-east-1'
@@ -325,13 +325,13 @@ class S3plistApi {
     })
     let res = {} as ListObjectsV2CommandOutput
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       success: false,
       finished: false
     }
     try {
       do {
-        const options = Object.assign({}, this.baseOptions) as S3ClientConfig
+        const options = { ...this.baseOptions } as S3ClientConfig
         options.region = String(region) || 'us-east-1'
         const client = new S3Client(options)
         const command = new ListObjectsV2Command({
@@ -389,14 +389,14 @@ class S3plistApi {
     })
     let res = {} as ListObjectsV2CommandOutput
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       success: false,
       finished: false
     }
     try {
       await this.getDogeCloudToken()
       do {
-        const options = Object.assign({}, this.baseOptions) as S3ClientConfig
+        const options = { ...this.baseOptions } as S3ClientConfig
         options.region = String(region) || 'us-east-1'
         const client = new S3Client(options)
         const command = new ListObjectsV2Command({
@@ -450,17 +450,17 @@ class S3plistApi {
     const slicedPrefix = prefix.slice(1)
     const urlPrefix = configMap.customUrl || `https://${bucket}.s3.amazonaws.com`
     const result = {
-      fullList: <any>[],
+      fullList: [] as any,
       isTruncated: false,
       nextMarker: '',
       success: false
     }
     try {
       await this.getDogeCloudToken()
-      const options = Object.assign(
-        {},
-        { ...this.baseOptions, region: String(region) || 'us-east-1' }
-      ) as S3ClientConfig
+      const options = {
+        ...this.baseOptions,
+        region: String(region) || 'us-east-1'
+      } as S3ClientConfig
       const client = new S3Client(options)
       const command = new ListObjectsV2Command({
         Bucket: bucket,
@@ -500,10 +500,10 @@ class S3plistApi {
     let result = false
     try {
       await this.getDogeCloudToken()
-      const options = Object.assign(
-        {},
-        { ...this.baseOptions, region: String(region) || 'us-east-1' }
-      ) as S3ClientConfig
+      const options = {
+        ...this.baseOptions,
+        region: String(region) || 'us-east-1'
+      } as S3ClientConfig
       const client = new S3Client(options)
       const command = new CopyObjectCommand({
         Bucket: bucketName,
@@ -545,7 +545,7 @@ class S3plistApi {
     let result = false
     try {
       await this.getDogeCloudToken()
-      const options = Object.assign({}, this.baseOptions) as S3ClientConfig
+      const options = { ...this.baseOptions } as S3ClientConfig
       options.region = String(region) || 'us-east-1'
       const client = new S3Client(options)
       const command = new DeleteObjectCommand({
@@ -581,7 +581,7 @@ class S3plistApi {
     try {
       await this.getDogeCloudToken()
       do {
-        const options = Object.assign({}, this.baseOptions) as S3ClientConfig
+        const options = { ...this.baseOptions } as S3ClientConfig
         options.region = String(region) || 'us-east-1'
         const client = new S3Client(options)
         const command = new ListObjectsV2Command({
@@ -616,7 +616,7 @@ class S3plistApi {
       }
       if (allFileList.Contents.length > 0) {
         const cycle = Math.ceil(allFileList.Contents.length / 1000)
-        const options = Object.assign({}, this.baseOptions) as S3ClientConfig
+        const options = { ...this.baseOptions } as S3ClientConfig
         options.region = String(region) || 'us-east-1'
         const client = new S3Client(options)
         for (let i = 0; i < cycle; i++) {
@@ -661,7 +661,7 @@ class S3plistApi {
     const { bucketName, region, key, expires } = configMap
     try {
       await this.getDogeCloudToken()
-      const options = Object.assign({}, this.baseOptions) as S3ClientConfig
+      const options = { ...this.baseOptions } as S3ClientConfig
       options.region = String(region) || 'us-east-1'
       const client = new S3Client(options)
       const signedUrl = await getSignedUrl(
@@ -690,7 +690,7 @@ class S3plistApi {
     let result = false
     try {
       await this.getDogeCloudToken()
-      const options = Object.assign({}, this.baseOptions) as S3ClientConfig
+      const options = { ...this.baseOptions } as S3ClientConfig
       options.region = String(region) || 'us-east-1'
       const client = new S3Client(options)
       const command = new PutObjectCommand({
@@ -764,7 +764,7 @@ class S3plistApi {
         })
         continue
       }
-      const options = Object.assign({}, this.baseOptions) as S3ClientConfig
+      const options = { ...this.baseOptions } as S3ClientConfig
       options.region = String(region) || 'us-east-1'
       const client = new S3Client(options)
       const fileStream = fs.createReadStream(filePath)

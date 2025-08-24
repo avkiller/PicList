@@ -1,27 +1,32 @@
-import { BrowserWindow, dialog, ipcMain, Notification } from 'electron'
-import fs from 'fs-extra'
-import { cloneDeep } from 'lodash'
-import { DBStore } from '@picgo/store'
-
-import { getWindowId, getSettingWindowId } from '@core/bus/apis'
-
+import { getSettingWindowId, getWindowId } from '@core/bus/apis'
 import db, { GalleryDB } from '@core/datastore'
 import { dbPathChecker, defaultConfigPath, getGalleryDBPath } from '@core/datastore/dbChecker'
-
+import { DBStore } from '@piclist/store'
 import uploader from 'apis/app/uploader'
+import { handleSecondaryUpload } from 'apis/app/uploader/apis'
+import { BrowserWindow, dialog, ipcMain, IpcMainEvent, MessageBoxOptions, Notification } from 'electron'
+import fs from 'fs-extra'
+import { cloneDeep } from 'lodash-es'
 
-import { T } from '~/i18n'
+import type {
+  IGuiApi,
+  ImgInfo,
+  IShowFileExplorerOption,
+  IShowInputBoxOption,
+  IShowMessageBoxOption,
+  IShowMessageBoxResult,
+  IShowNotificationOption,
+  IUploadOption
+} from '#/types/types'
+import { SHOW_INPUT_BOX } from '~/events/constant'
+import { T as $t } from '~/i18n'
 import { handleCopyUrl } from '~/utils/common'
+import { configPaths } from '~/utils/configPaths'
+import { IPasteStyle } from '~/utils/enum'
 import pasteTemplate from '~/utils/pasteTemplate'
-
-import { SHOW_INPUT_BOX } from '#/events/constants'
-import { IPasteStyle } from '#/types/enum'
-import { configPaths } from '#/utils/configPaths'
-import { handleSecondaryUpload } from '../app/uploader/apis'
 
 // Cross-process support may be required in the future
 class GuiApi implements IGuiApi {
-  // eslint-disable-next-line no-use-before-define
   private static instance: GuiApi
   private windowId: number = -1
   private settingWindowId: number = -1
@@ -63,7 +68,7 @@ class GuiApi implements IGuiApi {
     await this.showSettingWindow()
     this.getWebcontentsByWindowId(this.settingWindowId)?.send(SHOW_INPUT_BOX, options)
     return new Promise<string>(resolve => {
-      ipcMain.once(SHOW_INPUT_BOX, (_: Event, value: string) => {
+      ipcMain.once(SHOW_INPUT_BOX, (_: IpcMainEvent, value: string) => {
         resolve(value)
       })
     })
@@ -108,7 +113,7 @@ class GuiApi implements IGuiApi {
             : !!db.get(configPaths.settings.uploadResultNotification)
         if (isShowResultNotification) {
           const notification = new Notification({
-            title: T('UPLOAD_SUCCEED'),
+            title: $t('UPLOAD_SUCCEED'),
             body: shortUrl || (imgs[i].imgUrl! as string)
             // icon: imgs[i].imgUrl
           })
@@ -147,12 +152,14 @@ class GuiApi implements IGuiApi {
       buttons: ['Yes', 'No']
     }
   ) {
-    return new Promise<IShowMessageBoxResult>(async resolve => {
-      this.windowId = await getWindowId()
-      dialog.showMessageBox(BrowserWindow.fromId(this.windowId)!, options).then(res => {
-        resolve({
-          result: res.response,
-          checkboxChecked: res.checkboxChecked
+    return new Promise<IShowMessageBoxResult>(resolve => {
+      getWindowId().then(id => {
+        this.windowId = id
+        dialog.showMessageBox(BrowserWindow.fromId(id)!, options as MessageBoxOptions).then(res => {
+          resolve({
+            result: res.response,
+            checkboxChecked: res.checkboxChecked
+          })
         })
       })
     })
@@ -181,8 +188,8 @@ class GuiApi implements IGuiApi {
                 const guiApi = GuiApi.getInstance()
                 guiApi
                   .showMessageBox({
-                    title: T('TIPS_WARNING'),
-                    message: T('TIPS_PLUGIN_REMOVE_GALLERY_ITEM'),
+                    title: $t('TIPS_WARNING'),
+                    message: $t('TIPS_PLUGIN_REMOVE_GALLERY_ITEM'),
                     type: 'info',
                     buttons: ['Yes', 'No']
                   })
@@ -204,8 +211,8 @@ class GuiApi implements IGuiApi {
                 const guiApi = GuiApi.getInstance()
                 guiApi
                   .showMessageBox({
-                    title: T('TIPS_WARNING'),
-                    message: T('TIPS_PLUGIN_REMOVE_GALLERY_ITEM'),
+                    title: $t('TIPS_WARNING'),
+                    message: $t('TIPS_PLUGIN_REMOVE_GALLERY_ITEM'),
                     type: 'info',
                     buttons: ['Yes', 'No']
                   })

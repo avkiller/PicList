@@ -1,16 +1,17 @@
-import { Notification } from 'electron'
-
 import bus from '@core/bus'
 import shortKeyHandler from 'apis/app/shortKey/shortKeyHandler'
-import { T } from '~/i18n'
+import { Notification } from 'electron'
 
-import { IRPCActionType, IRPCType } from '#/types/enum'
-import { TOGGLE_SHORTKEY_MODIFIED_MODE } from '#/events/constants'
+import type { IIPCEvent } from '#/types/rpc'
+import type { IShortKeyConfig } from '#/types/types'
+import { TOGGLE_SHORTKEY_MODIFIED_MODE } from '~/events/constant'
+import { T as $t } from '~/i18n'
+import { IRPCActionType, IRPCType } from '~/utils/enum'
 
 const notificationFunc = (result: boolean) => {
   const notification = new Notification({
-    title: T(`OPERATION_${result ? 'SUCCEED' : 'FAILED'}`),
-    body: T(`TIPS_SHORTCUT_MODIFIED_${result ? 'SUCCEED' : 'CONFLICT'}`)
+    title: $t(`OPERATION_${result ? 'SUCCEED' : 'FAILED'}`),
+    body: $t(`TIPS_SHORTCUT_MODIFIED_${result ? 'SUCCEED' : 'CONFLICT'}`)
   })
   notification.show()
 }

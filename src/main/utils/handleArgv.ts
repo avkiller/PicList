@@ -1,8 +1,9 @@
+import path from 'node:path'
+
 import fs from 'fs-extra'
-import path from 'path'
 import { Logger } from 'piclist'
 
-import { isUrl } from '#/utils/common'
+import { isUrl } from '~/utils/common'
 
 interface IResultFileObject {
   path: string

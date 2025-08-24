@@ -1,11 +1,13 @@
+import path from 'node:path'
+
+import { dbPathDir } from '@core/datastore/dbChecker'
+import picgo from '@core/picgo'
 import { app, IpcMainEvent, shell } from 'electron'
 import fs from 'fs-extra'
-import path from 'path'
 
-import picgo from '@core/picgo'
-import { dbPathDir } from '@core/datastore/dbChecker'
-
-import { IRPCActionType, IRPCType } from '#/types/enum'
+import type { IIPCEvent } from '#/types/rpc'
+import type { IObj } from '#/types/types'
+import { IRPCActionType, IRPCType } from '~/utils/enum'
 
 const STORE_PATH = dbPathDir()
 

@@ -1,6 +1,7 @@
+import type { IIPCEvent } from '#/types/rpc'
+import type { IStringKeyMap } from '#/types/types'
 import { ManageApi } from '~/manage/manageApi'
-
-import { IRPCActionType, IRPCType } from '#/types/enum'
+import { IRPCActionType, IRPCType } from '~/utils/enum'
 
 export default [
   {

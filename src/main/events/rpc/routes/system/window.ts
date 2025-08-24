@@ -1,7 +1,8 @@
+import windowManager from 'apis/app/window/windowManager'
 import { app, BrowserWindow } from 'electron'
 
-import windowManager from 'apis/app/window/windowManager'
-
+import type { IIPCEvent } from '#/types/rpc'
+import type { IMiniWindowPos, IPicGoPlugin } from '#/types/types'
 import {
   buildMainPageMenu,
   buildMiniPageMenu,
@@ -9,30 +10,23 @@ import {
   buildPluginPageMenu,
   buildSecondPicBedMenu
 } from '~/events/remotes/menu'
+import { IRPCActionType, IWindowList } from '~/utils/enum'
 import { openMiniWindow } from '~/utils/windowHelper'
-
-import { IRPCActionType, IWindowList } from '#/types/enum'
 
 export default [
   {
     action: IRPCActionType.HIDE_DOCK,
     handler: async (_: IIPCEvent, args: [value: boolean]) => {
-      args[0] ? app.dock.hide() : app.dock.show()
+      args[0] ? app.dock?.hide() : app.dock?.show()
     }
   },
   {
     action: IRPCActionType.OPEN_WINDOW,
-    handler: async (_: IIPCEvent, args: [windowName: IWindowList]) => {
+    handler: async (_: IIPCEvent, args: [windowName: string]) => {
       const window = windowManager.get(args[0])
       if (window) {
         window.show()
       }
-    }
-  },
-  {
-    action: IRPCActionType.OPEN_MANUAL_WINDOW,
-    handler: async () => {
-      windowManager.get(IWindowList.MANUAL_WINDOW)!.show()
     }
   },
   {

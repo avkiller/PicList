@@ -1,21 +1,21 @@
 import bus from '@core/bus'
 import {
   CREATE_APP_MENU,
-  GET_WINDOW_ID,
-  GET_WINDOW_ID_REPONSE,
   GET_SETTING_WINDOW_ID,
   GET_SETTING_WINDOW_ID_RESPONSE,
-  UPLOAD_WITH_FILES,
-  UPLOAD_WITH_FILES_RESPONSE,
+  GET_WINDOW_ID,
+  GET_WINDOW_ID_REPONSE,
   UPLOAD_WITH_CLIPBOARD_FILES,
-  UPLOAD_WITH_CLIPBOARD_FILES_RESPONSE
+  UPLOAD_WITH_CLIPBOARD_FILES_RESPONSE,
+  UPLOAD_WITH_FILES,
+  UPLOAD_WITH_FILES_RESPONSE
 } from '@core/bus/constants'
-
 import { createMenu } from 'apis/app/system'
 import { uploadChoosedFiles, uploadClipboardFiles } from 'apis/app/uploader/apis'
 import windowManager from 'apis/app/window/windowManager'
 
-import { IWindowList } from '#/types/enum'
+import type { IFileWithPath } from '#/types/types'
+import { IWindowList } from '~/utils/enum'
 
 function initEventCenter() {
   const eventList: any = {

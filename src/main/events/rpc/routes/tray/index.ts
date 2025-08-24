@@ -1,20 +1,15 @@
-import { Notification } from 'electron'
-
-import { RPCRouter } from '~/events/rpc/router'
-import { generateShortUrl, setTrayToolTip, handleCopyUrl } from '~/utils/common'
-
-import { IRPCActionType, IRPCType, IPasteStyle, IWindowList } from '#/types/enum'
-
 import db, { GalleryDB } from '@core/datastore'
-
 import uploader from 'apis/app/uploader'
 import windowManager from 'apis/app/window/windowManager'
+import { Notification } from 'electron'
 
-import { T } from '~/i18n'
-
+import type { IIPCEvent } from '#/types/rpc'
+import { RPCRouter } from '~/events/rpc/router'
+import { T as $t } from '~/i18n'
+import { generateShortUrl, handleCopyUrl, setTrayToolTip } from '~/utils/common'
+import { configPaths } from '~/utils/configPaths'
+import { IPasteStyle, IRPCActionType, IRPCType, IWindowList } from '~/utils/enum'
 import pasteTemplate from '~/utils/pasteTemplate'
-
-import { configPaths } from '#/utils/configPaths'
 
 const trayRouter = new RPCRouter()
 
@@ -49,7 +44,7 @@ const trayRoutes = [
             : !!db.get(configPaths.settings.uploadResultNotification)
         if (isShowResultNotification) {
           const notification = new Notification({
-            title: T('UPLOAD_SUCCEED'),
+            title: $t('UPLOAD_SUCCEED'),
             body: shortUrl || img[0].imgUrl!
             // icon: file[0]
             // icon: img[0].imgUrl

@@ -1,26 +1,23 @@
-import { dialog, shell } from 'electron'
-import { IGuiMenuItem, PicGo as PicGoCore } from 'piclist'
-import path from 'path'
+import path from 'node:path'
 
 import { dbPathDir } from '@core/datastore/dbChecker'
 import picgo from '@core/picgo'
-
 import shortKeyHandler from 'apis/app/shortKey/shortKeyHandler'
 import windowManager from 'apis/app/window/windowManager'
+import { dialog, shell } from 'electron'
+import fs from 'fs-extra'
+import { IGuiMenuItem, PicGo as PicGoCore } from 'piclist'
 
-import { T } from '~/i18n'
-import { showNotification } from '~/utils/common'
-
-import { handleStreamlinePluginName, simpleClone } from '#/utils/common'
-import { ICOREBuildInEvent, IPicGoHelperType, IWindowList } from '#/types/enum'
+import type { IIPCEvent } from '#/types/rpc'
+import type { IDispose, IPicGoPlugin } from '#/types/types'
+import { T as $t } from '~/i18n'
+import { handleStreamlinePluginName, showNotification, simpleClone } from '~/utils/common'
+import { ICOREBuildInEvent, IPicGoHelperType, IWindowList } from '~/utils/enum'
 
 const STORE_PATH = dbPathDir()
 
-// eslint-disable-next-line
-const requireFunc = typeof __webpack_require__ === 'function' ? __non_webpack_require__ : require
-
 // get uploader or transformer config
-const getConfig = (name: string, type: IPicGoHelperType, ctx: PicGoCore) => {
+const getConfig = (name: string, type: keyof typeof IPicGoHelperType, ctx: PicGoCore) => {
   let config: any[] = []
   if (name === '') {
     return config
@@ -47,13 +44,17 @@ const handleConfigWithFunction = (config: any[]) => {
   return config
 }
 
-const getPluginList = (): IPicGoPlugin[] => {
+const getPluginList = async (): Promise<IPicGoPlugin[]> => {
   const pluginList = picgo.pluginLoader.getFullList()
   const list = []
   for (const i in pluginList) {
-    const plugin = picgo.pluginLoader.getPlugin(pluginList[i])!
+    const plugin = (await picgo.pluginLoader.getPlugin(pluginList[i]))!
     const pluginPath = path.join(STORE_PATH, `/node_modules/${pluginList[i]}`)
-    const pluginPKG = requireFunc(path.join(pluginPath, 'package.json'))
+    const pluginPKGPath = path.join(pluginPath, 'package.json')
+    if (!fs.existsSync(pluginPKGPath)) {
+      continue
+    }
+    const pluginPKG = fs.readJSONSync(pluginPKGPath, 'utf8')
     const uploaderName = plugin.uploader || ''
     const transformerName = plugin.transformer || ''
     let menu: Omit<IGuiMenuItem, 'handle'>[] = []
@@ -73,7 +74,7 @@ const getPluginList = (): IPicGoPlugin[] => {
       fullName: pluginList[i],
       author: pluginPKG.author.name || pluginPKG.author,
       description: pluginPKG.description,
-      logo: 'file://' + path.join(pluginPath, 'logo.png').split(path.sep).join('/'),
+      logo: path.join(pluginPath, 'logo.png').split(path.sep).join('/'),
       version: pluginPKG.version,
       gui,
       config: {
@@ -84,11 +85,15 @@ const getPluginList = (): IPicGoPlugin[] => {
         },
         uploader: {
           name: uploaderName,
-          config: handleConfigWithFunction(getConfig(uploaderName, IPicGoHelperType.uploader, picgo))
+          config: handleConfigWithFunction(
+            getConfig(uploaderName, IPicGoHelperType.uploader as keyof typeof IPicGoHelperType, picgo)
+          )
         },
         transformer: {
           name: transformerName,
-          config: handleConfigWithFunction(getConfig(uploaderName, IPicGoHelperType.transformer, picgo))
+          config: handleConfigWithFunction(
+            getConfig(uploaderName, IPicGoHelperType.transformer as keyof typeof IPicGoHelperType, picgo)
+          )
         }
       },
       enabled: picgo.getConfig(`picgoPlugins.${pluginList[i]}`),
@@ -106,8 +111,8 @@ const handleNPMError = (): IDispose => {
     if (msg === 'NPM is not installed') {
       dialog
         .showMessageBox({
-          title: T('TIPS_ERROR'),
-          message: T('TIPS_INSTALL_NODE_AND_RELOAD_PICGO'),
+          title: $t('TIPS_ERROR'),
+          message: $t('TIPS_INSTALL_NODE_AND_RELOAD_PICGO'),
           buttons: ['Yes']
         })
         .then(res => {
@@ -129,7 +134,7 @@ export const handlePluginUpdate = async (fullName: string | string[]) => {
     window.webContents.send('updateSuccess', res.body[0])
   } else {
     showNotification({
-      title: T('PLUGIN_UPDATE_FAILED'),
+      title: $t('PLUGIN_UPDATE_FAILED'),
       body: res.body as string
     })
   }
@@ -146,7 +151,7 @@ export const handlePluginUninstall = async (fullName: string) => {
     shortKeyHandler.unregisterPluginShortKey(res.body[0])
   } else {
     showNotification({
-      title: T('PLUGIN_UNINSTALL_FAILED'),
+      title: $t('PLUGIN_UNINSTALL_FAILED'),
       body: res.body as string
     })
   }
@@ -156,14 +161,14 @@ export const handlePluginUninstall = async (fullName: string) => {
 
 export const pluginGetListFunc = async (event: IIPCEvent) => {
   try {
-    const list = simpleClone(getPluginList())
+    const list = simpleClone(await getPluginList())
     // here can just send JS Object not function
     // or will cause [Failed to serialize arguments] error
     event.sender.send('pluginList', list)
   } catch (e: any) {
     event.sender.send('pluginList', [])
     showNotification({
-      title: T('TIPS_GET_PLUGIN_LIST_FAILED'),
+      title: $t('TIPS_GET_PLUGIN_LIST_FAILED'),
       body: e.message
     })
     picgo.log.error(e)
@@ -180,10 +185,10 @@ export const pluginInstallFunc = async (event: IIPCEvent, args: [fullName: strin
     errMsg: res.success ? '' : res.body
   })
   if (res.success) {
-    shortKeyHandler.registerPluginShortKey(res.body[0])
+    await shortKeyHandler.registerPluginShortKey(res.body[0])
   } else {
     showNotification({
-      title: T('PLUGIN_INSTALL_FAILED'),
+      title: $t('PLUGIN_INSTALL_FAILED'),
       body: res.body as string
     })
   }
@@ -201,22 +206,22 @@ export const pluginImportLocalFunc = async (event: IIPCEvent) => {
     const res = await picgo.pluginHandler.install(filePaths)
     if (res.success) {
       try {
-        const list = simpleClone(getPluginList())
+        const list = simpleClone(await getPluginList())
         event.sender.send('pluginList', list)
       } catch (e: any) {
         event.sender.send('pluginList', [])
         showNotification({
-          title: T('TIPS_GET_PLUGIN_LIST_FAILED'),
+          title: $t('TIPS_GET_PLUGIN_LIST_FAILED'),
           body: e.message
         })
       }
       showNotification({
-        title: T('PLUGIN_IMPORT_SUCCEED'),
+        title: $t('PLUGIN_IMPORT_SUCCEED'),
         body: ''
       })
     } else {
       showNotification({
-        title: T('PLUGIN_IMPORT_FAILED'),
+        title: $t('PLUGIN_IMPORT_FAILED'),
         body: res.body as string
       })
     }
