@@ -51,9 +51,12 @@
       "clipboardPicture": "剪贴板图片",
       "clickToUpload": "点击上传",
       "urlUpload": "URL上传",
-      "inputUrlTip": "请输入URL",
+      "inputUrlTip": "请输入URL地址",
       "httpPrefixTip": "http://或https://开头",
+      "multipleUrlsHint": "多个URL请分行输入",
       "inputValidUrl": "请输入合法的URL",
+      "invalidUrlsFound": "发现无效的URL: {urls}",
+      "uploadingMultipleUrls": "正在上传 {count} 个URL...",
       "linkFormat": "链接格式",
       "outputFormat": "输出格式",
       "urlType": { "title": "链接类型", "normal": "长链接", "short": "短链接" }
@@ -331,7 +334,20 @@
         "newestVersion": "最新版本",
         "getting": "正在获取中...",
         "hasNewVersion": "PicList 更新啦，请点击确定重启触发更新",
-        "networkError": "网络错误，请检查网络连接"
+        "networkError": "网络错误，请检查网络连接",
+        "releaseNotes": "版本说明",
+        "releaseNotesDescription": "查看最新的更改和更新内容",
+        "latestReleaseNotes": "最新版本说明",
+        "refresh": "刷新",
+        "retry": "重试",
+        "loadingReleaseNotes": "正在加载版本说明...",
+        "releaseNotesError": "加载版本说明失败，请检查网络连接。",
+        "noReleaseNotes": "暂无版本说明",
+        "lastUpdated": "最后更新",
+        "justNow": "刚刚",
+        "minutesAgo": "{minutes} 分钟前",
+        "hoursAgo": "{hours} 小时前",
+        "daysAgo": "{days} 天前"
       }
     },
     "plugin": {
