@@ -13,7 +13,6 @@ import { uploadChoosedFiles, uploadClipboardFiles } from 'apis/app/uploader/apis
 import windowManager from 'apis/app/window/windowManager'
 import axios from 'axios'
 import { app, dialog, globalShortcut, Notification, protocol, screen, shell } from 'electron'
-import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import updater from 'electron-updater'
 import fs from 'fs-extra'
 
@@ -27,6 +26,7 @@ import getManageApi from '~/manage/Main'
 import { clearTempFolder } from '~/manage/utils/common'
 import server from '~/server/index'
 import webServer from '~/server/webServer'
+import { isAutoStartEnabled, setAutoStart } from '~/utils/autoStart'
 import beforeOpen from '~/utils/beforeOpen'
 import clipboardPoll from '~/utils/clipboardPoll'
 import { configPaths } from '~/utils/configPaths'
@@ -173,11 +173,6 @@ class LifeCycle {
 
   #onReady() {
     const readyFunction = async () => {
-      if (process.env.NODE_ENV !== 'production') {
-        installExtension(VUEJS_DEVTOOLS).catch(err => {
-          logger.error('An error occurred: ', err)
-        })
-      }
       windowManager.create(IWindowList.TRAY_WINDOW)
       windowManager.create(IWindowList.SETTING_WINDOW)
       const isAutoListenClipboard = db.get(configPaths.settings.isAutoListenClipboard) || false
@@ -297,9 +292,24 @@ class LifeCycle {
         windowManager.create(IWindowList.SETTING_WINDOW)
       }
     })
-    app.setLoginItemSettings({
-      openAtLogin: db.get(configPaths.settings.autoStart) || false
-    })
+    const storedAutoStartEnabled = db.get(configPaths.settings.autoStart) || false
+    isAutoStartEnabled()
+      .then(actualAutoStartEnabled => {
+        if (actualAutoStartEnabled !== storedAutoStartEnabled) {
+          logger.warn(
+            `Auto-start state mismatch detected. Stored: ${storedAutoStartEnabled}, Actual: ${actualAutoStartEnabled}. Syncing...`
+          )
+          setAutoStart(storedAutoStartEnabled).catch(err => {
+            logger.error('Failed to sync auto-start:', err)
+          })
+        }
+      })
+      .catch(err => {
+        logger.error('Failed to check auto-start status:', err)
+        setAutoStart(storedAutoStartEnabled).catch(fallbackErr => {
+          logger.error('Failed to set auto-start as fallback:', fallbackErr)
+        })
+      })
     if (process.platform === 'win32') {
       app.setAppUserModelId('com.avkiller.piclist')
     }

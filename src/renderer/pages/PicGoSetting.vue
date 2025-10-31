@@ -1109,7 +1109,7 @@
     </div>
 
     <!-- Sync Configuration Dialog -->
-    <div v-if="syncVisible" class="dialog-overlay" @click="cancelSyncSetting">
+    <div v-if="syncVisible" class="dialog-overlay">
       <div class="dialog large" @click.stop>
         <div class="dialog-header">
           <h3 class="dialog-title">
@@ -1487,7 +1487,9 @@ const advancedRenameList = {
   categoryHash: [
     { label: t('pages.settings.upload.placeholder.md5'), value: '{md5}' },
     { label: t('pages.settings.upload.placeholder.md5-16'), value: '{md5-16}' },
-    { label: t('pages.settings.upload.placeholder.uuid'), value: '{uuid}' }
+    { label: t('pages.settings.upload.placeholder.uuid'), value: '{uuid}' },
+    { label: t('pages.settings.upload.placeholder.sha256'), value: '{sha256}' },
+    { label: t('pages.settings.upload.placeholder.sha256-n'), value: '{sha256-n}' }
   ],
   categoryFile: [
     { label: t('pages.settings.upload.placeholder.filename'), value: '{filename}' },
@@ -1607,6 +1609,17 @@ async function initData() {
   formKeys.forEach(key => {
     ;(formOfSetting.value as any)[key] = settings[key] ?? formOfSetting.value[key]
   })
+  try {
+    const actualAutoStartStatus = await window.electron.triggerRPC<boolean>(IRPCActionType.PICLIST_AUTO_START_STATUS)
+    if (typeof actualAutoStartStatus === 'boolean') {
+      formOfSetting.value.autoStart = actualAutoStartStatus
+      if (actualAutoStartStatus !== settings.autoStart) {
+        saveConfig({ [configPaths.settings.autoStart]: actualAutoStartStatus })
+      }
+    }
+  } catch (error) {
+    formOfSetting.value.autoStart = settings.autoStart ?? false
+  }
   formOfSetting.value.logLevel = initArray(settings.logLevel || [], ['all'])
   formOfSetting.value.autoImportPicBed = initArray(settings.autoImportPicBed || [], [])
   currentLanguage.value = settings.language || 'zh-CN'
