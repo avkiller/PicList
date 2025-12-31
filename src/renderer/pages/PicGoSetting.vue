@@ -183,57 +183,92 @@
 
         <!-- Sync & Configure Tab -->
         <div v-if="activeName === 'sync'" class="tab-content">
-          <div class="settings-section">
-            <h2>{{ t('pages.settings.sync.syncConfiguration') }}</h2>
-            <p>{{ ' ' }}</p>
+          <!-- Sync Status Overview -->
+          <div class="sync-overview-card">
+            <div class="sync-overview-header">
+              <div class="sync-overview-icon">
+                <RotateCcw :size="28" />
+              </div>
+              <div class="sync-overview-info">
+                <h2>{{ t('pages.settings.sync.syncConfiguration') }}</h2>
+                <p class="sync-status-text">
+                  <span class="sync-type-badge">{{ sync.type?.toUpperCase() || 'N/A' }}</span>
+                  <span v-if="sync.type !== 'webdav' && sync.username"
+                    >{{ sync.username }}/{{ sync.repo || '...' }}</span
+                  >
+                  <span v-else-if="sync.type === 'webdav' && sync.webdavEndpoint">{{ sync.webdavEndpoint }}</span>
+                  <span v-else class="sync-not-configured">{{ t('pages.settings.sync.notConfigured') }}</span>
+                </p>
+              </div>
+            </div>
+            <button class="btn btn-primary sync-config-btn" @click="syncVisible = true">
+              <Settings :size="16" />
+              {{ t('pages.settings.sync.configureSync') }}
+            </button>
+          </div>
 
-            <div class="form-grid">
-              <div class="form-group">
-                <label>{{ t('pages.settings.sync.syncEndpointConfig') }}</label>
-                <button class="btn btn-primary" @click="syncVisible = true">
-                  <RotateCcw :size="16" />
-                  {{ t('pages.settings.clickToSet') }}
-                </button>
+          <!-- Sync Actions Section -->
+          <div class="settings-section sync-actions-section">
+            <div class="section-header-with-icon">
+              <CloudUpload :size="20" class="section-icon" />
+              <div>
+                <h2>{{ t('pages.settings.sync.syncActions') }}</h2>
+              </div>
+            </div>
+
+            <div class="sync-action-cards">
+              <div class="sync-action-card" @click="upDownConfigVisible = true">
+                <div class="sync-action-icon upload">
+                  <CloudUpload :size="24" />
+                </div>
+                <div class="sync-action-content">
+                  <h4>{{ t('pages.settings.sync.upDownloadSettings') }}</h4>
+                  <p>{{ t('pages.settings.sync.upDownloadDesc') }}</p>
+                </div>
+                <div class="sync-action-arrow">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </div>
               </div>
 
-              <div class="form-group">
-                <label>{{ t('pages.settings.sync.upDownloadSettings') }}</label>
-                <button class="btn btn-primary" @click="upDownConfigVisible = true">
-                  <Download :size="16" />
-                  {{ t('pages.settings.clickToSet') }}
-                </button>
-              </div>
-
-              <div class="form-group">
-                <label>{{ t('pages.settings.sync.migrateFromPicGo') }}</label>
-                <button class="btn btn-secondary" @click="handleMigrateFromPicGo">
-                  <Import :size="16" />
-                  {{ t('pages.settings.clickToSet') }}
-                </button>
+              <div class="sync-action-card" @click="handleMigrateFromPicGo">
+                <div class="sync-action-icon migrate">
+                  <Import :size="24" />
+                </div>
+                <div class="sync-action-content">
+                  <h4>{{ t('pages.settings.sync.migrateFromPicGo') }}</h4>
+                  <p>{{ t('pages.settings.sync.migrateDesc') }}</p>
+                </div>
+                <div class="sync-action-arrow">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="settings-section">
-            <h2>{{ t('pages.settings.sync.fileManagement') }}</h2>
-            <p>{{ ' ' }}</p>
-
-            <div class="form-grid">
-              <div class="form-group">
-                <label>{{ t('pages.settings.sync.openConfigFile') }}</label>
-                <button class="btn btn-secondary" @click="openFile('data.json')">
-                  <FileText :size="16" />
-                  {{ t('pages.settings.clickToOpen') }}
-                </button>
+          <!-- File Management Section -->
+          <div class="settings-section file-management-section">
+            <div class="section-header-with-icon">
+              <FolderOpen :size="20" class="section-icon" />
+              <div>
+                <h2>{{ t('pages.settings.sync.fileManagement') }}</h2>
+                <p>{{ t('pages.settings.sync.fileManagementDesc') }}</p>
               </div>
+            </div>
 
-              <div class="form-group">
-                <label>{{ t('pages.settings.sync.openConfigFileDir') }}</label>
-                <button class="btn btn-secondary" @click="openDirectory()">
-                  <FolderOpen :size="16" />
-                  {{ t('pages.settings.clickToOpen') }}
-                </button>
-              </div>
+            <div class="file-action-grid">
+              <button class="file-action-btn" @click="openFile('data.json')">
+                <FileText :size="20" />
+                <span>{{ t('pages.settings.sync.openConfigFile') }}</span>
+              </button>
+
+              <button class="file-action-btn" @click="openDirectory()">
+                <FolderOpen :size="20" />
+                <span>{{ t('pages.settings.sync.openConfigFileDir') }}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -719,7 +754,6 @@
           <div class="form-group">
             <input v-model="customLink.value" type="text" class="form-input" :placeholder="'![$fileName]($url)'" />
           </div>
-          <small> ![$fileName]($url)</small>
         </div>
         <div class="dialog-footer">
           <button class="btn btn-secondary" @click="cancelCustomLink">
@@ -1110,106 +1144,148 @@
 
     <!-- Sync Configuration Dialog -->
     <div v-if="syncVisible" class="dialog-overlay">
-      <div class="dialog large" @click.stop>
+      <div class="dialog sync-config-dialog" @click.stop>
         <div class="dialog-header">
-          <h3 class="dialog-title">
-            {{ t('pages.settings.sync.syncEndpointConfig') }}
-          </h3>
+          <div class="dialog-header-content">
+            <div class="sync-dialog-icon">
+              <RotateCcw :size="24" />
+            </div>
+            <div>
+              <h3 class="dialog-title">{{ t('pages.settings.sync.syncEndpointConfig') }}</h3>
+            </div>
+          </div>
           <button class="dialog-close" @click="cancelSyncSetting">×</button>
         </div>
-        <div class="dialog-content">
-          <div class="notice-text">
-            {{ t('pages.settings.sync.syncConfigNote') }}
+        <div class="dialog-content sync-dialog-content">
+          <div class="sync-type-selector">
+            <label class="sync-type-label">{{ t('pages.settings.sync.selectType') }}</label>
+            <div class="sync-type-grid">
+              <button
+                v-for="typeitem of syncType"
+                :key="typeitem"
+                :class="['sync-type-btn', { active: sync.type === typeitem }]"
+                @click="sync.type = typeitem"
+              >
+                <GitBranch v-if="typeitem.includes('git')" :size="20" />
+                <Store v-else-if="typeitem === 'webdav'" :size="20" />
+                <span>{{ typeitem.slice(0, 1).toUpperCase() + typeitem.slice(1) }}</span>
+              </button>
+            </div>
           </div>
-          <div class="form-group">
-            <label>{{ t('pages.settings.sync.selectType') }}</label>
-            <select v-model="sync.type" class="form-select">
-              <option v-for="typeitem of syncType" :key="typeitem" :value="typeitem">
-                {{ typeitem.slice(0, 1).toUpperCase() + typeitem.slice(1) }}
-              </option>
-            </select>
-          </div>
-          <div v-if="sync.type === 'gitea'" class="form-group">
-            <label>{{ t('pages.settings.sync.giteaHost') }}</label>
-            <input
-              v-model.trim="sync.endpoint"
-              type="text"
-              class="form-input"
-              :placeholder="t('pages.settings.sync.giteaHost')"
-            />
-          </div>
-          <div v-if="sync.type === 'webdav'" class="form-group">
-            <label>{{ t('pages.settings.sync.webdavEndpoint') }}</label>
-            <input
-              v-model.trim="sync.webdavEndpoint"
-              type="text"
-              class="form-input"
-              :placeholder="t('pages.settings.sync.webdavEndpoint')"
-            />
-          </div>
-          <template v-if="sync.type !== 'webdav'">
-            <div v-for="inputItem in ['username', 'repo', 'branch', 'token']" :key="inputItem" class="form-group">
-              <label>{{ t(`pages.settings.sync.${sync.type.toLowerCase()}.${inputItem.toLowerCase()}`) }}</label>
-              <input
-                v-model.trim="sync[inputItem as any]"
-                type="text"
-                class="form-input"
-                :placeholder="t(`pages.settings.sync.${sync.type.toLowerCase()}.${inputItem.toLowerCase()}`)"
-              />
-            </div>
-          </template>
-          <template v-if="sync.type === 'webdav'">
-            <div class="form-group">
-              <label>{{ t('pages.settings.sync.webdav.username') }}</label>
-              <input
-                v-model.trim="sync.webdavUsername"
-                type="text"
-                class="form-input"
-                :placeholder="t('pages.settings.sync.webdav.username')"
-              />
-            </div>
-            <div class="form-group">
-              <label>{{ t('pages.settings.sync.webdav.password') }}</label>
-              <input
-                v-model.trim="sync.webdavPassword"
-                class="form-input"
-                :placeholder="t('pages.settings.sync.webdav.password')"
-              />
-            </div>
-            <div class="form-group">
-              <label>{{ t('pages.settings.sync.webdav.savePath') }}</label>
-              <input
-                v-model.trim="sync.webdavSavePath"
-                type="text"
-                class="form-input"
-                :placeholder="t('pages.settings.sync.webdav.savePath')"
-              />
-            </div>
-            <div class="form-group">
-              <label>{{ t('pages.settings.sync.webdav.authType') }}</label>
-              <select v-model="sync.webdavAuthType" class="form-select">
-                <option value="basic">Basic</option>
-                <option value="digest">Digest</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="switch-label">
-                <input v-model="sync.webdavSslEnabled" type="checkbox" class="switch-input" />
-                <span class="switch-slider" />
-                <div class="switch-content">
-                  <div class="switch-title">{{ t('pages.settings.sync.webdav.enableSSL') }}</div>
-                </div>
+
+          <!-- Configuration Fields -->
+          <div class="sync-config-fields">
+            <div v-if="sync.type === 'gitea'" class="sync-field-group">
+              <label>
+                <Server :size="16" />
+                {{ t('pages.settings.sync.giteaHost') }}
               </label>
+              <input
+                v-model.trim="sync.endpoint"
+                type="text"
+                class="form-input"
+                :placeholder="t('pages.settings.sync.giteaHost')"
+              />
             </div>
-          </template>
-          <div v-if="sync.type === 'github'" class="form-group">
-            <label>{{ t('pages.settings.sync.syncConfigProxy') }}</label>
-            <input
-              v-model.trim="sync.proxy"
-              type="text"
-              class="form-input"
-              :placeholder="t('pages.settings.sync.syncConfigProxy')"
-            />
+
+            <!-- WebDAV Endpoint -->
+            <div v-if="sync.type === 'webdav'" class="sync-field-group">
+              <label>
+                <Globe :size="16" />
+                {{ t('pages.settings.sync.webdavEndpoint') }}
+              </label>
+              <input
+                v-model.trim="sync.webdavEndpoint"
+                type="text"
+                class="form-input"
+                :placeholder="t('pages.settings.sync.webdavEndpoint')"
+              />
+            </div>
+
+            <!-- Git-based fields -->
+            <template v-if="sync.type !== 'webdav'">
+              <div class="sync-fields-grid">
+                <div
+                  v-for="inputItem in ['username', 'repo', 'branch', 'token']"
+                  :key="inputItem"
+                  class="sync-field-group"
+                >
+                  <label>
+                    {{ t(`pages.settings.sync.${sync.type.toLowerCase()}.${inputItem.toLowerCase()}`) }}
+                  </label>
+                  <input
+                    v-model.trim="sync[inputItem as any]"
+                    type="text"
+                    class="form-input"
+                    :placeholder="t(`pages.settings.sync.${sync.type.toLowerCase()}.${inputItem.toLowerCase()}`)"
+                  />
+                </div>
+              </div>
+            </template>
+
+            <!-- WebDAV fields -->
+            <template v-if="sync.type === 'webdav'">
+              <div class="sync-fields-grid">
+                <div class="sync-field-group">
+                  <label>{{ t('pages.settings.sync.webdav.username') }}</label>
+                  <input
+                    v-model.trim="sync.webdavUsername"
+                    type="text"
+                    class="form-input"
+                    :placeholder="t('pages.settings.sync.webdav.username')"
+                  />
+                </div>
+                <div class="sync-field-group">
+                  <label>{{ t('pages.settings.sync.webdav.password') }}</label>
+                  <input
+                    v-model.trim="sync.webdavPassword"
+                    type="text"
+                    class="form-input"
+                    :placeholder="t('pages.settings.sync.webdav.password')"
+                  />
+                </div>
+                <div class="sync-field-group">
+                  <label>{{ t('pages.settings.sync.webdav.savePath') }}</label>
+                  <input
+                    v-model.trim="sync.webdavSavePath"
+                    type="text"
+                    class="form-input"
+                    :placeholder="t('pages.settings.sync.webdav.savePath')"
+                  />
+                </div>
+                <div class="sync-field-group">
+                  <label>{{ t('pages.settings.sync.webdav.authType') }}</label>
+                  <select v-model="sync.webdavAuthType" class="form-select">
+                    <option value="basic">Basic</option>
+                    <option value="digest">Digest</option>
+                  </select>
+                </div>
+              </div>
+              <div class="sync-ssl-toggle">
+                <label class="switch-label">
+                  <input v-model="sync.webdavSslEnabled" type="checkbox" class="switch-input" />
+                  <span class="switch-slider" />
+                  <div class="switch-content">
+                    <div class="switch-title">{{ t('pages.settings.sync.webdav.enableSSL') }}</div>
+                    <div class="switch-description">{{ t('pages.settings.sync.webdav.enableSSLDesc') }}</div>
+                  </div>
+                </label>
+              </div>
+            </template>
+
+            <!-- GitHub Proxy -->
+            <div v-if="sync.type === 'github'" class="sync-field-group">
+              <label>
+                <Globe :size="16" />
+                {{ t('pages.settings.sync.syncConfigProxy') }}
+              </label>
+              <input
+                v-model.trim="sync.proxy"
+                type="text"
+                class="form-input"
+                :placeholder="t('pages.settings.sync.syncConfigProxy')"
+              />
+            </div>
           </div>
         </div>
         <div class="dialog-footer">
@@ -1225,37 +1301,70 @@
 
     <!-- Upload/Download Config Dialog -->
     <div v-if="upDownConfigVisible" class="dialog-overlay" @click="upDownConfigVisible = false">
-      <div class="dialog" @click.stop>
+      <div class="dialog config-dialog" @click.stop>
         <div class="dialog-header">
-          <h3 class="dialog-title">
-            {{ t('pages.settings.sync.upDownloadSettings') }}
-          </h3>
+          <div class="dialog-header-content">
+            <RotateCcw :size="20" class="dialog-icon" />
+            <h3 class="dialog-title">
+              {{ t('pages.settings.sync.upDownloadSettings') }}
+            </h3>
+          </div>
           <button class="dialog-close" @click="upDownConfigVisible = false">×</button>
         </div>
         <div class="dialog-content">
-          <div class="form-group">
-            <label>{{ t('pages.settings.sync.uploadSettings') }}</label>
-            <div class="button-group">
+          <!-- Upload Settings Section -->
+          <div class="config-section">
+            <div class="config-section-header">
+              <CloudUpload :size="18" />
+              <h4>{{ t('pages.settings.sync.uploadSettings') }}</h4>
+            </div>
+            <div class="config-button-grid">
               <button
                 v-for="item in syncTaskList.slice(0, 3)"
                 :key="item.task"
-                class="btn btn-primary"
+                class="config-button"
                 @click="syncTaskFn(item.task, item.number)"
               >
-                {{ item.label }}
+                <CloudUpload :size="16" class="button-icon" />
+                <span>{{ item.label }}</span>
               </button>
             </div>
           </div>
-          <div class="form-group">
-            <label>{{ t('pages.settings.sync.downloadSettings') }}</label>
-            <div class="button-group">
+
+          <!-- Download Settings Section -->
+          <div class="config-section">
+            <div class="config-section-header">
+              <Download :size="18" />
+              <h4>{{ t('pages.settings.sync.downloadSettings') }}</h4>
+            </div>
+            <div class="config-button-grid">
               <button
-                v-for="item in syncTaskList.slice(3)"
+                v-for="item in syncTaskList.slice(3, 6)"
                 :key="item.task"
-                class="btn btn-primary"
+                class="config-button"
                 @click="syncTaskFn(item.task, item.number)"
               >
-                {{ item.label }}
+                <Download :size="16" class="button-icon" />
+                <span>{{ item.label }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Gallery DB Section -->
+          <div class="config-section">
+            <div class="config-section-header">
+              <ImageIcon :size="18" />
+              <h4>{{ t('pages.settings.sync.galleryDB') }}</h4>
+            </div>
+            <div class="config-button-grid full-width">
+              <button
+                v-for="item in syncTaskList.slice(6, 7)"
+                :key="item.task"
+                class="config-button"
+                @click="syncTaskFn(item.task, item.number)"
+              >
+                <RefreshCw :size="16" class="button-icon" />
+                <span>{{ item.label }}</span>
               </button>
             </div>
           </div>
@@ -1294,6 +1403,7 @@ import {
   Edit,
   FileText,
   FolderOpen,
+  GitBranch,
   Globe,
   Image as ImageIcon,
   Import,
@@ -1303,7 +1413,8 @@ import {
   RefreshCw,
   RotateCcw,
   Server,
-  Settings
+  Settings,
+  Store,
 } from 'lucide-vue-next'
 import type { IConfig } from 'piclist'
 import pkg from 'root/package.json'
@@ -1339,20 +1450,20 @@ const tabs = computed(() => [
   { id: 'sync', label: t('pages.settings.sync.title'), icon: RotateCcw },
   { id: 'upload', label: t('pages.settings.upload.title'), icon: CloudUpload },
   { id: 'advanced', label: t('pages.settings.advanced.title'), icon: Server },
-  { id: 'update', label: t('pages.settings.update.title'), icon: RefreshCw }
+  { id: 'update', label: t('pages.settings.update.title'), icon: RefreshCw },
 ])
 
 const shortUrlServerList = [
   { label: 'c1n', value: 'c1n' },
   { label: 'yourls', value: 'yourls' },
   { label: 'xyTom/Url-Shorten-Worker', value: 'cf_worker' },
-  { label: 'ccbikai/Sink', value: 'sink' }
+  { label: 'ccbikai/Sink', value: 'sink' },
 ]
 
 const languageList = [
   { label: '简体中文', value: 'zh-CN' },
   { label: '繁體中文', value: 'zh-TW' },
-  { label: 'English', value: 'en' }
+  { label: 'English', value: 'en' },
 ]
 
 const formOfSetting = ref<ISettingForm>({
@@ -1396,7 +1507,7 @@ const formOfSetting = ref<ISettingForm>({
   proxy: '',
   mainWindowWidth: 1200,
   mainWindowHeight: 800,
-  enableSecondUploader: false
+  enableSecondUploader: false,
 })
 
 const proxy = ref('')
@@ -1432,7 +1543,7 @@ const autoWatchKeys = [
   'autoCopy',
   'encodeOutputURL',
   'useShortUrl',
-  'enableSecondUploader'
+  'enableSecondUploader',
 ]
 
 const addWatch = () => {
@@ -1441,7 +1552,7 @@ const addWatch = () => {
       () => formOfSetting.value[key as keyof ISettingForm],
       value => {
         saveConfig({ [`settings.${key}`]: value })
-      }
+      },
     )
   })
 
@@ -1482,20 +1593,20 @@ const advancedRenameList = {
     { label: t('pages.settings.upload.placeholder.minute'), value: '{i}' },
     { label: t('pages.settings.upload.placeholder.second'), value: '{s}' },
     { label: t('pages.settings.upload.placeholder.millisecond'), value: '{ms}' },
-    { label: t('pages.settings.upload.placeholder.timestamp'), value: '{timestamp}' }
+    { label: t('pages.settings.upload.placeholder.timestamp'), value: '{timestamp}' },
   ],
   categoryHash: [
     { label: t('pages.settings.upload.placeholder.md5'), value: '{md5}' },
     { label: t('pages.settings.upload.placeholder.md5-16'), value: '{md5-16}' },
     { label: t('pages.settings.upload.placeholder.uuid'), value: '{uuid}' },
     { label: t('pages.settings.upload.placeholder.sha256'), value: '{sha256}' },
-    { label: t('pages.settings.upload.placeholder.sha256-n'), value: '{sha256-n}' }
+    { label: t('pages.settings.upload.placeholder.sha256-n'), value: '{sha256-n}' },
   ],
   categoryFile: [
     { label: t('pages.settings.upload.placeholder.filename'), value: '{filename}' },
     { label: t('pages.settings.upload.placeholder.localFolder'), value: '{localFolder:n}' },
-    { label: t('pages.settings.upload.placeholder.randomString'), value: '{str-n}' }
-  ]
+    { label: t('pages.settings.upload.placeholder.randomString'), value: '{str-n}' },
+  ],
 }
 
 function copyPlaceholder(placeholder: string) {
@@ -1529,7 +1640,7 @@ const logLevel = {
   error: t('pages.settings.advanced.logLevelList.error'),
   info: t('pages.settings.advanced.logLevelList.info'),
   warn: t('pages.settings.advanced.logLevelList.warn'),
-  none: t('pages.settings.advanced.logLevelList.none')
+  none: t('pages.settings.advanced.logLevelList.none'),
 }
 
 const server = ref({ port: 36677, host: '0.0.0.0', enable: true })
@@ -1549,7 +1660,7 @@ const sync = ref<any>({
   password: '',
   authType: 'basic',
   sslEnabled: true,
-  webdavSavePath: ''
+  webdavSavePath: '',
 })
 
 const syncType = ['github', 'gitee', 'gitea', 'webdav']
@@ -1571,7 +1682,7 @@ async function cancelSyncSetting() {
     webdavPassword: '',
     webdavAuthType: 'basic',
     webdavSslEnabled: true,
-    webdavSavePath: ''
+    webdavSavePath: '',
   }
 }
 
@@ -1652,7 +1763,7 @@ async function initData() {
     webdavPassword: '',
     webdavAuthType: 'basic',
     webdavSslEnabled: true,
-    webdavSavePath: ''
+    webdavSavePath: '',
   }
   formOfSetting.value.logFileSizeLimit = enforceNumber(settings.logFileSizeLimit) || 10
   addProxyWatch()
@@ -1702,7 +1813,7 @@ function confirmCustomLink() {
 async function handleCancelAdvancedRename() {
   advancedRenameVisible.value = false
   advancedRename.value = toRaw(
-    (await getConfig<any>(configPaths.buildIn.rename)) || { enable: false, format: '{filename}' }
+    (await getConfig<any>(configPaths.buildIn.rename)) || { enable: false, format: '{filename}' },
   )
 }
 
@@ -1722,7 +1833,7 @@ function handleMigrateFromPicGo() {
     type: 'warning',
     confirmButtonText: t('common.confirm'),
     cancelButtonText: t('common.cancel'),
-    center: true
+    center: true,
   }).then(result => {
     if (result) {
       window.electron
@@ -1871,7 +1982,7 @@ async function confirmWindowSize() {
   const height = enforceNumber(formOfSetting.value.mainWindowHeight)
   saveConfig({
     [configPaths.settings.mainWindowWidth]: rawPicGoSize.value ? 800 : width < 100 ? 100 : width,
-    [configPaths.settings.mainWindowHeight]: rawPicGoSize.value ? 450 : height < 100 ? 100 : height
+    [configPaths.settings.mainWindowHeight]: rawPicGoSize.value ? 450 : height < 100 ? 100 : height,
   })
   await getMainWindowSize()
 }
@@ -1906,7 +2017,7 @@ function confirmLogLevelSetting() {
   }
   saveConfig({
     [configPaths.settings.logLevel]: formOfSetting.value.logLevel,
-    [configPaths.settings.logFileSizeLimit]: formOfSetting.value.logFileSizeLimit
+    [configPaths.settings.logFileSizeLimit]: formOfSetting.value.logFileSizeLimit,
   })
   logFileVisible.value = false
 }
@@ -1940,7 +2051,8 @@ const syncTaskList = [
   { task: IRPCActionType.CONFIGURE_UPLOAD_ALL_CONFIG, label: t('pages.settings.sync.allConfig'), number: 4 },
   { task: IRPCActionType.CONFIGURE_DOWNLOAD_COMMON_CONFIG, label: t('pages.settings.sync.commonConfig'), number: 2 },
   { task: IRPCActionType.CONFIGURE_DOWNLOAD_MANAGE_CONFIG, label: t('pages.settings.sync.manageConfig'), number: 2 },
-  { task: IRPCActionType.CONFIGURE_DOWNLOAD_ALL_CONFIG, label: t('pages.settings.sync.allConfig'), number: 4 }
+  { task: IRPCActionType.CONFIGURE_DOWNLOAD_ALL_CONFIG, label: t('pages.settings.sync.allConfig'), number: 4 },
+  { task: IRPCActionType.CONFIGURE_SYNC_GALLERY_DB, label: t('pages.settings.sync.galleryDB'), number: 2 },
 ]
 
 async function syncTaskFn(task: string, number: number) {
