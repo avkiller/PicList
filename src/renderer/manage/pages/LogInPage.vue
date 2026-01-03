@@ -25,7 +25,7 @@
     <div class="login-card tabs-card">
       <div class="tabs-container">
         <div class="tabs-nav-wrapper">
-          <div ref="tabsNav" class="tabs-nav">
+          <div class="tabs-nav">
             <button
               v-for="item in tabItems"
               :key="item.key"
@@ -309,7 +309,6 @@ import { getConfig, removeConfig, saveConfig } from '@/manage/utils/dataSender'
 import { formatEndpoint } from '@/utils/common'
 import { getConfig as getPicBedsConfig } from '@/utils/dataSender'
 import { IRPCActionType } from '@/utils/enum'
-import type { IStringKeyMap, IUploaderConfigListItem } from '#/types/types'
 
 const { t } = useI18n()
 const manageStore = useManageStore()
@@ -320,7 +319,6 @@ const { confirm } = useConfirm()
 const activeName = ref('login')
 const expandedConfigs = ref<string[]>([])
 const importDropdownOpen = ref(false)
-const tabsNav = ref<HTMLElement>()
 
 const configResult: IStringKeyMap = reactive({})
 const existingConfiguration = reactive({} as IStringKeyMap)

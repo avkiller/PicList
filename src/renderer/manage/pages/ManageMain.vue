@@ -36,7 +36,7 @@
     <!-- Main Content Card -->
     <div class="manage-card main-card">
       <div class="main-layout">
-        <div ref="sidebar" class="sidebar" :style="{ width: sidebarWidth + 'px' }">
+        <div class="sidebar" :style="{ width: sidebarWidth + 'px' }">
           <div class="sidebar-header">
             <h3 class="sidebar-title">
               {{ menuTitleMap[currentPicBedName] }}
@@ -92,7 +92,7 @@
           <div class="resize-line" />
         </div>
 
-        <div ref="contentArea" class="content-area">
+        <div class="content-area">
           <router-view />
         </div>
       </div>
@@ -276,7 +276,6 @@ import { useManageStore } from '@/manage/store/manageStore'
 import { supportedPicBedList } from '@/manage/utils/constants'
 import { newBucketConfig } from '@/manage/utils/newBucketConfig'
 import { IRPCActionType } from '@/utils/enum'
-import type { IStringKeyMap } from '#/types/types'
 
 const { t } = useI18n()
 const manageStore = useManageStore() as any
@@ -287,7 +286,6 @@ const message = useMessage()
 const currentAlias = ref(route.query.alias as string)
 const currentPicBedName = ref(route.query.picBedName as string)
 
-const contentArea = ref<HTMLElement>()
 const sidebarWidth = ref(160)
 const isResizing = ref(false)
 

@@ -3,7 +3,7 @@
     <div class="title-bar-content">
       <div v-if="osGlobal !== 'darwin'" class="title-left">
         <div class="app-icon">
-          <img :src="defaultLogo" alt="App Icon" width="20" height="20" />
+          <img :src="defaultLogo" width="20" height="20" />
         </div>
       </div>
 
@@ -19,13 +19,8 @@
 
       <div class="title-right">
         <div class="window-controls">
-          <button
-            class="control-button pin-button"
-            :class="{ active: isAlwaysOnTop }"
-            :title="$t('titleBar.alwaysOnTop')"
-            @click="setAlwaysOnTop"
-          >
-            <PinIcon :color="isAlwaysOnTop ? '#CE6769' : '#6B7280'" :size="14" />
+          <button class="control-button pin-button" :title="$t('titleBar.alwaysOnTop')" @click="setAlwaysOnTop">
+            <PinIcon :size="14" class="pin-icon" :class="{ active: isAlwaysOnTop }" />
           </button>
           <template v-if="osGlobal !== 'darwin'">
             <button class="control-button minimize-button" :title="$t('titleBar.minimize')" @click="minimizeWindow">
@@ -61,17 +56,9 @@ function setAlwaysOnTop() {
   window.electron.sendRPC(IRPCActionType.MAIN_WINDOW_ON_TOP)
 }
 
-function minimizeWindow() {
-  window.electron.sendRPC(IRPCActionType.MINIMIZE_WINDOW)
-}
-
-function openMiniWindow() {
-  window.electron.sendRPC(IRPCActionType.OPEN_MINI_WINDOW)
-}
-
-function closeWindow() {
-  window.electron.sendRPC(IRPCActionType.CLOSE_WINDOW)
-}
+const minimizeWindow = () => window.electron.sendRPC(IRPCActionType.MINIMIZE_WINDOW)
+const openMiniWindow = () => window.electron.sendRPC(IRPCActionType.OPEN_MINI_WINDOW)
+const closeWindow = () => window.electron.sendRPC(IRPCActionType.CLOSE_WINDOW)
 
 const uploadProcessHandler = (data: { progress: number }) => {
   isShowprogress.value = data.progress !== 100 && data.progress !== 0
@@ -153,13 +140,18 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  max-width: 200px;
+  width: 100%;
+  min-width: 100px;
+  max-width: 600px;
 }
 
 .progress-bar {
   overflow: hidden;
   border-radius: 2px;
-  height: 4px;
+  width: 100%;
+  min-width: 100px;
+  max-width: 600px;
+  height: 14px;
   background: var(--color-border);
   flex: 1;
 }
@@ -208,9 +200,23 @@ onBeforeUnmount(() => {
   background: var(--color-surface-elevated);
 }
 
-.pin-button.active {
-  color: var(--color-accent);
-  background: var(--color-accent) 20;
+.pin-icon {
+  color: #6b7280;
+}
+
+.pin-icon.active {
+  rotate: 90deg;
+  color: #ce6769;
+}
+
+.minimize-button:hover {
+  color: white;
+  background: color-mix(in srgb, var(--color-warning), transparent 15%);
+}
+
+.mini-button:hover {
+  color: white;
+  background: color-mix(in srgb, var(--color-success), transparent 15%);
 }
 
 .close-button:hover {

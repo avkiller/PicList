@@ -202,16 +202,12 @@
         v-else
         :key="componentKey"
         ref="virtualScrollerRef"
-        v-model:view-mode="viewMode"
+        :view-mode="viewMode"
         class="virtual-gallery-scroller"
         :items="filterList"
-        :item-height="itemHeight"
-        :grid-items="4"
+        :item-height="300"
         :grid-breakpoints="effectiveGridBreakpoints"
         key-field="key"
-        :page-mode="true"
-        :buffer-factor="0.5"
-        :item-padding="8"
       >
         <template #default="{ item, index }">
           <div class="gallery-item" :class="{ selected: choosedList[item.id || ''] }">
@@ -501,7 +497,17 @@ import {
   TrashIcon,
   XIcon,
 } from 'lucide-vue-next'
-import { computed, nextTick, onActivated, onBeforeMount, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import {
+  computed,
+  nextTick,
+  onActivated,
+  onBeforeMount,
+  onBeforeUnmount,
+  reactive,
+  ref,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { useI18n } from 'vue-i18n'
 import { onBeforeRouteUpdate } from 'vue-router'
 
@@ -517,7 +523,6 @@ import $$db from '@/utils/db'
 import { IPasteStyle, IRPCActionType } from '@/utils/enum'
 import { picBedGlobal } from '@/utils/global'
 import { picBedsCanbeDeleted } from '@/utils/static'
-import type { IGalleryItem, ImgInfo, IObj, IObjT } from '#/types/types'
 
 const { t } = useI18n()
 const message = useMessage()
@@ -530,8 +535,8 @@ type IResult<T> = T & {
 }
 
 const images = ref<ImgInfo[]>([])
-const virtualScrollerRef = ref<InstanceType<typeof VirtualScroller>>()
-const previewImageRef = ref<HTMLImageElement>()
+const virtualScrollerRef = useTemplateRef('virtualScrollerRef')
+const previewImageRef = useTemplateRef('previewImageRef')
 const dialogVisible = ref(false)
 const imgInfo = reactive({
   id: '',
@@ -581,7 +586,6 @@ const viewMode = useStorage<'list' | 'grid'>('galleryViewMode', 'grid')
 const componentKey = ref(0)
 const currentSortField = ref<'name' | 'time' | 'ext' | 'check'>('name')
 const userGridColumns = useStorage<number>('galleryGridColumns', 4)
-const itemHeight = 300
 
 const effectiveGridBreakpoints = computed(() => {
   return [{ min: 0, cols: userGridColumns.value }]
@@ -655,7 +659,7 @@ const dateRange = computed({
 })
 
 function copyPlaceholder(placeholder: string) {
-  window.electron.clipboard.writeText(placeholder)
+  window.electron.clipboard.writeText(String(placeholder))
   message.success(t('pages.settings.upload.copySuccess', { content: placeholder }))
 }
 
@@ -1208,7 +1212,7 @@ async function copy(item: ImgInfo) {
     })
     updateGallery()
   }
-  window.electron.clipboard.writeText(result ? result[0] : '')
+  window.electron.clipboard.writeText(String(result ? result[0] : ''))
   message.success(t('pages.gallery.copyLinkSucceed'))
 }
 
