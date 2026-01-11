@@ -30,10 +30,10 @@
 import type { IConfig } from 'piclist'
 import { onBeforeMount, onBeforeUnmount, ref, watch } from 'vue'
 
+import { osGlobal } from '@/hooks/useGlobal'
 import { isUrl } from '@/utils/common'
 import { getConfig } from '@/utils/dataSender'
 import { IRPCActionType } from '@/utils/enum'
-import { osGlobal } from '@/utils/global'
 
 const logoPath = ref('')
 const dragover = ref(false)
@@ -178,12 +178,12 @@ function openContextMenu() {
 }
 
 onBeforeMount(async () => {
-  await initLogoPath()
   removeListeners = window.electron.ipcRendererOn('uploadProgress', uploadProgressHandler)
   window.electron.ipcRendererOn('updateMiniIcon', updateMiniIconHandler)
   window.addEventListener('mousedown', handleMouseDown, false)
   window.addEventListener('mousemove', handleMouseMove, false)
   window.addEventListener('mouseup', handleMouseUp, false)
+  await initLogoPath()
 })
 
 onBeforeUnmount(() => {

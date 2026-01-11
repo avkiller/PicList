@@ -16,7 +16,7 @@ export const getLatestVersion = async (): Promise<string> => {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       const data = await response.text()
-      const r = window.node.yaml.load(data) as IStringKeyMap
+      const r = window.node.yaml.parse(data).toJSON() as IStringKeyMap
       return r.version
     } catch (err) {
       console.error('Error fetching backup latest version: ', err)

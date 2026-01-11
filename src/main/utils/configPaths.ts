@@ -8,6 +8,12 @@ export interface IConfigStruct {
   picBed: {
     uploader: string
     current?: string
+    secondUploader?: string
+    secondUploaderId?: string
+    secondUploaderConfig?: IStringKeyMap
+    proxy?: string
+    transformer?: string
+    list: IPicBedType[]
     smms?: ISMMSConfig
     qiniu?: IQiniuConfig
     upyun?: IUpYunConfig
@@ -20,9 +26,6 @@ export interface IConfigStruct {
     sftpplist?: ISftpPlistConfig
     lskyplist?: ILskyConfig
     'aws-s3-plist': IAwsS3PListUserConfig
-    proxy?: string
-    transformer?: string
-    list: IPicBedType[]
     [others: string]: any
   }
   settings: {
@@ -125,9 +128,9 @@ export const configPaths = {
     showUpdateTip: 'settings.showUpdateTip',
     miniWindowPosition: 'settings.miniWindowPosition',
     miniWindowOntop: 'settings.miniWindowOntop',
-    isHideDock: 'settings.isHideDock',
     mainWindowWidth: 'settings.mainWindowWidth',
     mainWindowHeight: 'settings.mainWindowHeight',
+    isHideDock: 'settings.isHideDock',
     autoCloseMiniWindow: 'settings.autoCloseMiniWindow',
     autoCloseMainWindow: 'settings.autoCloseMainWindow',
     isCustomMiniIcon: 'settings.isCustomMiniIcon',
@@ -181,6 +184,23 @@ export const configPaths = {
     watermark: 'buildIn.watermark',
     rename: 'buildIn.rename',
     skipProcess: 'buildIn.skipProcess',
+    list: {
+      _name: 'buildIn.list',
+      id: 'buildIn.list.id',
+      compress: 'buildIn.list.compress',
+      watermark: 'buildIn.list.watermark',
+      skipProcess: {
+        _name: 'buildIn.list.skipProcess',
+        skipProcessExtList: 'buildIn.list.skipProcess.skipProcessExtList',
+      },
+      rename: {
+        _name: 'buildIn.list.rename',
+        enable: 'buildIn.list.rename.enable',
+        format: 'buildIn.list.rename.format',
+      },
+      autoRename: 'buildIn.list.autoRename',
+      manualRename: 'buildIn.list.manualRename',
+    },
   },
   debug: 'debug',
   PICGO_ENV: 'PICGO_ENV',
