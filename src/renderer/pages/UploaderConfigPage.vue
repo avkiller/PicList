@@ -1,8 +1,5 @@
 <template>
   <div class="config-page">
-    <!-- Ambient Background -->
-    <div class="ambient-bg" />
-
     <div class="config-container">
       <!-- Hero Header Section -->
       <header class="page-header">
@@ -12,7 +9,7 @@
           </div>
           <div class="header-text">
             <h1 class="page-title">
-              {{ `${type} ${t('pages.uploaderConfig.title')}` }}
+              {{ `${picBedName || type} ${t('pages.uploaderConfig.title')}` }}
             </h1>
             <p class="page-subtitle">
               {{ t('pages.uploaderConfig.subtitle', { count: curConfigList.length }) }}
@@ -50,6 +47,17 @@
                 <Cloud :size="20" />
               </div>
               <div class="card-actions">
+                <button
+                  class="action-btn"
+                  :title="
+                    isConfigFavorited(item._id)
+                      ? t('pages.uploaderConfig.removeFromFavorites')
+                      : t('pages.uploaderConfig.addToFavorites')
+                  "
+                  @click.stop="() => toggleConfigFavorite(item._id, item._configName)"
+                >
+                  <Heart :size="14" :fill="isConfigFavorited(item._id) ? '#f39c12' : 'none'" />
+                </button>
                 <button class="action-btn" :title="t('pages.uploaderConfig.edit')" @click.stop="openEditPage(item._id)">
                   <Pencil :size="14" />
                 </button>
@@ -76,20 +84,18 @@
             <div class="card-body">
               <h3 class="config-name">{{ item._configName }}</h3>
               <div class="config-meta">
-                <Clock :size="12" />
-                <span>{{ formatTime(item._updatedAt) }}</span>
-              </div>
-            </div>
-
-            <!-- Card Footer -->
-            <div class="card-footer">
-              <div v-if="defaultConfigId === item._id" class="status-badge active">
-                <CheckCircle2 :size="14" />
-                <span>{{ t('pages.uploaderConfig.selected') }}</span>
-              </div>
-              <div v-else class="status-badge inactive">
-                <Circle :size="14" />
-                <span>{{ t('pages.uploaderConfig.clickToSelect') }}</span>
+                <div style="display: flex; align-items: center; gap: 4px">
+                  <Clock :size="12" />
+                  <span>{{ formatTime(item._updatedAt) }}</span>
+                </div>
+                <div v-if="defaultConfigId === item._id" class="status-badge active">
+                  <CheckCircle2 :size="14" />
+                  <span>{{ t('pages.uploaderConfig.selected') }}</span>
+                </div>
+                <div v-else class="status-badge inactive">
+                  <Circle :size="14" />
+                  <span>{{ t('pages.uploaderConfig.clickToSelect') }}</span>
+                </div>
               </div>
             </div>
 
@@ -119,9 +125,10 @@
 </template>
 
 <script lang="ts" setup>
+import { useStorage } from '@vueuse/core'
 import dayjs from 'dayjs'
-import { CheckCircle2, Circle, Clock, Cloud, Copy, Pencil, Plus, Settings2, Star, Trash2 } from 'lucide-vue-next'
-import { onBeforeMount, ref } from 'vue'
+import { CheckCircle2, Circle, Clock, Cloud, Copy, Heart, Pencil, Plus, Settings2, Star, Trash2 } from 'lucide-vue-next'
+import { computed, onBeforeMount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 
@@ -140,11 +147,37 @@ const message = useMessage()
 const { confirm } = useConfirm()
 const router = useRouter()
 const route = useRoute()
-const { defaultPicBedG } = usePicBed()
+const { defaultPicBedG, picBedG } = usePicBed()
+const favoritePicbeds = useStorage<IFavoritePicbedItem[]>('favorite-picbeds', [])
 
 const type = ref('')
 const curConfigList = ref<IStringKeyMap[]>([])
 const defaultConfigId = ref('')
+
+const picBedName = computed(() => {
+  if (!picBedG.value || picBedG.value.length === 0) {
+    return ''
+  }
+  const target = picBedG.value.find(item => item.type === type.value)
+  return target ? target.name : ''
+})
+
+function isConfigFavorited(configId: string): boolean {
+  const ids = favoritePicbeds.value.map(item => item.id)
+  return ids.includes(configId)
+}
+
+function toggleConfigFavorite(configId: string, configName: string) {
+  if (isConfigFavorited(configId)) {
+    const index = favoritePicbeds.value.findIndex(
+      item => item.type === type.value && item.id === configId && item.configName === configName,
+    )
+    if (index === -1) return
+    favoritePicbeds.value.splice(index, 1)
+  } else {
+    favoritePicbeds.value.push({ id: configId, configName, type: type.value })
+  }
+}
 
 async function selectItem(id: string) {
   await window.electron.triggerRPC<void>(IRPCActionType.UPLOADER_SELECT, type.value, id)
@@ -249,6 +282,12 @@ async function deleteConfig(id: string) {
     center: true,
   })
   if (!result) return
+  if (isConfigFavorited(id)) {
+    const index = favoritePicbeds.value.findIndex(item => item.type === type.value && item.id === id)
+    if (index !== -1) {
+      favoritePicbeds.value.splice(index, 1)
+    }
+  }
   const res = await window.electron.triggerRPC<IUploaderConfigItem>(IRPCActionType.PICBED_DELETE_CONFIG, type.value, id)
   if (!res) return
   curConfigList.value = res.configList
@@ -271,7 +310,6 @@ function setDefaultPicBed(type: string) {
     [configPaths.picBed.current]: type,
     [configPaths.picBed.uploader]: type,
   })
-
   const currentConfigName = curConfigList.value.find(item => item._id === defaultConfigId.value)?._configName
   window.electron.sendRPC(IRPCActionType.TRAY_SET_TOOL_TIP, `${type} ${currentConfigName || ''}`)
   message.success(t('pages.uploaderConfig.setSuccess'))

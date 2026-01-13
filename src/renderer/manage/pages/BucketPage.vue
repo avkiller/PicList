@@ -341,9 +341,9 @@
             v-if="layoutStyle === 'grid'"
             class="file-grid-item"
             :class="{ selected: item.checked }"
-            @click="handleClickFile(item)"
+            @click="item.checked = !item.checked"
           >
-            <div class="file-preview">
+            <div class="file-preview" @click.stop="handleClickFile(item)">
               <!-- Image Preview -->
               <template v-if="!item.isDir && !['webdavplist', 'sftp', 'local', 's3plist'].includes(currentPicBedName)">
                 <img v-if="isShowThumbnail && item.isImage" :src="item.url" class="file-image" @error="() => {}" />
@@ -390,7 +390,7 @@
 
             <div class="file-info-section">
               <div class="file-name" :title="item.fileName" @click.stop="copyToClipboard(item.fileName ?? '')">
-                {{ formatFileName(item.fileName ?? '', 25) }}
+                {{ item.fileName ?? '' }}
               </div>
               <div class="file-meta">
                 <span>{{ formatFileSize(item.fileSize) }}</span>
@@ -487,7 +487,7 @@
             <!-- File Info -->
             <div class="file-list-info" @click.stop="handleClickFile(item)">
               <div class="file-list-name">
-                {{ formatFileName(item.fileName ?? '', 40) }}
+                {{ item.fileName ?? '' }}
               </div>
               <div class="file-list-meta">
                 <span>{{ formatFileSize(item.fileSize) }}</span>

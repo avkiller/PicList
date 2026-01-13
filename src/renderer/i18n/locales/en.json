@@ -478,6 +478,7 @@
         "configChangeMsg": "Configuration changed",
         "configSaveMsg": "Configuration saved",
         "configTabTitle": "Existing configurations, click to copy",
+        "configurationRefreshMsg": "Configuration refreshed",
         "confirmDeleteConfig": "Are you sure you want to delete this configuration?",
         "copySuccess": "Copied: {text}",
         "delete": "Delete",
@@ -841,6 +842,7 @@
         "availablePlaceholdersTitle": "Use these placeholders to customize link format",
         "c1nToken": "C1N Token",
         "cfWorkerHost": "CF Worker Address",
+        "chooseSecondPicBedMode": "Choose Second Image Bed Mode",
         "chooseShowedPicBed": "Please select the image bed to display in the menu",
         "clipboardAndNotification": "Clipboard and Notification",
         "copySuccess": "Copy Successful: {content}",
@@ -887,6 +889,10 @@
           "uuid": "Random UUID",
           "year2": "Year, 2 Digits",
           "year4": "Year, 4 Digits"
+        },
+        "secondPicBedMode": {
+          "backup": "Backup Mode",
+          "seperate": "Separate Mode"
         },
         "setSecondPicBed": "Set Second Image Bed",
         "setSecondPicBedDesc": "Configure secondary image bed for backup",
@@ -958,6 +964,7 @@
       "updateReady": "Update Ready to Install"
     },
     "upload": {
+      "addToFavorites": "Add current picbed to quick switch",
       "changePicBed": "Change PicBed",
       "clickToUpload": "Click to Upload",
       "clipboardPicture": "Clipboard",
@@ -970,9 +977,13 @@
       "inputValidUrl": "Please enter a valid URL",
       "invalidUrlsFound": "Invalid URLs found: {urls}",
       "linkFormat": "Link Format",
+      "longPressToRemoveFromFavorites": "Long press to remove",
       "multipleUrlsHint": "Each URL on a separate line for multiple uploads",
       "outputFormat": "Output Format",
+      "picbedAddedToFavorites": "Added to quick switch",
+      "picbedSwitched": "Switched to {name}",
       "quickUpload": "Quick Upload",
+      "removeFromFavorites": "Remove from quick switch",
       "taskQueue": {
         "addFiles": "Add Files",
         "allCancelled": "All tasks cancelled",
@@ -1033,6 +1044,7 @@
     },
     "uploaderConfig": {
       "addNew": "Add New Configuration",
+      "addToFavorites": "Add to Quick Switch",
       "clickToSelect": "Click to select",
       "copy": "Copy",
       "delete": "Delete",
@@ -1045,11 +1057,12 @@
       "duplicateSuccess": "Duplicate Success",
       "duplicateTitle": "Duplicate Configuration",
       "edit": "Edit",
+      "removeFromFavorites": "Remove from Quick Switch",
       "selected": "Active",
       "setAsDefault": "Set as Default PicBed",
       "setSuccess": "Set Success",
       "subtitle": "{count} configurations available",
-      "title": "Uploader Configurations"
+      "title": "Configurations"
     }
   },
   "settings": {

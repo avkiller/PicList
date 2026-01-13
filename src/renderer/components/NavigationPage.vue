@@ -12,7 +12,7 @@
         class="collapse-button"
         @click="isCollapsed = !isCollapsed"
       >
-        <component :is="isCollapsed ? ChevronRightIcon : ChevronLeftIcon" :size="20" />
+        <component :is="isCollapsed ? ChevronRightIcon : ChevronLeftIcon" :size="16" />
       </button>
     </div>
 
@@ -248,7 +248,13 @@ function openMenu() {
 }
 
 function handleCopyPicBedConfig() {
-  window.electron.clipboard.writeText(picBedConfigString.value)
+  let result
+  try {
+    result = JSON.stringify(JSON.parse(picBedConfigString.value), null, 2)
+  } catch (_e) {
+    result = picBedConfigString.value
+  }
+  window.electron.clipboard.writeText(result)
   message.success(t('navigation.copySuccess'))
 }
 

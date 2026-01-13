@@ -23,8 +23,8 @@
           v-for="tab in tabs"
           :key="tab.id"
           class="tab-button"
-          :class="{ active: activeName === tab.id }"
-          @click="activeName = tab.id as 'system' | 'sync' | 'upload' | 'advanced' | 'update'"
+          :class="{ active: currentTab === tab.id }"
+          @click="currentTab = tab.id as 'system' | 'sync' | 'upload' | 'advanced' | 'update'"
         >
           <component :is="tab.icon" :size="18" />
           <span>{{ tab.label }}</span>
@@ -34,7 +34,7 @@
       <!-- Settings Content -->
       <div class="settings-content">
         <!-- System Settings Tab -->
-        <div v-if="activeName === 'system'" class="tab-content">
+        <div v-if="currentTab === 'system'" class="tab-content">
           <!-- Language & Appearance Section -->
           <div class="settings-section system-section">
             <div class="section-header-with-icon">
@@ -227,7 +227,7 @@
         </div>
 
         <!-- Sync & Configure Tab -->
-        <div v-if="activeName === 'sync'" class="tab-content">
+        <div v-if="currentTab === 'sync'" class="tab-content">
           <!-- Sync Status Overview -->
           <div class="sync-overview-card">
             <div class="sync-overview-header">
@@ -317,7 +317,7 @@
           </div>
         </div>
         <!-- Upload Settings Tab -->
-        <div v-if="activeName === 'upload'" class="tab-content">
+        <div v-if="currentTab === 'upload'" class="tab-content">
           <!-- Upload Behavior Section -->
           <div class="settings-section upload-section">
             <div class="section-header-with-icon">
@@ -387,6 +387,18 @@
                     <path d="M9 18l6-6-6-6" />
                   </svg>
                 </div>
+              </div>
+
+              <div class="system-option-card">
+                <div class="system-option-header">
+                  <Settings2Icon :size="18" />
+                  <span>{{ t('pages.settings.upload.chooseSecondPicBedMode') }}</span>
+                </div>
+                <select v-model="currentSecondMode" class="form-select">
+                  <option v-for="item in secondModeList" :key="item.value" :value="item.value">
+                    {{ item.label }}
+                  </option>
+                </select>
               </div>
             </div>
           </div>
@@ -706,7 +718,7 @@
         </div>
 
         <!-- Advanced Settings Tab -->
-        <div v-if="activeName === 'advanced'" class="tab-content">
+        <div v-if="currentTab === 'advanced'" class="tab-content">
           <!-- Logging Section -->
           <div class="settings-section advanced-section">
             <div class="section-header-with-icon">
@@ -813,19 +825,24 @@
                   <small>{{ t('pages.settings.advanced.serverEncryptionKeyDesc') }}</small>
                 </div>
               </div>
-              <input
-                v-model.trim="formOfSetting.aesPassword"
-                type="text"
-                class="form-input"
-                :placeholder="t('pages.settings.advanced.serverEncryptionKey')"
-                @change="handleAesPasswordChange(formOfSetting.aesPassword)"
-              />
+              <div class="input-with-icon">
+                <input
+                  v-model.trim="formOfSetting.aesPassword"
+                  :type="apiKeyVisible ? 'text' : 'password'"
+                  class="form-input"
+                  :placeholder="t('pages.settings.advanced.serverEncryptionKey')"
+                  @change="handleAesPasswordChange(formOfSetting.aesPassword)"
+                />
+                <div class="icon-btn" @click="apiKeyVisible = !apiKeyVisible">
+                  <component :is="apiKeyVisible ? Eye : EyeOff" :size="16" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Update Settings Tab -->
-        <div v-if="activeName === 'update'" class="tab-content">
+        <div v-if="currentTab === 'update'" class="tab-content">
           <!-- Version Status Card -->
           <div class="update-status-card">
             <div class="update-status-icon">
@@ -846,15 +863,6 @@
 
           <!-- Update Preferences -->
           <div class="settings-section update-preferences-section">
-            <div class="section-header-with-icon">
-              <div class="section-icon-wrapper update small-icon">
-                <Settings :size="15" />
-              </div>
-              <div>
-                <h2>{{ t('pages.settings.update.updatePreferences') }}</h2>
-              </div>
-            </div>
-
             <div class="update-preference-card">
               <label class="switch-label">
                 <input v-model="formOfSetting.showUpdateTip" type="checkbox" class="switch-input" />
@@ -871,15 +879,6 @@
 
           <!-- Release Notes Section -->
           <div class="settings-section release-notes-section">
-            <div class="section-header-with-icon">
-              <div class="section-icon-wrapper notes small-icon">
-                <FileText :size="15" />
-              </div>
-              <div>
-                <h2>{{ t('pages.settings.update.releaseNotes') }}</h2>
-              </div>
-            </div>
-
             <div class="release-notes-card enhanced">
               <div class="release-notes-header">
                 <div class="release-notes-title">
@@ -905,9 +904,7 @@
                   </div>
                   <span>{{ t('pages.settings.update.loadingReleaseNotes') }}</span>
                 </div>
-                <div v-else-if="releaseNotes" class="release-notes-text">
-                  <pre class="release-notes-pre">{{ releaseNotes }}</pre>
-                </div>
+                <div v-else-if="releaseNotes" class="notes-body" v-html="renderedReleaseNotes"></div>
                 <div v-else-if="releaseNotesError" class="release-notes-error">
                   <div class="error-icon">⚠️</div>
                   <span>{{ releaseNotesError }}</span>
@@ -1399,12 +1396,17 @@
                 <Keyboard :size="14" />
                 {{ t('pages.settings.advanced.serverKey') }}
               </label>
-              <input
-                v-model="formOfSetting.serverKey"
-                type="text"
-                class="form-input"
-                :placeholder="t('pages.settings.advanced.serverKeyPlaceholder')"
-              />
+              <div class="input-with-icon">
+                <input
+                  v-model="formOfSetting.serverKey"
+                  :type="serverKeyVisible ? 'text' : 'password'"
+                  class="form-input"
+                  :placeholder="t('pages.settings.advanced.serverKeyPlaceholder')"
+                />
+                <div class="icon-btn" @click="serverKeyVisible = !serverKeyVisible">
+                  <component :is="serverKeyVisible ? Eye : EyeOff" :size="16" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1758,12 +1760,15 @@
 </template>
 
 <script lang="ts" setup>
+import { useStorage } from '@vueuse/core'
 import { compare } from 'compare-versions'
 import {
   BookOpen,
   CloudUpload,
   Download,
   Edit,
+  Eye,
+  EyeOff,
   FileText,
   FolderOpen,
   GitBranch,
@@ -1777,8 +1782,10 @@ import {
   RotateCcw,
   Server,
   Settings,
+  Settings2Icon,
   Store,
 } from 'lucide-vue-next'
+import { marked } from 'marked'
 import type { IConfig } from 'piclist'
 import pkg from 'root/package.json'
 import { computed, onBeforeMount, reactive, ref, toRaw, watch } from 'vue'
@@ -1803,9 +1810,9 @@ const { confirm } = useConfirm()
 const message = useMessage()
 const { picBedG, updatePicBeds } = usePicBed()
 
-const activeName = ref<'system' | 'sync' | 'upload' | 'advanced' | 'update'>('system')
 const showPicBedList = ref<string[]>([])
 const galleryPicBedFilterList = ref<string[]>([])
+const currentTab = useStorage<'system' | 'sync' | 'upload' | 'advanced' | 'update'>('settings-current-tab', 'system')
 
 // Tab configuration
 const tabs = computed(() => [
@@ -1827,6 +1834,11 @@ const languageList = [
   { label: '简体中文', value: 'zh-CN' },
   { label: '繁體中文', value: 'zh-TW' },
   { label: 'English', value: 'en' },
+]
+
+const secondModeList = [
+  { label: t('pages.settings.upload.secondPicBedMode.backup'), value: 'backup' },
+  { label: t('pages.settings.upload.secondPicBedMode.seperate'), value: 'seperate' },
 ]
 
 const formOfSetting = ref<ISettingForm>({
@@ -1919,6 +1931,12 @@ const addWatch = () => {
     )
   })
 
+  watch(currentSecondMode, newVal => {
+    if (newVal) {
+      saveConfig({ [configPaths.settings.secondPicBedMode]: newVal })
+    }
+  })
+
   watch(currentLanguage, newVal => {
     if (newVal) {
       handleLanguageChange(newVal)
@@ -1978,6 +1996,7 @@ function copyPlaceholder(placeholder: string) {
 }
 
 const currentLanguage = ref()
+const currentSecondMode = ref()
 const currentStartMode = ref()
 const currentShortUrlServer = ref()
 
@@ -1985,6 +2004,8 @@ const logFileVisible = ref(false)
 const customLinkVisible = ref(false)
 const checkUpdateVisible = ref(false)
 const serverVisible = ref(false)
+const serverKeyVisible = ref(false)
+const apiKeyVisible = ref(false)
 const webServerVisible = ref(false)
 const syncVisible = ref(false)
 const upDownConfigVisible = ref(false)
@@ -2098,6 +2119,7 @@ async function initData() {
   formOfSetting.value.autoImportPicBed = initArray(settings.autoImportPicBed || [], [])
   currentLanguage.value = settings.language || 'zh-CN'
   currentStartMode.value = settings.startMode || ISartMode.QUIET
+  currentSecondMode.value = settings.secondPicBedMode || 'backup'
   if (osGlobal.value === 'darwin' && currentStartMode.value === ISartMode.MINI) {
     currentStartMode.value = ISartMode.QUIET
     saveConfig(configPaths.settings.startMode, ISartMode.QUIET)
@@ -2266,6 +2288,10 @@ function formatLastFetchTime(date: Date): string {
     }
   }
 }
+
+const renderedReleaseNotes = computed(() => {
+  return marked(releaseNotes.value, { breaks: true, gfm: true })
+})
 
 async function fetchReleaseNotes(forceRefresh = false): Promise<void> {
   if (!forceRefresh && releaseNotesLastFetch.value) {
@@ -2440,7 +2466,7 @@ function handleLanguageChange(val: string) {
   setCurrentLanguage(val)
   saveConfig({ [configPaths.settings.language]: val })
   localStorage.setItem('currentLanguage', val)
-  // updatePicBedGlobal()
+  updatePicBeds()
 }
 
 function handleStartModeChange(val: string) {
@@ -2470,3 +2496,33 @@ export default { name: 'SettingPage' }
 </script>
 
 <style scoped src="./css/PicgoSetting.css"></style>
+
+<style scoped>
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-with-icon .form-input {
+  padding-right: 2.5rem;
+}
+
+.icon-btn {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  transition: color 0.2s ease;
+}
+
+.icon-btn:hover {
+  color: var(--color-text-primary);
+}
+</style>
