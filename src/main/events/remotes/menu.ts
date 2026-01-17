@@ -1,4 +1,3 @@
-import db from '@core/datastore'
 import picgo from '@core/picgo'
 import { uploadClipboardFiles } from 'apis/app/uploader/apis'
 import windowManager from 'apis/app/window/windowManager'
@@ -12,6 +11,7 @@ import {
   PICGO_HANDLE_PLUGIN_DONE,
   PICGO_HANDLE_PLUGIN_ING,
   PICGO_TOGGLE_PLUGIN,
+  SHOW_FIRST_TIME_GUIDE,
   SHOW_MAIN_PAGE_QRCODE,
 } from '~/events/constant'
 import { handlePluginUninstall, handlePluginUpdate } from '~/events/rpc/routes/plugin/utils'
@@ -30,7 +30,7 @@ interface GuiMenuItem {
 }
 
 const buildMiniPageMenu = () => {
-  const isListeningClipboard = db.get(configPaths.settings.isListeningClipboard) || false
+  const isListeningClipboard = picgo.getConfig<boolean>(configPaths.settings.isListeningClipboard) || false
   const ClipboardWatcher = clipboardPoll
   const submenu = buildPicBedListMenu()
   const template: (MenuItemConstructorOptions | MenuItem)[] = [
@@ -58,7 +58,7 @@ const buildMiniPageMenu = () => {
     {
       label: $t('START_WATCH_CLIPBOARD'),
       click() {
-        db.set(configPaths.settings.isListeningClipboard, true)
+        picgo.saveConfig({ [configPaths.settings.isListeningClipboard]: true })
         ClipboardWatcher.startListening()
         ClipboardWatcher.on('change', () => {
           picgo.log.info('clipboard changed')
@@ -71,7 +71,7 @@ const buildMiniPageMenu = () => {
     {
       label: $t('STOP_WATCH_CLIPBOARD'),
       click() {
-        db.set(configPaths.settings.isListeningClipboard, false)
+        picgo.saveConfig({ [configPaths.settings.isListeningClipboard]: false })
         ClipboardWatcher.stopListening()
         ClipboardWatcher.removeAllListeners()
         buildMiniPageMenu()
@@ -113,6 +113,12 @@ const buildMainPageMenu = (win: BrowserWindow) => {
       },
     },
     {
+      label: $t('SHOW_FIRST_TIME_GUIDE'),
+      click() {
+        win?.webContents?.send(SHOW_FIRST_TIME_GUIDE)
+      },
+    },
+    {
       label: $t('OPEN_TOOLBOX'),
       click() {
         const window = windowManager.create(IWindowList.TOOLBOX_WINDOW)
@@ -138,14 +144,13 @@ const buildMainPageMenu = (win: BrowserWindow) => {
 
 const buildSecondPicBedMenu = () => {
   const picBeds = getPicBeds().picBeds
-  const secondUploader = picgo.getConfig(configPaths.picBed.secondUploader)
-  const defaultSecondUploaderConfig = picgo.getConfig(configPaths.picBed.secondUploaderConfig) as
-    | IUploaderConfig
-    | undefined
+  const allConfig = picgo.getConfig<any>() || {}
+  const secondUploader = allConfig.picBed?.secondUploader
+  const defaultSecondUploaderConfig = allConfig.picBed?.secondUploaderConfig as IUploaderConfig | undefined
   const defaultSecondUploaderId = defaultSecondUploaderConfig?._id || ''
   const defaultSecondUploaderName = defaultSecondUploaderConfig?._configName || 'Default'
   const currentPicBedName = picBeds.find(item => item.type === secondUploader)?.name
-  const picBedConfigList = picgo.getConfig<IUploaderConfig>('uploader')
+  const picBedConfigList = allConfig.uploader
   const currentPicBedMenuItem = [
     {
       label: `${$t('CURRENT_SECOND_PICBED')} - ${currentPicBedName || 'None'} - ${defaultSecondUploaderName}`,
@@ -165,7 +170,7 @@ const buildSecondPicBedMenu = () => {
         type: !hasSubmenu ? 'checkbox' : undefined,
         checked: !hasSubmenu ? secondUploader === item.type : undefined,
         submenu: hasSubmenu
-          ? configList.map(config => {
+          ? configList.map((config: any) => {
               return {
                 label: config._configName || 'Default',
                 // if only one config, use checkbox, or radio will checked as default
@@ -196,9 +201,10 @@ const buildSecondPicBedMenu = () => {
 
 const buildPicBedListMenu = () => {
   const picBeds = getPicBeds().picBeds
-  const currentPicBed = picgo.getConfig(configPaths.picBed.uploader)
+  const allConfig = picgo.getConfig<any>() || {}
+  const currentPicBed = allConfig.picBed?.uploader
   const currentPicBedName = picBeds.find(item => item.type === currentPicBed)?.name
-  const picBedConfigList = picgo.getConfig<IUploaderConfig>('uploader')
+  const picBedConfigList = allConfig.uploader
   const currentPicBedMenuItem = [
     {
       label: `${$t('CURRENT_PICBED')} - ${currentPicBedName}`,
@@ -219,7 +225,7 @@ const buildPicBedListMenu = () => {
         type: !hasSubmenu ? 'checkbox' : undefined,
         checked: !hasSubmenu ? currentPicBed === item.type : undefined,
         submenu: hasSubmenu
-          ? configList.map(config => {
+          ? configList.map((config: any) => {
               return {
                 label: config._configName || 'Default',
                 // if only one config, use checkbox, or radio will checked as default

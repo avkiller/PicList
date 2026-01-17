@@ -73,6 +73,59 @@
                   <option value="main">{{ t('pages.settings.system.mainMode') }}</option>
                 </select>
               </div>
+              <!-- Performance & Animation Toggles -->
+              <div class="system-toggle-card">
+                <label class="switch-label">
+                  <input v-model="isDisableGPU" type="checkbox" class="switch-input" />
+                  <span class="switch-slider" />
+                  <div class="switch-content">
+                    <div class="switch-title">{{ t('pages.settings.system.isDisableGPU') }}</div>
+                    <div class="switch-description">{{ t('pages.settings.system.isDisableGPUDesc') }}</div>
+                  </div>
+                </label>
+              </div>
+
+              <div class="system-toggle-card">
+                <label class="switch-label">
+                  <input v-model="formOfSetting.enableAdvancedAnimation" type="checkbox" class="switch-input" />
+                  <span class="switch-slider" />
+                  <div class="switch-content">
+                    <div class="switch-title">{{ t('pages.settings.system.enableAdvancedAnimation') }}</div>
+                    <div class="switch-description">{{ t('pages.settings.system.enableAdvancedAnimationDesc') }}</div>
+                  </div>
+                </label>
+              </div>
+
+              <div class="system-option-card">
+                <div class="system-option-header">
+                  <ImageIcon :size="18" />
+                  <span>{{ t('pages.settings.system.chooseTheme') }}</span>
+                </div>
+                <select v-model="currentTheme" class="form-select theme-dropdown">
+                  <option v-for="theme in themeList" :key="theme.key" :value="theme.key">
+                    {{ theme.label }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="theme-actions-grid">
+              <button
+                class="btn btn-secondary theme-action-btn"
+                :disabled="downloadingThemes"
+                @click="handleDownloadThemes"
+              >
+                <Download :size="14" />
+                <span>{{
+                  downloadingThemes
+                    ? t('pages.settings.system.downloadingThemes')
+                    : t('pages.settings.system.downloadThemes')
+                }}</span>
+              </button>
+              <button class="btn btn-secondary theme-action-btn" @click="handleImportThemes">
+                <Import :size="14" />
+                <span>{{ t('pages.settings.system.importThemes') }}</span>
+              </button>
             </div>
           </div>
 
@@ -291,6 +344,20 @@
                   </svg>
                 </div>
               </div>
+              <div v-if="isPortable" class="sync-action-card" @click="handleMigrateFromPicListInstallation">
+                <div class="sync-action-icon migrate">
+                  <Import :size="24" />
+                </div>
+                <div class="sync-action-content">
+                  <h4>{{ t('pages.settings.sync.migrateFromPicListInstallation') }}</h4>
+                  <p>{{ t('pages.settings.sync.migrateDescPicList') }}</p>
+                </div>
+                <div class="sync-action-arrow">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -417,7 +484,7 @@
             <!-- Processing Action Cards -->
             <div class="processing-actions-grid">
               <div class="processing-action-card" @click="advancedRenameVisible = true">
-                <div class="processing-action-icon rename">
+                <div class="processing-action-icon">
                   <Edit :size="15" />
                 </div>
                 <div class="processing-action-info">
@@ -427,7 +494,7 @@
               </div>
 
               <div class="processing-action-card" @click="imageProcessDialogVisible = true">
-                <div class="processing-action-icon image">
+                <div class="processing-action-icon">
                   <ImageIcon :size="20" />
                 </div>
                 <div class="processing-action-info">
@@ -828,14 +895,11 @@
               <div class="input-with-icon">
                 <input
                   v-model.trim="formOfSetting.aesPassword"
-                  :type="apiKeyVisible ? 'text' : 'password'"
+                  type="text"
                   class="form-input"
                   :placeholder="t('pages.settings.advanced.serverEncryptionKey')"
                   @change="handleAesPasswordChange(formOfSetting.aesPassword)"
                 />
-                <div class="icon-btn" @click="apiKeyVisible = !apiKeyVisible">
-                  <component :is="apiKeyVisible ? Eye : EyeOff" :size="16" />
-                </div>
               </div>
             </div>
           </div>
@@ -932,7 +996,7 @@
 
     <!-- Dialogs -->
     <!-- Custom Link Format Dialog -->
-    <div v-if="customLinkVisible" class="dialog-overlay" @click="customLinkVisible = false">
+    <div v-if="customLinkVisible" class="dialog-overlay" :class="advancedAnimation" @click="customLinkVisible = false">
       <div class="dialog enhanced-dialog" @click.stop>
         <div class="dialog-header">
           <div class="dialog-header-content">
@@ -983,7 +1047,7 @@
     </div>
 
     <!-- Proxy Settings Dialog -->
-    <div v-if="proxyVisible" class="dialog-overlay" @click="proxyVisible = false">
+    <div v-if="proxyVisible" class="dialog-overlay" :class="advancedAnimation" @click="proxyVisible = false">
       <div class="dialog enhanced-dialog" @click.stop>
         <div class="dialog-header">
           <div class="dialog-header-content">
@@ -1000,7 +1064,7 @@
         <div class="dialog-content">
           <div class="proxy-config-grid">
             <div class="proxy-config-card">
-              <div class="proxy-config-icon upload">
+              <div class="proxy-config-icon">
                 <CloudUpload :size="18" />
               </div>
               <div class="proxy-config-field">
@@ -1009,7 +1073,7 @@
               </div>
             </div>
             <div class="proxy-config-card">
-              <div class="proxy-config-icon plugin">
+              <div class="proxy-config-icon">
                 <Settings :size="18" />
               </div>
               <div class="proxy-config-field">
@@ -1023,7 +1087,7 @@
               </div>
             </div>
             <div class="proxy-config-card full-width">
-              <div class="proxy-config-icon mirror">
+              <div class="proxy-config-icon">
                 <Globe :size="18" />
               </div>
               <div class="proxy-config-field">
@@ -1050,7 +1114,7 @@
     </div>
 
     <!-- Main Window Size Dialog -->
-    <div v-if="mainWindowSizeVisible" class="dialog-overlay">
+    <div v-if="mainWindowSizeVisible" class="dialog-overlay" :class="advancedAnimation">
       <div class="dialog enhanced-dialog" @click.stop>
         <div class="dialog-header">
           <div class="dialog-header-content">
@@ -1105,7 +1169,7 @@
     </div>
 
     <!-- Check Update Dialog -->
-    <div v-if="checkUpdateVisible" class="dialog-overlay" @click="cancelCheckVersion">
+    <div v-if="checkUpdateVisible" class="dialog-overlay" :class="advancedAnimation" @click="cancelCheckVersion">
       <div class="dialog enhanced-dialog update-dialog" @click.stop>
         <div class="dialog-header">
           <div class="dialog-header-content">
@@ -1154,7 +1218,12 @@
     </div>
 
     <!-- Advanced Rename Dialog -->
-    <div v-if="advancedRenameVisible" class="dialog-overlay" @click="handleCancelAdvancedRename">
+    <div
+      v-if="advancedRenameVisible"
+      class="dialog-overlay"
+      :class="advancedAnimation"
+      @click="handleCancelAdvancedRename"
+    >
       <div class="dialog enhanced-dialog rename-dialog" @click.stop>
         <div class="dialog-header">
           <div class="dialog-header-content">
@@ -1254,7 +1323,7 @@
     </div>
 
     <!-- Log Settings Dialog -->
-    <div v-if="logFileVisible" class="dialog-overlay" @click="cancelLogLevelSetting">
+    <div v-if="logFileVisible" class="dialog-overlay" :class="advancedAnimation" @click="cancelLogLevelSetting">
       <div class="dialog enhanced-dialog log-dialog" @click.stop>
         <div class="dialog-header">
           <div class="dialog-header-content">
@@ -1343,7 +1412,7 @@
     </div>
 
     <!-- Server Settings Dialog -->
-    <div v-if="serverVisible" class="dialog-overlay" @click="cancelServerSetting">
+    <div v-if="serverVisible" class="dialog-overlay" :class="advancedAnimation" @click="cancelServerSetting">
       <div class="dialog enhanced-dialog server-dialog" @click.stop>
         <div class="dialog-header">
           <div class="dialog-header-content">
@@ -1399,13 +1468,10 @@
               <div class="input-with-icon">
                 <input
                   v-model="formOfSetting.serverKey"
-                  :type="serverKeyVisible ? 'text' : 'password'"
+                  type="text"
                   class="form-input"
                   :placeholder="t('pages.settings.advanced.serverKeyPlaceholder')"
                 />
-                <div class="icon-btn" @click="serverKeyVisible = !serverKeyVisible">
-                  <component :is="serverKeyVisible ? Eye : EyeOff" :size="16" />
-                </div>
               </div>
             </div>
           </div>
@@ -1422,7 +1488,7 @@
     </div>
 
     <!-- Web Server Settings Dialog -->
-    <div v-if="webServerVisible" class="dialog-overlay" @click="confirmWebServerSetting">
+    <div v-if="webServerVisible" class="dialog-overlay" :class="advancedAnimation" @click="confirmWebServerSetting">
       <div class="dialog enhanced-dialog webserver-dialog" @click.stop>
         <div class="dialog-header">
           <div class="dialog-header-content">
@@ -1505,7 +1571,7 @@
     </div>
 
     <!-- Sync Configuration Dialog -->
-    <div v-if="syncVisible" class="dialog-overlay">
+    <div v-if="syncVisible" class="dialog-overlay" :class="advancedAnimation">
       <div class="dialog sync-config-dialog" @click.stop>
         <div class="dialog-header">
           <div class="dialog-header-content">
@@ -1662,7 +1728,12 @@
     </div>
 
     <!-- Upload/Download Config Dialog -->
-    <div v-if="upDownConfigVisible" class="dialog-overlay" @click="upDownConfigVisible = false">
+    <div
+      v-if="upDownConfigVisible"
+      class="dialog-overlay"
+      :class="advancedAnimation"
+      @click="upDownConfigVisible = false"
+    >
       <div class="dialog config-dialog" @click.stop>
         <div class="dialog-header">
           <div class="dialog-header-content">
@@ -1740,7 +1811,12 @@
     </div>
 
     <!-- Image Process Dialog -->
-    <div v-if="imageProcessDialogVisible" class="dialog-overlay" @click="imageProcessDialogVisible = false">
+    <div
+      v-if="imageProcessDialogVisible"
+      class="dialog-overlay"
+      :class="advancedAnimation"
+      @click="imageProcessDialogVisible = false"
+    >
       <div class="dialog large" @click.stop>
         <div class="dialog-header">
           <h3 class="dialog-title">
@@ -1767,8 +1843,6 @@ import {
   CloudUpload,
   Download,
   Edit,
-  Eye,
-  EyeOff,
   FileText,
   FolderOpen,
   GitBranch,
@@ -1812,6 +1886,11 @@ const { picBedG, updatePicBeds } = usePicBed()
 
 const showPicBedList = ref<string[]>([])
 const galleryPicBedFilterList = ref<string[]>([])
+const themeList = ref<{ key: string; label: string }[]>([{ key: 'default.css', label: '默认' }])
+const currentTheme = ref('default.css')
+const downloadingThemes = ref(false)
+const isDisableGPU = ref(false)
+const isPortable = ref(false)
 const currentTab = useStorage<'system' | 'sync' | 'upload' | 'advanced' | 'update'>('settings-current-tab', 'system')
 
 // Tab configuration
@@ -1883,6 +1962,8 @@ const formOfSetting = ref<ISettingForm>({
   mainWindowWidth: 1200,
   mainWindowHeight: 800,
   enableSecondUploader: false,
+  enableAdvancedAnimation: false,
+  theme: 'default.css',
 })
 
 const proxy = ref('')
@@ -1919,7 +2000,12 @@ const autoWatchKeys = [
   'encodeOutputURL',
   'useShortUrl',
   'enableSecondUploader',
+  'enableAdvancedAnimation',
 ]
+
+const advancedAnimation = computed(() => ({
+  advancedAnimation: formOfSetting.value.enableAdvancedAnimation,
+}))
 
 const addWatch = () => {
   autoWatchKeys.forEach(key => {
@@ -1955,6 +2041,17 @@ const addWatch = () => {
     if (newVal) {
       handleShortUrlServerChange(newVal)
     }
+  })
+
+  watch(currentTheme, newVal => {
+    if (newVal) {
+      handleThemeChange(newVal)
+    }
+  })
+
+  watch(isDisableGPU, newVal => {
+    message.info(t('pages.settings.system.needRestart'))
+    saveConfig({ [configPaths.settings.isDisableGPU]: newVal })
   })
 }
 
@@ -2004,8 +2101,6 @@ const logFileVisible = ref(false)
 const customLinkVisible = ref(false)
 const checkUpdateVisible = ref(false)
 const serverVisible = ref(false)
-const serverKeyVisible = ref(false)
-const apiKeyVisible = ref(false)
 const webServerVisible = ref(false)
 const syncVisible = ref(false)
 const upDownConfigVisible = ref(false)
@@ -2095,12 +2190,78 @@ onBeforeMount(() => {
   initData()
 })
 
+async function loadThemes() {
+  try {
+    const themes = await window.electron.triggerRPC<{ key: string; label: string }[]>(
+      IRPCActionType.THEME_RESOLVE_THEMES,
+    )
+    if (themes && themes.length > 0) {
+      themeList.value = themes.sort((a, b) => {
+        if (a.key === 'default.css') return -1
+        if (b.key === 'default.css') return 1
+        return a.label.localeCompare(b.label)
+      })
+    }
+  } catch (error) {
+    console.error('Failed to load themes:', error)
+  }
+}
+
+async function handleDownloadThemes() {
+  try {
+    downloadingThemes.value = true
+    const result = await window.electron.triggerRPC(IRPCActionType.THEME_FETCH_THEMES)
+    if (!result) {
+      throw new Error('No themes were downloaded.')
+    }
+    message.success(t('pages.settings.system.downloadThemesSuccess'))
+    await loadThemes()
+  } catch (error) {
+    console.error('Failed to download themes:', error)
+    message.error(t('pages.settings.system.downloadThemesFailed'))
+  } finally {
+    downloadingThemes.value = false
+  }
+}
+
+async function handleImportThemes() {
+  try {
+    const result = await window.electron.triggerRPC<string[]>(IRPCActionType.MANAGE_OPEN_FILE_SELECT_DIALOG, {
+      title: t('pages.settings.system.importThemes'),
+      filters: [{ name: 'CSS Files', extensions: ['css'] }],
+      properties: ['openFile', 'multiSelections'],
+    })
+    if (result && result.length > 0) {
+      await window.electron.triggerRPC(IRPCActionType.THEME_IMPORT_THEMES, result)
+      message.success(t('pages.settings.system.importThemesSuccess'))
+      await loadThemes()
+    }
+  } catch (error) {
+    console.error('Failed to import themes:', error)
+    message.error(t('pages.settings.system.importThemesFailed'))
+  }
+}
+
+async function handleThemeChange(theme: string) {
+  try {
+    await window.electron.triggerRPC(IRPCActionType.THEME_APPLY_THEME, theme)
+    saveConfig({ [configPaths.settings.theme]: theme })
+  } catch (error) {
+    console.error('Failed to apply theme:', error)
+    message.error(t('pages.settings.system.applyThemeFailed'))
+  }
+}
+
 async function initData() {
   const config = (await getConfig<IConfig>()) || ({} as IConfig)
   const settings = config.settings || {}
   const picBed = config.picBed
+  isDisableGPU.value = settings.isDisableGPU || false
+  isPortable.value = (await window.electron.triggerRPC<boolean>(IRPCActionType.GET_IS_PORTABLE)) || false
   showPicBedList.value = picBedG.value.filter(item => item.visible).map(item => item.name)
   galleryPicBedFilterList.value = settings.galleryPicBedFilter || []
+  currentTheme.value = settings.theme || 'default.css'
+  loadThemes()
   formKeys.forEach(key => {
     ;(formOfSetting.value as any)[key] = settings[key] ?? formOfSetting.value[key]
   })
@@ -2223,6 +2384,28 @@ function handleMigrateFromPicGo() {
     if (result) {
       window.electron
         .triggerRPC<boolean>(IRPCActionType.CONFIGURE_MIGRATE_FROM_PICGO)
+        .then(() => {
+          message.success(t('pages.settings.sync.mirgrateSuccess'))
+        })
+        .catch(() => {
+          message.error(t('pages.settings.sync.mirgrateFailed'))
+        })
+    }
+  })
+}
+
+function handleMigrateFromPicListInstallation() {
+  confirm({
+    title: t('pages.settings.sync.mirgrateTitle'),
+    message: t('pages.settings.sync.migrateFromPicListInstallationContent'),
+    type: 'warning',
+    confirmButtonText: t('common.confirm'),
+    cancelButtonText: t('common.cancel'),
+    center: true,
+  }).then(result => {
+    if (result) {
+      window.electron
+        .triggerRPC<boolean>(IRPCActionType.CONFIGURE_MIGRATE_FROM_PICLIST_INSTALLATION)
         .then(() => {
           message.success(t('pages.settings.sync.mirgrateSuccess'))
         })

@@ -1,5 +1,7 @@
 {
-  "app": { "title": "PicList" },
+  "app": {
+    "title": "PicList"
+  },
   "common": {
     "cancel": "取消",
     "close": "关闭",
@@ -8,6 +10,49 @@
     "reset": "重置",
     "submit": "提交",
     "version": "版本"
+  },
+  "guide": {
+    "close": "关闭",
+    "finish": "开始使用",
+    "next": "下一步",
+    "previous": "上一步",
+    "skip": "跳过教程",
+    "stepIndicator": "第 {current} 步，共 {total} 步",
+    "steps": {
+      "finish": {
+        "description": "您已经准备好开始使用 PicList 了！您可以随时从菜单重新启动本指南。",
+        "title": "一切就绪！✨"
+      },
+      "gallery": {
+        "description": "在相册中访问您上传的图片。您可以搜索、筛选和管理您的图片集。",
+        "title": "查看相册"
+      },
+      "picbed": {
+        "description": "点击这里查看和配置您当前使用的图床服务。",
+        "title": "选择图床服务"
+      },
+      "settings": {
+        "description": "自定义 PicList 以满足您的需求。配置上传设置、快捷键等。",
+        "title": "配置设置"
+      },
+      "theme": {
+        "description": "点击侧边栏中的明暗切换来改变明暗主题。",
+        "title": "明暗切换"
+      },
+      "themeSelection": {
+        "description": "从下拉菜单中选择主题来自定义 PicList 的外观。",
+        "title": "自定义主题  🎨"
+      },
+      "upload": {
+        "description": "您可以通过拖放图片到这里，或点击选择文件来上传图片。",
+        "title": "上传您的图片"
+      },
+      "welcome": {
+        "description": "让我们快速了解一下 PicList 的主要功能吧。",
+        "title": "欢迎使用 PicList！🎉"
+      }
+    },
+    "title": "欢迎使用 PicList"
   },
   "navigation": {
     "choosePicBed": "选择图床",
@@ -621,6 +666,7 @@
       "viewDocFailed": "查看文档失败"
     },
     "plugin": {
+      "browseAllPlugins": "浏览所有插件",
       "browsePlugins": "浏览插件",
       "configThing": "配置 {c}",
       "description": "PicList 插件管理页面",
@@ -633,12 +679,15 @@
       "installPluginsToGetStarted": "请先安装插件以开始使用",
       "list": "插件列表",
       "loading": "加载中...",
+      "loadingPlugins": "正在加载插件...",
       "needRestart": "需要重启生效",
       "noPluginsFound": "未找到插件",
       "NoPluginsInstalled": "暂无已安装插件",
       "notGuiImplement": "该插件未对可视化界面进行优化, 是否继续安装?",
+      "openRemoteList": "打开远程插件列表",
       "pluginList": "插件列表",
       "restartApp": "重启应用",
+      "searchInBrowse": "搜索插件",
       "searchPlaceholder": "搜索 npm 上的 PicGo 插件，或者点击上方按钮查看优秀插件列表",
       "setResult": "设置结果",
       "setSuccess": "设置成功",
@@ -720,7 +769,12 @@
         "downloadSettings": "下载配置",
         "fileManagement": "文件管理",
         "galleryDB": "相册数据库同步",
-        "gitea": { "branch": "分支名", "repo": "仓库名", "token": "访问令牌", "username": "用户名" },
+        "gitea": {
+          "branch": "分支名",
+          "repo": "仓库名",
+          "token": "访问令牌",
+          "username": "用户名"
+        },
         "giteaHost": "Gitea 地址",
         "gitee": {
           "branch": "Gitee 分支名",
@@ -736,7 +790,10 @@
         },
         "manageConfig": "管理配置",
         "migrateDesc": "从 PicGo 导入配置和相册数据",
+        "migrateDescPicList": "从安装版PicList导入配置和相册数据",
         "migrateFromPicGo": "从PicGo迁移",
+        "migrateFromPicListInstallation": "从安装版PicList迁移",
+        "migrateFromPicListInstallationContent": "将安装版PicList的配置文件和相册数据导入到当前版本, 这将覆盖当前的配置文件和相册, 是否继续?",
         "mirgrateContent": "即将导入PicGo的配置文件和相册, 这将覆盖当前的配置文件和相册, 是否继续?",
         "mirgrateFailed": "导入失败",
         "mirgrateSuccess": "导入成功, 请重启PicList生效",
@@ -749,7 +806,10 @@
         "syncConfigProxy": "代理",
         "syncConfiguration": "同步平台",
         "syncEndpointConfig": "平台设置",
-        "syncResult": { "failed": "同步失败", "success": "同步成功" },
+        "syncResult": {
+          "failed": "同步失败",
+          "success": "同步成功"
+        },
         "title": "同步",
         "upDownloadDesc": "同步配置文件和相册数据到云端",
         "upDownloadSettings": "同步配置和相册",
@@ -765,14 +825,27 @@
         "webdavEndpoint": "WebDAV 端点"
       },
       "system": {
+        "applyThemeFailed": "应用主题失败",
         "autoCloseMainWindow": "打开迷你窗口时关闭主窗口",
         "autoCloseMiniWindow": "打开主窗口时关闭迷你窗口",
         "autoLaunch": "开机自启",
         "autoLaunchDesc": "登录时自动启动 PicList",
         "chooseLanguage": "选择语言",
+        "chooseTheme": "选择主题",
         "customMiniIconPath": "自定义迷你窗口图标路径",
+        "downloadingThemes": "下载中...",
+        "downloadThemes": "下载主题",
+        "downloadThemesFailed": "下载主题失败",
+        "downloadThemesSuccess": "主题下载成功",
+        "enableAdvancedAnimation": "启用高级动画效果",
+        "enableAdvancedAnimationDesc": "不要在低性能设备上或关闭GPU加速时启用此选项",
         "hideDockHint": "不支持同时隐藏 dock 和托盘",
+        "importThemes": "导入主题",
+        "importThemesFailed": "导入主题失败",
+        "importThemesSuccess": "主题导入成功",
         "isCustomMiniIcon": "是否自定义迷你窗口图标",
+        "isDisableGPU": "禁用 GPU 加速",
+        "isDisableGPUDesc": "提升兼容性，但可能降低性能",
         "isHideDock": "是否隐藏 Dock 图标",
         "languageAndAppearance": "语言和外观",
         "mainMode": "主窗口",
@@ -1034,7 +1107,11 @@
       "uploadHint": "支持所有文件类型，但推荐仅上传图片",
       "uploadingMultipleUrls": "正在上传 {count} 个URL...",
       "uploadViewHint": "点击打开图床设置",
-      "urlType": { "normal": "长链接", "short": "短链接", "title": "链接类型" },
+      "urlType": {
+        "normal": "长链接",
+        "short": "短链接",
+        "title": "链接类型"
+      },
       "urlUpload": "URL上传"
     },
     "uploaderConfig": {
@@ -1071,5 +1148,10 @@
       "toggle": "切换主题"
     }
   },
-  "titleBar": { "alwaysOnTop": "置顶", "close": "关闭", "minimize": "最小化", "miniWindow": "迷你窗口" }
+  "titleBar": {
+    "alwaysOnTop": "置顶",
+    "close": "关闭",
+    "minimize": "最小化",
+    "miniWindow": "迷你窗口"
+  }
 }

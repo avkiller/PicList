@@ -1,12 +1,11 @@
 import http from 'node:http'
 import path from 'node:path'
 
-import { dbPathDir } from '@core/datastore/dbChecker'
+import { appLogPath, dataDir } from '@core/datastore/dirs'
 import picgo from '@core/picgo'
 import logger from '@core/picgo/logger'
 import { uploadChoosedFiles, uploadClipboardFiles } from 'apis/app/uploader/apis'
 import windowManager from 'apis/app/window/windowManager'
-import { app } from 'electron'
 import fs from 'fs-extra'
 import { marked } from 'marked'
 
@@ -14,14 +13,11 @@ import { markdownContent } from '~/server/apiDoc'
 import router from '~/server/router'
 import { deleteChoosedFiles, handleResponse } from '~/server/utils'
 import { AESHelper } from '~/utils/aesHelper'
-import { configPaths } from '~/utils/configPaths'
 import { changeCurrentUploader } from '~/utils/handleUploaderConfig'
 
-const appPath = app.getPath('userData')
+const appPath = dataDir()
 const serverTempDir = path.join(appPath, 'serverTemp')
-
-const STORE_PATH = dbPathDir()
-const LOG_PATH = path.join(STORE_PATH, 'piclist.log')
+const LOG_PATH = appLogPath()
 
 const errorMessage = `upload error. see ${LOG_PATH} for more detail.`
 const deleteErrorMessage = `delete error. see ${LOG_PATH} for more detail.`
@@ -48,10 +44,11 @@ router.post(
     urlparams?: URLSearchParams
   }): Promise<void> => {
     try {
+      const allConfig = picgo.getConfig<any>() || {}
       const picbed = urlparams?.get('picbed')
       const passedKey = urlparams?.get('key')
-      const serverKey = picgo.getConfig<string>(configPaths.settings.serverKey) || ''
-      const useShortUrl = picgo.getConfig<boolean>(configPaths.settings.useShortUrl)
+      const serverKey = allConfig.settings?.serverKey || ''
+      const useShortUrl = allConfig.settings?.useShortUrl
       if (serverKey && passedKey !== serverKey) {
         handleResponse({
           response,
@@ -67,7 +64,7 @@ router.post(
       let currentPicBedConfigId = ''
       let needRestore = false
       if (picbed) {
-        const currentPicBed = picgo.getConfig<IStringKeyMap>('picBed') || ({} as IStringKeyMap)
+        const currentPicBed = allConfig.picBed || ({} as IStringKeyMap)
         currentPicBedType = currentPicBed.uploader || currentPicBed.current || 'smms'
         currentPicBedConfig = currentPicBed[currentPicBedType] || ({} as IStringKeyMap)
         currentPicBedConfigId = currentPicBedConfig._id
@@ -76,7 +73,7 @@ router.post(
           // do nothing
         } else {
           needRestore = true
-          const picBeds = picgo.getConfig<IStringKeyMap>('uploader')
+          const picBeds = allConfig.uploader
           const currentPicBedList = picBeds?.[picbed]?.configList
           if (currentPicBedList) {
             const currentConfig = currentPicBedList?.find((item: any) => item._configName === configName)

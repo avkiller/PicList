@@ -9,7 +9,8 @@
           </div>
           <div>
             <h1>{{ t('pages.gallery.title') }}</h1>
-            <p>{{ filterList.length }} {{ t('pages.gallery.images') }}</p>
+            <p v-if="selectedCount > 0">{{ `${selectedCount}/${filterList.length} ${t('pages.gallery.selected')}` }}</p>
+            <p v-else>{{ `${filterList.length} ${t('pages.gallery.images')}` }}</p>
           </div>
         </div>
         <div class="header-actions">
@@ -46,7 +47,7 @@
           <button class="action-button" @click="toggleHandleBar">
             <ChevronDownIcon v-if="!handleBarActive" :size="16" />
             <ChevronUpIcon v-else :size="16" />
-            {{ handleBarActive ? t('pages.gallery.hideFilters') : t('pages.gallery.showFilters') }}
+            {{ t('pages.gallery.hideFilters') }}
           </button>
           <button class="action-button" @click="refreshPage">
             <RefreshCwIcon :size="16" />
@@ -74,7 +75,7 @@
                   <ChevronDownIcon :size="16" />
                 </button>
                 <div v-show="picBedDropdownOpen" class="multiselect-dropdown">
-                  <label v-for="item in picBedG" :key="item.type" class="multiselect-option">
+                  <label v-for="item in filteredPicBedG" :key="item.type" class="multiselect-option">
                     <input v-model="choosedPicBed" type="checkbox" :value="item.type" />
                     {{ item.name }}
                   </label>
@@ -178,7 +179,7 @@
               </button>
               <button class="action-btn delete-btn" :class="{ active: isMultiple(choosedList) }" @click="multiRemove">
                 <TrashIcon :size="16" />
-                {{ t('pages.gallery.delete') }}
+                {{ `${t('pages.gallery.delete')}${selectedCount > 0 ? ` (${selectedCount})` : ''}` }}
               </button>
               <button class="action-btn select-btn" :class="{ active: filterList.length > 0 }" @click="toggleSelectAll">
                 <CheckSquareIcon :size="16" />
@@ -281,7 +282,7 @@
         @wheel="handleImageWheel"
         @keydown="handleKeydown"
       >
-        <div class="modal-backdrop" />
+        <div class="modal-backdrop" :class="advancedAnimation" />
         <div class="modal-content">
           <button class="modal-close" @click="handleClose">
             <XIcon :size="24" />
@@ -352,7 +353,7 @@
 
     <!-- Edit URL Modal -->
     <transition name="modal">
-      <div v-if="dialogVisible" class="modal-overlay" @click="dialogVisible = false">
+      <div v-if="dialogVisible" class="modal-overlay" :class="advancedAnimation" @click="dialogVisible = false">
         <div class="modal-container" @click.stop>
           <div class="modal-header">
             <h3>{{ t('pages.gallery.changeImageUrl') }}</h3>
@@ -377,7 +378,12 @@
 
     <!-- Batch Rename Modal -->
     <transition name="modal">
-      <div v-if="isShowBatchRenameDialog" class="modal-overlay" @click="isShowBatchRenameDialog = false">
+      <div
+        v-if="isShowBatchRenameDialog"
+        class="modal-overlay"
+        :class="advancedAnimation"
+        @click="isShowBatchRenameDialog = false"
+      >
         <div class="modal-container large" @click.stop>
           <div class="modal-header">
             <h3>{{ t('pages.gallery.batchEditUrl') }}</h3>
@@ -395,7 +401,17 @@
                 type="text"
                 class="form-input"
                 :placeholder="t('pages.gallery.regexPatternPlaceholder')"
+                @focus="showMatchedUrls = true"
+                @blur="showMatchedUrls = false"
               />
+              <div v-if="showMatchedUrls && matchedUrls.length > 0" class="matched-urls-tooltip">
+                <div class="tooltip-header">Matched URLs ({{ matchedUrls.length }}):</div>
+                <div class="tooltip-content">
+                  <div v-for="(url, index) in matchedUrls" :key="index" class="url-item">
+                    {{ url }}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="form-group">
@@ -562,7 +578,7 @@ const searchText = ref<string>('')
 const searchTextURL = ref<string>('')
 const debouncedSearchText = ref<string>('')
 const debouncedSearchTextURL = ref<string>('')
-const handleBarActive = ref<boolean>(false)
+const handleBarActive = useStorage<boolean>('galleryHandleBarActive', true)
 const pasteStyle = ref<string>('')
 const pasteStyleMap = {
   Markdown: 'markdown',
@@ -587,6 +603,8 @@ const dateRangeEnd = ref('')
 const picBedDropdownOpen = ref(false)
 const sortDropdownOpen = ref(false)
 const showFormatInfo = ref(false)
+const showMatchedUrls = ref(false)
+const enableAdvancedAnimation = ref(false)
 const viewMode = useStorage<'list' | 'grid'>('galleryViewMode', 'grid')
 const componentKey = ref(0)
 const currentSortField = ref<'name' | 'time' | 'ext' | 'check'>('name')
@@ -594,6 +612,13 @@ const userGridColumns = useStorage<number>('galleryGridColumns', 4)
 
 const effectiveGridBreakpoints = computed(() => {
   return [{ min: 0, cols: userGridColumns.value }]
+})
+
+const filteredPicBedG = computed(() => {
+  if (galleryPicBedFilterSetting.value.length === 0) {
+    return picBedG.value
+  }
+  return picBedG.value.filter(item => galleryPicBedFilterSetting.value.includes(item.type))
 })
 
 const imageLoadStates = reactive<Record<string, boolean>>({})
@@ -640,9 +665,17 @@ const advancedRenameList = {
 }
 
 const matchedCount = computed(() => {
-  return filterList.value.filter((item: any) => {
+  const matches = filterList.value.filter((item: any) => {
     return customStrMatch(item.imgUrl, batchRenameMatch.value)
-  }).length
+  })
+  return matches.length
+})
+
+const matchedUrls = computed(() => {
+  const matches = filterList.value.filter((item: any) => {
+    return customStrMatch(item.imgUrl, batchRenameMatch.value)
+  })
+  return matches.map((item: any) => item.imgUrl || '').filter(Boolean)
 })
 
 const dateRange = computed({
@@ -668,12 +701,20 @@ function copyPlaceholder(placeholder: string) {
   message.success(t('pages.settings.upload.copySuccess', { content: placeholder }))
 }
 
+const advancedAnimation = computed(() => ({
+  advancedAnimation: enableAdvancedAnimation.value,
+}))
+
 const filterList = computed(() => {
   return getGallery()
 })
 
 const isAllSelected = computed(() => {
   return Object.values(choosedList).length > 0 && filterList.value.every(item => choosedList[item.id!])
+})
+
+const selectedCount = computed(() => {
+  return Object.values(choosedList).filter(v => v).length
 })
 
 const currentPreviewImage = computed(() => {
@@ -1000,13 +1041,13 @@ onBeforeRouteUpdate((to, from) => {
 })
 
 async function initConf() {
-  pasteStyle.value = (await getConfig(configPaths.settings.pasteStyle)) || IPasteStyle.MARKDOWN
-  useShortUrl.value = (await getConfig(configPaths.settings.useShortUrl))
-    ? t('pages.gallery.shortUrl')
-    : t('pages.gallery.longUrl')
-  isAlwaysForceReload.value = (await getConfig<boolean>(configPaths.settings.isAlwaysForceReload)) || false
-  deleteCloud.value = (await getConfig<boolean>(configPaths.settings.deleteCloudFile)) || false
-  galleryPicBedFilterSetting.value = (await getConfig<string[]>(configPaths.settings.galleryPicBedFilter)) || []
+  const settingConfig = await getConfig<any>('settings')
+  pasteStyle.value = settingConfig.pasteStyle || IPasteStyle.MARKDOWN
+  useShortUrl.value = settingConfig.useShortUrl ? t('pages.gallery.shortUrl') : t('pages.gallery.longUrl')
+  enableAdvancedAnimation.value = settingConfig.enableAdvancedAnimation || false
+  isAlwaysForceReload.value = settingConfig.isAlwaysForceReload || false
+  deleteCloud.value = settingConfig.deleteCloudFile || false
+  galleryPicBedFilterSetting.value = settingConfig.galleryPicBedFilter || []
 }
 
 const updateGalleryHandler = () => {

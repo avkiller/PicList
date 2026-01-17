@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import bus from '@core/bus'
 import { CREATE_APP_MENU } from '@core/bus/constants'
-import db from '@core/datastore'
+import picgo from '@core/picgo'
 import { app, BrowserWindow, Rectangle } from 'electron'
 
 import { TOGGLE_SHORTKEY_MODIFIED_MODE } from '~/events/constant'
@@ -12,14 +12,14 @@ import { configPaths } from '~/utils/configPaths'
 import { IWindowList } from '~/utils/enum'
 
 import logo from '../../../../../resources/logo.png?asset&asarUnpack'
+import { applyTheme } from '../theme'
 
 const windowList = new Map<string, IWindowListItem>()
 
 const getDefaultWindowSizes = (): { width: number; height: number } => {
-  const [mainWindowWidth, mainWindowHeight] = db.get([
-    configPaths.settings.mainWindowWidth,
-    configPaths.settings.mainWindowHeight,
-  ])
+  const allConfig = picgo.getConfig<any>() || {}
+  const mainWindowWidth = allConfig.settings?.mainWindowWidth
+  const mainWindowHeight = allConfig.settings?.mainWindowHeight
   return {
     width: mainWindowWidth || 1200,
     height: mainWindowHeight || 800,
@@ -115,7 +115,7 @@ const miniWindowOptions = {
   },
 } as IBrowserWindowOptions
 
-if (db.get(configPaths.settings.miniWindowOntop)) {
+if (picgo.getConfig<boolean>(configPaths.settings.miniWindowOntop)) {
   miniWindowOptions.alwaysOnTop = true
 }
 
@@ -206,6 +206,10 @@ windowList.set(IWindowList.SETTING_WINDOW, {
           app.quit()
         })
       }
+    })
+    window.on('ready-to-show', () => {
+      const customTheme = picgo.getConfig<string>(configPaths.settings.theme) || 'default.css'
+      applyTheme(customTheme)
     })
     bus.emit(CREATE_APP_MENU)
     windowManager.create(IWindowList.MINI_WINDOW)

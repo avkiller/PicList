@@ -1,8 +1,10 @@
-import db from '@core/datastore'
+import { isPortable } from '@core/datastore/dirs'
+import picgo from '@core/picgo'
 import { BrowserWindow, shell } from 'electron'
 import updater from 'electron-updater'
 
 import { RPCRouter } from '~/events/rpc/router'
+import { downloadAndInstallUpdate } from '~/lifeCycle/autoUpdater'
 import { configPaths } from '~/utils/configPaths'
 import { IRPCActionType } from '~/utils/enum'
 
@@ -12,7 +14,11 @@ const updaterRoutes = [
   {
     action: IRPCActionType.DOWNLOAD_UPDATE,
     handler: async () => {
-      updater.autoUpdater.downloadUpdate()
+      if (!isPortable()) {
+        updater.autoUpdater.downloadUpdate()
+      } else {
+        downloadAndInstallUpdate()
+      }
     },
   },
   {
@@ -30,7 +36,7 @@ const updaterRoutes = [
   {
     action: IRPCActionType.SET_SHOW_UPDATE_TIP,
     handler: async (_: IIPCEvent, args: [value: boolean]) => {
-      db.set(configPaths.settings.showUpdateTip, args[0])
+      picgo.saveConfig({ [configPaths.settings.showUpdateTip]: args[0] })
     },
   },
   {

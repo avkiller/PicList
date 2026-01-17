@@ -23,9 +23,11 @@ yarn-error.log*
 /release/
 /coverage/
 docs/dist/
+resources/theme/
 /build/*
 !/build/icons/
 !/build/installer.nsh
+!/build/entitlements.mac.plist
 release-notes.md
 .github/prompts
 .shared/
@@ -38,3 +40,4 @@ scripts/generateYmlFile.js
 remote-notice.json
 cloc*.exe
 !.gitkeep
+7za.exe

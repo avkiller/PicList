@@ -1,0 +1,325 @@
+name: Build with architecture
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name to build'
+        required: false
+        default: 'preview'
+        type: string
+      publish_enabled:
+        description: 'Publish artifacts after build?'
+        required: true
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+        default: 'false'
+      build_os:
+        description: "Build OS"
+        required: true
+        default: "All"
+        type: choice
+        options:
+          - windows-latest-x64-zip
+          - windows-latest-x64-7z
+          - windows-latest-x64-nsis
+          - windows-11-arm-arm64-zip
+          - windows-11-arm-arm64-7z
+          - windows-11-arm-arm64-nsis
+          - macos-15-intel-x64-dmg
+          - macos-latest-arm64-dmg
+          - ubuntu-latest-x64-AppImage
+          - ubuntu-latest-x64-deb
+          - ubuntu-latest-x64-snap
+          - ubuntu-latest-x64-rpm
+          - ubuntu-24.04-arm-arm64-AppImage
+          - ubuntu-24.04-arm-arm64-deb
+          - ubuntu-24.04-arm-arm64-rpm
+          - All
+permissions:
+  contents: write
+
+env:
+  ELECTRON_OUTPUT_PATH: ./dist_electron
+  CSC_LINK: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+  CSC_KEY_PASSWORD: ${{ secrets.P12_PASSWORD }}
+  USE_HARD_LINKS: false
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            arch: x64
+            format: zip
+            filter: windows-latest-x64-zip
+          - os: windows-latest
+            arch: x64
+            format: 7z
+            filter: windows-latest-x64-7z
+          - os: windows-latest
+            arch: x64
+            format: nsis
+            filter: windows-latest-x64-nsis
+          - os: windows-11-arm
+            arch: arm64
+            format: zip
+            filter: windows-11-arm-arm64-zip
+          - os: windows-11-arm
+            arch: arm64
+            format: 7z
+            filter: windows-11-arm-arm64-7z
+          - os: windows-11-arm
+            arch: arm64
+            format: nsis
+            filter: windows-11-arm-arm64-nsis
+          - os: macos-15-intel
+            arch: x64
+            format: dmg
+            filter: macos-15-intel-x64-dmg
+          - os: macos-latest
+            arch: arm64
+            format: dmg
+            filter: macos-latest-arm64-dmg
+          - os: ubuntu-latest
+            arch: x64
+            format: AppImage
+            filter: ubuntu-latest-x64-AppImage
+          - os: ubuntu-latest
+            arch: x64
+            format: deb
+            filter: ubuntu-latest-x64-deb
+          - os: ubuntu-latest
+            arch: x64
+            format: snap
+            filter: ubuntu-latest-x64-snap
+          - os: ubuntu-latest
+            arch: x64
+            format: rpm
+            filter: ubuntu-latest-x64-rpm
+          - os: ubuntu-24.04-arm
+            arch: arm64
+            format: AppImage
+            filter: ubuntu-24.04-arm-arm64-AppImage
+          - os: ubuntu-24.04-arm
+            arch: arm64
+            format: deb
+            filter: ubuntu-24.04-arm-arm64-deb
+          - os: ubuntu-24.04-arm
+            arch: arm64
+            format: rpm
+            filter: ubuntu-24.04-arm-arm64-rpm
+    name: Build on ${{ matrix.os }} for ${{ matrix.arch }} - ${{ matrix.format }}
+    steps:
+      - name: Set up git config
+        run: |
+          git config --global core.autocrlf false
+
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # step2: sign
+      - name: Install the Apple certificates
+        if: contains(matrix.os, 'macos') && (github.event.inputs.build_os == matrix.filter || github.event.inputs.build_os == 'All')
+        run: |
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
+
+      # step3: install node env
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22.x"
+
+      - name: Install system deps
+        if: contains(matrix.os, 'linux') && (github.event.inputs.build_os == matrix.filter || github.event.inputs.build_os == 'All')
+        run: |
+          sudo apt-get install --no-install-recommends -y icnsutils graphicsmagick xz-utils libfuse2
+          sudo snap install snapcraft --classic
+
+      - name: Install FPM
+        if: matrix.os == 'ubuntu-24.04-arm' && (github.event.inputs.build_os == matrix.filter || github.event.inputs.build_os == 'All')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ruby ruby-dev build-essential
+          sudo gem install --no-document fpm
+
+      # step3: yarn
+      - name: Install dependencies
+        if: github.event.inputs.build_os == matrix.filter || github.event.inputs.build_os == 'All'
+        shell: bash
+        run: |
+          yarn config set ignore-engines true
+          rm -rf node_modules dist_electron && yarn install --frozen-lockfile
+          yarn global add xvfb-maybe
+          if [[ "${{ matrix.format }}" == "zip" || "${{ matrix.format }}" == "7z" ]]; then
+            echo "Target format is ${{ matrix.format }}, downloading all resources..."
+            yarn run prepare:7za
+          fi
+          echo "Checking resources directory:"
+          ls -alh ./resources/theme || echo "Theme directory not found"
+          # check 7za.exe and theme dir
+          if [[ -f "./resources/7za.exe" ]]; then
+            echo "✅ 7za.exe exists"
+          else
+            echo "❌ 7za.exe does not exist"
+          fi
+
+      - name: Build & release app
+        if: github.event.inputs.build_os == matrix.filter || github.event.inputs.build_os == 'All'
+        shell: bash
+        run: |
+          if [ "${{ matrix.os }}" == "windows-11-arm" ]; then
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+            unset CSC_LINK WIN_CSC_LINK CSC_KEY_PASSWORD
+          fi
+          if [[ "${{ matrix.os }}" == windows* ]]; then
+            yarn run build:win ${{ matrix.format}} --${{ matrix.arch }} --publish never
+          elif [[ "${{ matrix.os }}" == macos* ]]; then
+            yarn run build:mac default --${{ matrix.arch }} --publish never
+          elif [[ "${{ matrix.os }}" == ubuntu* ]]; then
+            yarn run build:linux ${{ matrix.format}} --${{ matrix.arch }} --publish never
+          else
+            echo "Unsupported OS: ${{ matrix.os }}"
+            exit 1
+          fi
+        env:
+          USE_SYSTEM_FPM: ${{ matrix.os == 'ubuntu-24.04-arm' && 'true' || 'false' }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          ELECTRON_SKIP_NOTARIZATION: ${{ secrets.ELECTRON_SKIP_NOTARIZATION }}
+          XCODE_APP_LOADER_EMAIL: ${{ secrets.XCODE_APP_LOADER_EMAIL }}
+          XCODE_APP_LOADER_PASSWORD: ${{ secrets.XCODE_APP_LOADER_PASSWORD }}
+          XCODE_TEAM_ID: ${{ secrets.XCODE_TEAM_ID }}
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          USE_HARD_LINKS: false
+
+      - name: Upload build artifacts
+        if: github.event.inputs.build_os == matrix.filter || github.event.inputs.build_os == 'All'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.filter }}-artifacts
+          path: |
+            dist_electron/*.exe
+            dist_electron/*.dmg
+            dist_electron/*.zip
+            dist_electron/*.7z
+            dist_electron/*.AppImage
+            dist_electron/*.deb
+            dist_electron/*.rpm
+            dist_electron/*.snap
+            dist_electron/*.blockmap
+          retention-days: 30
+          if-no-files-found: 'ignore'
+
+      - name: Upload yml artifacts
+        if: github.event.inputs.build_os == matrix.filter || github.event.inputs.build_os == 'All'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.filter }}-yml
+          path: dist_electron/**/*.yml
+          retention-days: 30
+          if-no-files-found: 'ignore'
+
+  combine-and-upload:
+    name: Combine and Upload Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out git repository
+        uses: actions/checkout@v6
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22.x"
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          yarn config set ignore-engines true
+          rm -rf node_modules && yarn install
+
+      - name: Generate Release Notes
+        run: |
+          chmod +x ./scripts/generate-release-notes.sh
+          ./scripts/generate-release-notes.sh
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '*-artifacts'
+          path: ./artifacts
+
+      - name: Download YML Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '*-yml'
+          path: ./yml-artifacts
+          merge-multiple: false
+
+      - name: List downloaded artifacts
+        run: |
+          echo "Downloaded artifacts structure:"
+          find ./yml-artifacts -type f -name "*.yml"
+          tree ./yml-artifacts
+          tree ./artifacts
+
+      - name: Combine and deduplicate yml files
+        run: |
+          node scripts/combine-yml.cjs ./yml-artifacts ./dist_electron/combined
+          echo "Combined YML files:"
+          ls -la ./dist_electron/combined/
+          echo "Latest combined YML content:"
+          cat ./dist_electron/combined/latest.yml
+          echo "Latest macOS combined YML content:"
+          cat ./dist_electron/combined/latest-mac.yml
+          echo "Latest linux combined YML content:"
+          cat ./dist_electron/combined/latest-linux.yml
+          echo "Latest linux ARM64 combined YML content:"
+          cat ./dist_electron/combined/latest-linux-arm64.yml
+
+      - name: Publish GitHub Dev Release
+        uses: softprops/action-gh-release@v2
+        continue-on-error: true
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          tag_name: ${{ github.event.inputs.tag_name }}
+          draft: true
+          prerelease: ${{ github.event.inputs.publish_enabled == 'false' || github.event.inputs.tag_name == 'preview'  }}
+          body_path: ./release-notes.md
+          name: ${{ github.event.inputs.tag_name }}
+          files: |
+            !artifacts/**/*-unpacked/**
+            artifacts/**/*.exe
+            artifacts/**/*.dmg
+            artifacts/**/*.zip
+            artifacts/**/*.7z
+            artifacts/**/*.AppImage
+            artifacts/**/*.deb
+            artifacts/**/*.snap
+            artifacts/**/*.rpm
+            ./dist_electron/combined/*.yml
+            artifacts/**/*.tar.gz
+
+      - name: Upload to S3
+        run: |
+          if [ "${{ github.event.inputs.publish_enabled }}" == "false" ]; then
+            echo "Publishing is disabled. Skipping upload to S3."
+            node scripts/upload-to-s3.js ./artifacts ./dist_electron/combined
+            exit 0
+          fi
+          node scripts/upload-to-s3.js ./artifacts ./dist_electron/combined false
+        env:
+          R2_SECRET_ID: ${{ secrets.R2_SECRET_ID }}
+          R2_SECRET_KEY: ${{ secrets.R2_SECRET_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+

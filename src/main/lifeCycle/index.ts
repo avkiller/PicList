@@ -3,7 +3,6 @@ import '~/lifeCycle/errorHandler'
 import path from 'node:path'
 
 import bus from '@core/bus'
-import db from '@core/datastore'
 import picgo from '@core/picgo'
 import logger from '@core/picgo/logger'
 import { remoteNoticeHandler } from 'apis/app/remoteNotice'
@@ -11,14 +10,13 @@ import shortKeyHandler from 'apis/app/shortKey/shortKeyHandler'
 import { createTray, setDockMenu } from 'apis/app/system'
 import { uploadChoosedFiles, uploadClipboardFiles } from 'apis/app/uploader/apis'
 import windowManager from 'apis/app/window/windowManager'
-import axios from 'axios'
 import { app, globalShortcut, Notification, protocol, screen } from 'electron'
-import updater from 'electron-updater'
 import fs from 'fs-extra'
 
 import busEventList from '~/events/busEventList'
 import { rpcServer } from '~/events/rpc'
 import { startFileServer, stopFileServer } from '~/fileServer'
+import { setupAutoUpdater } from '~/lifeCycle/autoUpdater'
 import fixPath from '~/lifeCycle/fixPath'
 import UpDownTaskQueue from '~/manage/datastore/upDownTaskQueue'
 import getManageApi from '~/manage/Main'
@@ -29,7 +27,7 @@ import { isAutoStartEnabled, setAutoStart } from '~/utils/autoStart'
 import beforeOpen from '~/utils/beforeOpen'
 import clipboardPoll from '~/utils/clipboardPoll'
 import { configPaths } from '~/utils/configPaths'
-import { II18nLanguage, IRemoteNoticeTriggerHook, ISartMode, IWindowList } from '~/utils/enum'
+import { IRemoteNoticeTriggerHook, ISartMode, IWindowList } from '~/utils/enum'
 import { getUploadFiles } from '~/utils/handleArgv'
 import { initI18n } from '~/utils/handleI18n'
 import { notificationList } from '~/utils/notification'
@@ -59,105 +57,7 @@ const handleStartUpFiles = (argv: string[], cwd: string) => {
   return false
 }
 
-updater.autoUpdater.setFeedURL({
-  provider: 'generic',
-  url: 'https://release.piclist.cn/latest',
-  channel: 'latest',
-})
-
-updater.autoUpdater.forceDevUpdateConfig = true
-updater.autoUpdater.autoDownload = false
-
-updater.autoUpdater.on('update-available', async (info: updater.UpdateInfo) => {
-  const lang = db.get(configPaths.settings.language) || II18nLanguage.ZH_CN
-  let updateLog = ''
-  try {
-    const url =
-      lang === II18nLanguage.ZH_CN
-        ? 'https://release.piclist.cn/currentVersion.md'
-        : 'https://release.piclist.cn/currentVersion_en.md'
-    const res = await axios.get(url)
-    updateLog = res.data
-  } catch (e: any) {
-    logger.error(e)
-  }
-
-  const maxLogLength = 8000
-  let displayLog = updateLog
-  let truncatedNote = ''
-
-  if (updateLog.length > maxLogLength) {
-    const truncatePoint = updateLog.lastIndexOf('\n', maxLogLength)
-    displayLog = updateLog.substring(0, truncatePoint > 0 ? truncatePoint : maxLogLength)
-    truncatedNote =
-      lang === II18nLanguage.ZH_CN
-        ? '\n\n... (更多详情请查看完整更新日志)'
-        : '\n\n... (See full changelog for more details)'
-  }
-
-  windowManager.create(IWindowList.UPDATE_WINDOW)
-  const updateWindow = windowManager.get(IWindowList.UPDATE_WINDOW)!
-
-  updateWindow.webContents.once('did-finish-load', () => {
-    updateWindow.webContents.send('SHOW_UPDATE_INFO', {
-      type: 'update-available',
-      title: lang === II18nLanguage.ZH_CN ? '发现新版本' : 'New Update Available',
-      version: info.version,
-      releaseNotes: displayLog + truncatedNote,
-    })
-  })
-
-  updateWindow.show()
-})
-
-updater.autoUpdater.on('download-progress', progressObj => {
-  const percent = {
-    progress: progressObj.percent,
-  }
-  const settingWindow = windowManager.get(IWindowList.SETTING_WINDOW)
-  const updateWindow = windowManager.get(IWindowList.UPDATE_WINDOW)
-
-  if (settingWindow) {
-    settingWindow.webContents.send('updateProgress', percent)
-  }
-  if (updateWindow) {
-    updateWindow.webContents.send('UPDATE_PROGRESS', percent)
-  }
-})
-
-updater.autoUpdater.on('update-downloaded', () => {
-  const lang = db.get(configPaths.settings.language) || II18nLanguage.ZH_CN
-
-  if (!windowManager.has(IWindowList.UPDATE_WINDOW)) {
-    windowManager.create(IWindowList.UPDATE_WINDOW)
-  }
-  const updateWindow = windowManager.get(IWindowList.UPDATE_WINDOW)!
-
-  const sendUpdateInfo = () => {
-    updateWindow.webContents.send('SHOW_UPDATE_INFO', {
-      type: 'update-downloaded',
-      title: lang === II18nLanguage.ZH_CN ? '更新已下载' : 'Update Downloaded',
-      message:
-        lang === II18nLanguage.ZH_CN
-          ? '更新已下载完成，将在下次重启应用时安装。是否立即重启？'
-          : 'The update has been downloaded and will be installed on the next app restart. Would you like to restart now?',
-    })
-  }
-
-  if (updateWindow.webContents.isLoading()) {
-    updateWindow.webContents.once('did-finish-load', sendUpdateInfo)
-  } else {
-    sendUpdateInfo()
-  }
-
-  if (!updateWindow.isVisible()) {
-    updateWindow.show()
-  }
-})
-
-updater.autoUpdater.on('error', err => {
-  logger.error(err)
-})
+await setupAutoUpdater()
 
 class LifeCycle {
   async #beforeReady() {
@@ -170,7 +70,10 @@ class LifeCycle {
     initI18n()
     rpcServer.start()
     busEventList.listen()
-
+    const isDisableGPU = picgo.getConfig<boolean>(configPaths.settings.isDisableGPU) || false
+    if (isDisableGPU) {
+      app.disableHardwareAcceleration()
+    }
     if (process.env.NODE_ENV === 'development') {
       MemoryMonitor.start(30000)
     }
@@ -178,27 +81,28 @@ class LifeCycle {
 
   #onReady() {
     const readyFunction = async () => {
+      const allConfig = picgo.getConfig<any>() || {}
       windowManager.create(IWindowList.TRAY_WINDOW)
       windowManager.create(IWindowList.SETTING_WINDOW)
-      const isAutoListenClipboard = db.get(configPaths.settings.isAutoListenClipboard) || false
+      const isAutoListenClipboard = allConfig.settings?.isAutoListenClipboard || false
       const ClipboardWatcher = clipboardPoll
       if (isAutoListenClipboard) {
-        db.set(configPaths.settings.isListeningClipboard, true)
+        picgo.saveConfig({ [configPaths.settings.isListeningClipboard]: true })
         ClipboardWatcher.startListening()
         ClipboardWatcher.on('change', () => {
           picgo.log.info('clipboard changed')
           uploadClipboardFiles()
         })
       } else {
-        db.set(configPaths.settings.isListeningClipboard, false)
+        picgo.saveConfig({ [configPaths.settings.isListeningClipboard]: false })
       }
-      const isHideDock = db.get(configPaths.settings.isHideDock) || false
-      let startMode = db.get(configPaths.settings.startMode) || ISartMode.QUIET
+      const isHideDock = allConfig.settings?.isHideDock || false
+      let startMode = allConfig.settings?.startMode || ISartMode.QUIET
       if (process.platform === 'darwin' && startMode === ISartMode.MINI) {
         startMode = ISartMode.QUIET
       }
-      const currentPicBed = db.get(configPaths.picBed.uploader) || db.get(configPaths.picBed.current) || 'smms'
-      const currentPicBedConfig = db.get(`picBed.${currentPicBed}`)?._configName || 'Default'
+      const currentPicBed = allConfig.picBed?.uploader || allConfig.picBed?.current || 'smms'
+      const currentPicBedConfig = allConfig.picBed?.[currentPicBed]?._configName || 'Default'
       const tooltip = `${currentPicBed} ${currentPicBedConfig}`
       if (process.platform === 'darwin') {
         isHideDock ? app.dock?.hide() : setDockMenu()
@@ -206,7 +110,7 @@ class LifeCycle {
       } else {
         createTray(tooltip)
       }
-      db.set(configPaths.needReload, false)
+      picgo.saveConfig({ [configPaths.needReload]: false })
       updateChecker()
       // 不需要阻塞
       process.nextTick(() => {
@@ -232,24 +136,26 @@ class LifeCycle {
         windowManager.create(IWindowList.MINI_WINDOW)
         const miniWindow = windowManager.get(IWindowList.MINI_WINDOW)!
         miniWindow.removeAllListeners()
-        if (db.get(configPaths.settings.miniWindowOntop)) {
+        if (allConfig.settings?.miniWindowOntop) {
           miniWindow.setAlwaysOnTop(true)
         }
         const { width, height } = screen.getPrimaryDisplay().workAreaSize
-        const lastPosition = db.get(configPaths.settings.miniWindowPosition)
+        const lastPosition = allConfig.settings?.miniWindowPosition
         if (lastPosition) {
           if (lastPosition[0] < 0 || lastPosition[0] > width || lastPosition[1] < 0 || lastPosition[1] > height) {
             miniWindow.setPosition(width - 100, height - 100)
-            db.set(configPaths.settings.miniWindowPosition, [width - 100, height - 100])
+            picgo.saveConfig({ [configPaths.settings.miniWindowPosition]: [width - 100, height - 100] })
           } else if (
             lastPosition[0] + miniWindow.getSize()[0] > width ||
             lastPosition[1] + miniWindow.getSize()[1] > height
           ) {
             miniWindow.setPosition(width - miniWindow.getSize()[0], height - miniWindow.getSize()[1])
-            db.set(configPaths.settings.miniWindowPosition, [
-              width - miniWindow.getSize()[0],
-              height - miniWindow.getSize()[1],
-            ])
+            picgo.saveConfig({
+              [configPaths.settings.miniWindowPosition]: [
+                width - miniWindow.getSize()[0],
+                height - miniWindow.getSize()[1],
+              ],
+            })
           } else {
             miniWindow.setPosition(lastPosition[0], lastPosition[1])
           }
@@ -258,7 +164,7 @@ class LifeCycle {
         }
         const setPositionFunc = () => {
           const position = miniWindow.getPosition()
-          db.set(configPaths.settings.miniWindowPosition, position)
+          picgo.saveConfig({ [configPaths.settings.miniWindowPosition]: position })
         }
         miniWindow.on('close', setPositionFunc)
         miniWindow.on('move', setPositionFunc)
@@ -297,7 +203,7 @@ class LifeCycle {
         windowManager.create(IWindowList.SETTING_WINDOW)
       }
     })
-    const storedAutoStartEnabled = db.get(configPaths.settings.autoStart) || false
+    const storedAutoStartEnabled = picgo.getConfig<boolean>(configPaths.settings.autoStart) || false
     isAutoStartEnabled()
       .then(actualAutoStartEnabled => {
         if (actualAutoStartEnabled !== storedAutoStartEnabled) {

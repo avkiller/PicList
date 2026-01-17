@@ -1,7 +1,6 @@
 import path from 'node:path'
 import util from 'node:util'
 
-import db from '@core/datastore'
 import picgo from '@core/picgo'
 import logger from '@core/picgo/logger'
 import windowManager from 'apis/app/window/windowManager'
@@ -49,7 +48,7 @@ class Uploader {
     })
 
     picgo.on(ICOREBuildInEvent.BEFORE_TRANSFORM, () => {
-      if (db.get(configPaths.settings.uploadNotification)) {
+      if (picgo.getConfig<boolean | undefined>(configPaths.settings.uploadNotification)) {
         const notification = new Notification({
           title: $t('UPLOAD_PROGRESS'),
           body: $t('UPLOADING'),
@@ -61,10 +60,11 @@ class Uploader {
     picgo.helper.beforeUploadPlugins.register('renameFn', {
       handle: async (ctx: IPicGo) => {
         const uploaderType = getUploaderType(ctx)
+        const allConfig = picgo.getConfig<any>() || {}
 
-        const globalRename = db.get(configPaths.settings.rename)
-        const globalAutoRename = db.get(configPaths.settings.autoRename)
-        const buildInList = db.get(configPaths.buildIn.list._name) || []
+        const globalRename = allConfig.settings?.rename
+        const globalAutoRename = allConfig.settings?.autoRename
+        const buildInList = allConfig.buildIn?.list || []
         const idSpecificRename = buildInList.find((item: any) => item.id === uploaderType.id)?.manualRename
         const idSpecificAutoRename = buildInList.find((item: any) => item.id === uploaderType.id)?.autoRename
         const rename = idSpecificRename !== undefined ? !!idSpecificRename : !!globalRename
@@ -118,25 +118,6 @@ class Uploader {
     return filePath
   }
 
-  /**
-   * use electron's clipboard image to upload
-   */
-  async uploadWithBuildInClipboard(): Promise<ImgInfo[] | false> {
-    let imgPath: string | false = false
-    try {
-      imgPath = await this.getClipboardImagePath()
-      if (!imgPath) return false
-      return await this.upload([imgPath])
-    } catch (e: any) {
-      logger.error(e)
-      return false
-    } finally {
-      if (imgPath && imgPath.startsWith(path.join(picgo.baseDir, CLIPBOARD_IMAGE_FOLDER))) {
-        fs.remove(imgPath)
-      }
-    }
-  }
-
   async uploadWithBuildInClipboardReturnCtx(img?: IUploadOption): Promise<(ImgInfo[] | false)[]> {
     let imgPath: string | false = false
     try {
@@ -157,17 +138,18 @@ class Uploader {
     try {
       const result = [false, false] as (ImgInfo[] | false)[]
       const res = await picgo.uploadReturnCtx(img)
+      const allConfig = picgo.getConfig<any>() || {}
 
       if (Array.isArray(res.output) && res.output.some((item: ImgInfo) => item.imgUrl)) {
         res.output.forEach((item: ImgInfo) => {
-          item.config = JSON.parse(JSON.stringify(db.get(`picBed.${item.type}`)))
+          item.config = JSON.parse(JSON.stringify(allConfig.picBed?.[item.type!]))
         })
         result[0] = res.output
       }
 
       if (Array.isArray(res.backupOutput) && res.backupOutput.some((item: ImgInfo) => item.imgUrl)) {
         res.backupOutput.forEach((item: ImgInfo) => {
-          item.config = JSON.parse(JSON.stringify(db.get(`picBed.${item.type}`)))
+          item.config = JSON.parse(JSON.stringify(allConfig.picBed?.[item.type!]))
         })
         result[1] = res.backupOutput
       }
@@ -182,29 +164,6 @@ class Uploader {
         })
       }, 500)
       return [false, false]
-    } finally {
-      ipcMain.removeAllListeners(GET_RENAME_FILE_NAME)
-    }
-  }
-
-  async upload(img?: IUploadOption): Promise<ImgInfo[] | false> {
-    try {
-      const output = await picgo.upload(img)
-      if (!Array.isArray(output) || !output.some((item: ImgInfo) => item.imgUrl)) return false
-      output.forEach((item: ImgInfo) => {
-        item.config = JSON.parse(JSON.stringify(db.get(`picBed.${item.type}`)))
-      })
-      return output.filter(item => item.imgUrl)
-    } catch (e: any) {
-      logger.error(e)
-      setTimeout(() => {
-        showNotification({
-          title: $t('UPLOAD_FAILED'),
-          body: util.format(e.stack),
-          clickToCopy: true,
-        })
-      }, 500)
-      return false
     } finally {
       ipcMain.removeAllListeners(GET_RENAME_FILE_NAME)
     }

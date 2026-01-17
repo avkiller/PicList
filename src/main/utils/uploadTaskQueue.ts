@@ -1,11 +1,11 @@
 import path from 'node:path'
 
 import { GalleryDB } from '@core/datastore'
-import db from '@core/datastore'
+import { dataDir } from '@core/datastore/dirs'
 import picgo from '@core/picgo'
 import uploader from 'apis/app/uploader'
 import windowManager from 'apis/app/window/windowManager'
-import { app, Notification, WebContents } from 'electron'
+import { Notification, WebContents } from 'electron'
 import fs from 'fs-extra'
 import { cloneDeep } from 'lodash-es'
 import { v4 as uuid } from 'uuid'
@@ -72,7 +72,7 @@ class UploadTaskQueueManager {
   }
 
   private webContents: WebContents | null = null
-  private persistPath = path.join(app.getPath('userData'), 'taskQueue.json')
+  private persistPath = path.join(dataDir(), 'taskQueue.json')
   private taskTimer: NodeJS.Timeout | null = null
 
   private constructor() {
@@ -240,10 +240,11 @@ class UploadTaskQueueManager {
     const res = await uploader.setWebContents(webContents).uploadReturnCtx(input)
     const imgs = res[0] ? res[0] : false
     const backupImgs = res[1] ? res[1] : false
+    const allConfig = picgo.getConfig<any>() || {}
 
     if (imgs !== false && imgs.length > 0) {
-      const pasteStyle = db.get(configPaths.settings.pasteStyle) || IPasteStyle.MARKDOWN
-      const deleteLocalFile = db.get(configPaths.settings.deleteLocalFile) || false
+      const pasteStyle = allConfig.settings?.pasteStyle || IPasteStyle.MARKDOWN
+      const deleteLocalFile = allConfig.settings?.deleteLocalFile || false
 
       const img = imgs[0]
 
@@ -257,7 +258,7 @@ class UploadTaskQueueManager {
           })
       }
 
-      const [pasteText, shortUrl] = await pasteTemplate(pasteStyle, img, db.get(configPaths.settings.customLink))
+      const [pasteText, shortUrl] = await pasteTemplate(pasteStyle, img, allConfig.settings?.customLink)
       img.shortUrl = shortUrl
 
       const inserted = await GalleryDB.getInstance().insert(img)
@@ -567,9 +568,9 @@ class UploadTaskQueueManager {
 
     if (stats.completed > 0 || stats.failed > 0) {
       const isShowResultNotification =
-        db.get(configPaths.settings.uploadResultNotification) === undefined
+        picgo.getConfig<boolean | undefined>(configPaths.settings.uploadResultNotification) === undefined
           ? true
-          : !!db.get(configPaths.settings.uploadResultNotification)
+          : !!picgo.getConfig<boolean>(configPaths.settings.uploadResultNotification)
 
       if (isShowResultNotification) {
         const notification = new Notification({

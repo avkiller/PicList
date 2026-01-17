@@ -1,25 +1,12 @@
+@import url('./common/modal.css');
+@import url('./common/advancedAnimation.css');
+
 /* Page Container */
 .picbeds-page {
   position: relative;
   overflow: hidden auto;
   min-height: 100vh;
   background: var(--color-background);
-}
-
-/* Ambient Background Effect */
-.ambient-bg {
-  position: fixed;
-  top: -50%;
-  left: -50%;
-  z-index: 0;
-  width: 200%;
-  height: 200%;
-  background:
-    radial-gradient(circle at 30% 20%, rgb(var(--accent-rgb) / 8%) 0%, transparent 50%),
-    radial-gradient(circle at 70% 80%, rgb(16 185 129 / 6%) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, rgb(59 130 246 / 4%) 0%, transparent 40%);
-  animation: ambient-drift 25s ease-in-out infinite;
-  pointer-events: none;
 }
 
 @keyframes ambient-drift {
@@ -161,7 +148,7 @@
 
 .btn-secondary {
   color: var(--color-text-primary);
-  background: var(--color-surface-elevated);
+  background: var(--color-background-secondary);
   box-shadow:
     0 2px 8px rgb(0 0 0 / 8%),
     inset 0 1px 0 rgb(255 255 255 / 5%);
@@ -245,7 +232,7 @@
   overflow: hidden;
   border: 1px solid var(--color-border-secondary);
   border-radius: 20px;
-  background: var(--color-surface);
+  background: var(--color-background-secondary);
   box-shadow:
     0 4px 24px rgb(0 0 0 / 6%),
     0 1px 2px rgb(0 0 0 / 4%);
@@ -269,7 +256,7 @@
   align-items: center;
   border-bottom: 1px solid var(--color-border-secondary);
   padding: 1.25rem 1.5rem;
-  background: var(--color-surface-elevated);
+  background: var(--color-background-secondary);
   gap: 0.75rem;
 }
 
@@ -568,15 +555,6 @@
     left: 0;
     min-width: 100%;
   }
-
-  .modal-overlay {
-    padding: 1rem;
-  }
-
-  .modal-header,
-  .modal-content {
-    padding: 1.5rem;
-  }
 }
 
 @media (width >= 1024px) {
@@ -589,90 +567,5 @@
 .doc-link-btn:focus-visible,
 .dropdown-item:focus-visible {
   outline: 1px solid var(--color-accent);
-  outline-offset: 2px;
-}
-
-
-/* Modal */
-.modal-overlay {
-  position: fixed;
-  z-index: 1000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow-y: auto;
-  padding: 2rem;
-  background: rgb(0 0 0 / 50%);
-  inset: 0;
-}
-
-.modal-container {
-  overflow: hidden;
-  margin: auto;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-2xl);
-  width: 90vw;
-  max-width: 90vw;
-  height: 85vh;
-  max-height: 85vh;
-  background: var(--color-surface);
-  box-shadow: var(--shadow-xl);
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--color-border-secondary);
-  padding: 0.95rem 1rem;
-}
-
-.modal-title {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.modal-subtitle {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.modal-close {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  color: var(--color-text-secondary);
-  background: var(--color-surface-elevated);
-  cursor: pointer;
-}
-
-.modal-close:hover {
-  border-color: var(--color-danger);
-  color: var(--color-danger);
-  background: var(--color-surface);
-}
-
-.modal-content {
-  overflow-y: auto;
-  padding: 0.2rem;
-  max-height: calc(90vh - 120px);
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.modal-content::-webkit-scrollbar {
-  display: none;
-}
-
-.modal-close:focus-visible {
-  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }

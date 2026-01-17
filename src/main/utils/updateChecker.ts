@@ -1,17 +1,23 @@
-import db from '@core/datastore'
+import picgo from '@core/picgo'
 import updater from 'electron-updater'
 
+import { isPortable } from '~/apis/core/datastore/dirs'
+import { checkUpdateAndNotify } from '~/lifeCycle/autoUpdater'
 import { configPaths } from '~/utils/configPaths'
 
 const updateChecker = async () => {
-  let showTip = db.get(configPaths.settings.showUpdateTip)
+  let showTip = picgo.getConfig<boolean | undefined>(configPaths.settings.showUpdateTip)
   if (showTip === undefined) {
-    db.set(configPaths.settings.showUpdateTip, true)
+    picgo.saveConfig({ [configPaths.settings.showUpdateTip]: true })
     showTip = true
   }
   if (showTip) {
     try {
-      await updater.autoUpdater.checkForUpdatesAndNotify()
+      if (!isPortable()) {
+        await updater.autoUpdater.checkForUpdatesAndNotify()
+      } else {
+        await checkUpdateAndNotify()
+      }
     } catch (_err) {}
   }
 }

@@ -1,5 +1,7 @@
 {
-  "app": { "title": "PicList" },
+  "app": {
+    "title": "PicList"
+  },
   "common": {
     "cancel": "Cancel",
     "close": "Close",
@@ -8,6 +10,49 @@
     "reset": "Reset",
     "submit": "Submit",
     "version": "Version"
+  },
+  "guide": {
+    "close": "Close",
+    "finish": "Get Started",
+    "next": "Next",
+    "previous": "Back",
+    "skip": "Skip Tour",
+    "stepIndicator": "Step {current} of {total}",
+    "steps": {
+      "finish": {
+        "description": "You're ready to start using PicList! You can always restart this guide from the menu.",
+        "title": "You're All Set! ✨"
+      },
+      "gallery": {
+        "description": "Access your uploaded images in the gallery. You can search, filter, and manage your image collection.",
+        "title": "View Your Gallery"
+      },
+      "picbed": {
+        "description": "Click here to view and configure your current image hosting service (PicBed).",
+        "title": "Choose Your Image Host"
+      },
+      "settings": {
+        "description": "Customize PicList to suit your needs. Configure upload settings, shortcuts, and more.",
+        "title": "Configure Settings"
+      },
+      "theme": {
+        "description": "Click the light/dark mode toggle in the sidebar to switch themes.",
+        "title": "Light/Dark Mode"
+      },
+      "themeSelection": {
+        "description": "Select a theme from the dropdown to customize PicList's appearance.",
+        "title": "Custom Theme 🎨"
+      },
+      "upload": {
+        "description": "You can upload images by dragging and dropping them here, or click to select files.",
+        "title": "Upload Your Images"
+      },
+      "welcome": {
+        "description": "Let's take a quick tour to help you get started with PicList.",
+        "title": "Welcome to PicList! 🎉"
+      }
+    },
+    "title": "Welcome to PicList"
   },
   "navigation": {
     "choosePicBed": "Choose PicBed",
@@ -621,6 +666,7 @@
       "viewDocFailed": "View Document Failed"
     },
     "plugin": {
+      "browseAllPlugins": "Browse All Plugins",
       "browsePlugins": "Browse Plugins",
       "configThing": "Config {c}",
       "description": "PicList Plugin Management",
@@ -633,12 +679,15 @@
       "installPluginsToGetStarted": "Please install plugins to get started",
       "list": "Plugin List",
       "loading": "Loading...",
+      "loadingPlugins": "Loading plugins...",
       "needRestart": "Need Restart to Take Effect",
       "noPluginsFound": "No Plugins Found",
       "NoPluginsInstalled": "No Plugins Installed",
       "notGuiImplement": "This plugin does not have a GUI implementation, continue?",
+      "openRemoteList": "Open Remote Plugin List",
       "pluginList": "Plugin List",
       "restartApp": "Restart Application",
+      "searchInBrowse": "Search in Browse",
       "searchPlaceholder": "Search for PicGo plugins on npm, or click the button above to view the excellent plugin list",
       "setResult": "Set Result",
       "setSuccess": "Set Success",
@@ -741,7 +790,10 @@
         },
         "manageConfig": "Manage Configuration",
         "migrateDesc": "Import configuration and gallery data from PicGo",
+        "migrateDescPicList": "Import configuration and gallery data from PicList Installation",
         "migrateFromPicGo": "Migrate from PicGo",
+        "migrateFromPicListInstallation": "Migrate from PicList Installation",
+        "migrateFromPicListInstallationContent": "Import configuration files and albums from PicList Installation, which will overwrite the current configuration files and albums. Do you want to continue?",
         "mirgrateContent": "You are about to import configuration files and albums from PicGo, which will overwrite the current configuration files and albums. Do you want to continue?",
         "mirgrateFailed": "Import Failed",
         "mirgrateSuccess": "Import Successful, Please Restart PicList to Take Effect",
@@ -754,7 +806,10 @@
         "syncConfigProxy": "Proxy",
         "syncConfiguration": "Sync Platform",
         "syncEndpointConfig": "Endpoint Configuration",
-        "syncResult": { "failed": "Sync Failed", "success": "Sync Successful" },
+        "syncResult": {
+          "failed": "Sync Failed",
+          "success": "Sync Successful"
+        },
         "title": "Sync",
         "upDownloadDesc": "Sync configuration files and gallery data to cloud",
         "upDownloadSettings": "Sync Config & Gallery",
@@ -770,14 +825,27 @@
         "webdavEndpoint": "WebDAV Endpoint"
       },
       "system": {
+        "applyThemeFailed": "Failed to apply theme",
         "autoCloseMainWindow": "Close Main Window when Opening Mini Window",
         "autoCloseMiniWindow": "Close Mini Window when Opening Main Window",
         "autoLaunch": "Auto Launch",
         "autoLaunchDesc": "Automatically start PicList when system boots",
         "chooseLanguage": "Choose Language",
+        "chooseTheme": "Choose Theme",
         "customMiniIconPath": "Custom Mini Icon Path",
+        "downloadingThemes": "Downloading...",
+        "downloadThemes": "Download Themes",
+        "downloadThemesFailed": "Failed to download themes",
+        "downloadThemesSuccess": "Themes downloaded successfully",
+        "enableAdvancedAnimation": "Enable Advanced Animation",
+        "enableAdvancedAnimationDesc": "Do not enable this option on low-performance devices or when GPU acceleration is disabled",
         "hideDockHint": "Cannot hide both dock and tray at the same time",
+        "importThemes": "Import Themes",
+        "importThemesFailed": "Failed to import themes",
+        "importThemesSuccess": "Themes imported successfully",
         "isCustomMiniIcon": "Custom Mini Icon",
+        "isDisableGPU": "Disable GPU Acceleration",
+        "isDisableGPUDesc": "Improve compatibility but may reduce performance",
         "isHideDock": "Hide Dock Icon",
         "languageAndAppearance": "Language and Appearance",
         "mainMode": "Main Mode",
@@ -1039,7 +1107,11 @@
       "uploadHint": "All formats are supported, but images are recommended",
       "uploadingMultipleUrls": "Uploading {count} URLs...",
       "uploadViewHint": "Click to open picbeds settings",
-      "urlType": { "normal": "Long Link", "short": "Short Link", "title": "Link Type" },
+      "urlType": {
+        "normal": "Long Link",
+        "short": "Short Link",
+        "title": "Link Type"
+      },
       "urlUpload": "URL Upload"
     },
     "uploaderConfig": {
@@ -1076,5 +1148,10 @@
       "toggle": "Toggle Theme"
     }
   },
-  "titleBar": { "alwaysOnTop": "Always On Top", "close": "Close", "minimize": "Minimize", "miniWindow": "Mini Window" }
+  "titleBar": {
+    "alwaysOnTop": "Always On Top",
+    "close": "Close",
+    "minimize": "Minimize",
+    "miniWindow": "Mini Window"
+  }
 }
