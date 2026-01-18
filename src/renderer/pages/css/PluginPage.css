@@ -219,7 +219,7 @@ html, body {
   align-items: center;
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-text);
+  color: var(--color-text-primary);
   gap: 0.5rem;
 }
 
@@ -235,8 +235,8 @@ html, body {
 }
 
 .checkbox-input:checked + .checkbox-label::before {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
+  border-color: var(--color-accent);
+  background: var(--color-accent);
 }
 
 .checkbox-input:checked + .checkbox-label::after {
@@ -249,7 +249,7 @@ html, body {
 }
 
 .checkbox-label:hover::before {
-  border-color: var(--color-primary);
+  border-color: var(--color-accent);
 }
 
 .checkbox-description {
@@ -302,7 +302,7 @@ html, body {
 .loading-spinner {
   border: 3px solid var(--color-border);
   border-top: 3px solid var(--color-accent);
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   width: 40px;
   height: 40px;
   animation: spin 1s linear infinite;
@@ -527,7 +527,7 @@ html, body {
 .button-spinner {
   border: 2px solid transparent;
   border-top: 2px solid currentcolor;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   width: 16px;
   height: 16px;
   animation: spin 1s linear infinite;
