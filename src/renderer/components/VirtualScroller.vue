@@ -1,15 +1,19 @@
 <template>
-  <div ref="containerRef" class="virtual-scroller" @scroll="handleScroll">
-    <div class="virtual-scroller-content" :style="contentStyles">
+  <div
+    ref="containerRef"
+    class="relative overflow-auto will-change-transform contain-[layout_style_paint] [-webkit-overflow-scrolling:touch]"
+    @scroll="handleScroll"
+  >
+    <div class="relative w-full" :style="contentStyles">
       <div
-        class="virtual-scroller-viewport"
+        class="group absolute inset-[0_auto_auto_0] w-full will-change-transform backface-hidden [.is-grid]:grid [.is-grid]:auto-rows-(--row-height,1px) [.is-grid]:grid-cols-[repeat(var(--items-per-row,1),minmax(0,1fr))] [.is-grid]:gap-(--item-gap,0)"
         :class="{ 'is-grid': isGridMode, 'is-list': !isGridMode }"
         :style="viewportStyle"
       >
         <div
           v-for="realIndex in visibleIndexes"
           :key="items[realIndex] && items[realIndex][keyField || 'id'] ? items[realIndex][keyField || 'id'] : realIndex"
-          class="virtual-scroller-item"
+          class="w-full"
           :style="itemStyle"
         >
           <slot :item="items[realIndex]" :index="realIndex" />
@@ -51,6 +55,9 @@ const containerRef = useTemplateRef('containerRef')
 const containerHeight = ref(0)
 const containerWidth = ref<number>(0)
 const parentScrollListeners = ref<HTMLElement[]>([])
+const lastScrollTime = ref(0)
+let ro: ResizeObserver | null = null
+
 const sortedBreakpoints = computed<Breakpoint[]>(() => [...gridBreakpoints].sort((a, b) => a.min - b.min))
 
 const effectiveCols = computed<number>(() => {
@@ -118,9 +125,6 @@ function handlePageScroll() {
     updateScrollTop(intersectionTop)
   }
 }
-
-let ro: ResizeObserver | null = null
-const lastScrollTime = ref(0)
 
 function updateContainerMetrics() {
   if (!containerRef.value) return

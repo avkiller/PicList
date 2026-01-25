@@ -1,86 +1,71 @@
 <template>
-  <div class="picbeds-page">
-    <div class="page-container">
-      <header class="page-header">
-        <div class="header-content">
-          <div class="header-icon">
-            <Cloud :size="38" :stroke-width="1.5" />
-          </div>
-          <div class="header-text">
-            <div class="title-row">
-              <h1 class="page-title">
-                {{ picBedName }}
-              </h1>
-              <button class="doc-link-btn" :title="t('pages.picBedConfigs.viewDoc')" @click="handleNameClick">
-                <ExternalLink :size="16" />
-                <span>{{ t('pages.picBedConfigs.viewDoc') }}</span>
-              </button>
-            </div>
-          </div>
+  <div class="relative flex h-full w-full items-center justify-center">
+    <div class="relative z-1 flex h-full w-full flex-col items-center justify-start gap-4 rounded-xl border-none p-4">
+      <header
+        class="flex w-full items-center justify-between gap-4 overflow-visible rounded-2xl border border-border-secondary px-6 py-2 shadow-md max-md:items-stretch max-md:p-5"
+      >
+        <div class="flex flex-1 flex-wrap items-center gap-4 p-2">
+          <Cloud :size="24" class="text-accent" />
+          <h1 class="m-0 text-2xl font-semibold tracking-tight text-main">
+            {{ picBedName }}
+          </h1>
+          <CustomButton
+            type="secondary"
+            :icon="ExternalLink"
+            :text="t('pages.picBedConfigs.viewDoc')"
+            @click="handleNameClick"
+          />
         </div>
-        <div class="header-actions">
-          <button class="btn btn-secondary btn-glow" @click="imageProcessDialogVisible = true">
-            <Settings :size="16" />
-            <span>{{ t('pages.upload.imageProcessNameSingle') }}</span>
-          </button>
-          <button class="btn btn-secondary btn-glow" @click="handleCopyApi">
-            <Copy :size="16" />
-            <span>{{ t('pages.picBedConfigs.copyAPI') }}</span>
-          </button>
+        <div class="flex flex-wrap gap-3 overflow-visible">
+          <CustomButton
+            type="secondary"
+            :icon="Settings"
+            :text="t('pages.upload.imageProcessNameSingle')"
+            @click="imageProcessDialogVisible = true"
+          />
+          <CustomButton type="primary" :icon="Copy" :text="t('pages.picBedConfigs.copyAPI')" @click="handleCopyApi" />
         </div>
       </header>
 
       <!-- Main Content Card -->
-      <main class="main-content">
-        <div v-if="config.length > 0" class="config-card">
-          <!-- Card Header -->
-          <div class="card-header">
-            <div class="card-header-icon">
-              <Settings :size="18" />
-            </div>
-            <h2 class="card-title">{{ t('pages.picBedConfigs.configSettings') }}</h2>
-          </div>
-
-          <!-- Config Form -->
-          <div class="card-body">
-            <config-form :id="type" ref="$configForm" :config="config" type="uploader" color-mode="white">
+      <div
+        class="relative flex h-full w-full flex-1 items-center justify-center overflow-hidden rounded-2xl border border-border-secondary shadow-md"
+      >
+        <div class="no-scrollbar flex h-full w-full flex-1 overflow-auto rounded-sm">
+          <div v-if="config.length > 0" class="flex h-full w-full">
+            <!-- Config Form -->
+            <config-form :id="type" ref="$configForm" :config="config" type="uploader">
               <!-- Action Buttons -->
-              <div class="action-buttons">
-                <button class="btn btn-outline" type="button" @click="handleReset">
-                  <RotateCcw :size="16" />
-                  <span>{{ t('common.reset') }}</span>
-                </button>
+              <div class="mb-4 flex flex-wrap gap-3 rounded-xl border border-border bg-accent/10 p-4">
+                <CustomButton type="secondary" :icon="RotateCcw" :text="t('common.reset')" @click="handleReset" />
+                <CustomButton type="primary" :icon="Check" :text="t('common.confirm')" @click="handleConfirm" />
 
-                <button class="btn btn-success btn-glow" type="button" @click="handleConfirm">
-                  <Check :size="16" />
-                  <span>{{ t('common.confirm') }}</span>
-                </button>
-
-                <div v-if="picBedConfigList.length > 0" class="dropdown-wrapper">
-                  <button
-                    class="btn btn-warning btn-glow dropdown-trigger"
-                    type="button"
+                <div v-if="picBedConfigList.length > 0" class="relative">
+                  <CustomButton
+                    type="primary"
+                    :icon="Import"
+                    :text="t('common.import')"
+                    class="bg-warning!"
                     @click="toggleDropdown"
                     @blur="handleDropdownBlur"
-                  >
-                    <Import :size="16" />
-                    <span>{{ t('common.import') }}</span>
-                    <ChevronDown :size="14" class="dropdown-chevron" :class="{ rotated: dropdownVisible }" />
-                  </button>
+                  />
 
                   <Transition name="dropdown">
-                    <div v-show="dropdownVisible" class="dropdown-menu">
-                      <div class="dropdown-header">
+                    <div
+                      v-show="dropdownVisible"
+                      class="absolute right-0 bottom-[calc(100%+8px)] z-1000 min-w-[220px] overflow-auto rounded-xl border border-border bg-surface shadow-md"
+                    >
+                      <div class="bg-bg-tertiary px-4 py-3 text-xs font-semibold tracking-wider text-main uppercase">
                         <span>{{ t('pages.picBedConfigs.selectConfig') }}</span>
                       </div>
-                      <div class="dropdown-items">
+                      <div class="max-h-[250px] overflow-y-auto">
                         <button
                           v-for="item in picBedConfigList"
                           :key="item._id"
-                          class="dropdown-item"
+                          class="flex w-full cursor-pointer items-center gap-2.5 border-none bg-bg-tertiary px-4 py-3 text-center text-sm text-main hover:text-accent"
                           @click="handleConfigImport(item)"
                         >
-                          <FileJson :size="14" />
+                          <FileJson :size="14" class="text-accent" />
                           <span>{{ item._configName }}</span>
                         </button>
                       </div>
@@ -90,77 +75,49 @@
               </div>
             </config-form>
           </div>
-        </div>
 
-        <!-- Empty State -->
-        <div v-else class="empty-state-card">
-          <div class="empty-state">
-            <div class="empty-icon-wrapper">
-              <FolderOpen :size="48" />
+          <!-- Empty State -->
+          <div
+            v-else
+            class="flex w-full items-center justify-center overflow-hidden rounded-2xl border border-border-secondary bg-surface shadow-md"
+          >
+            <div class="px-8 py-16 text-center">
+              <div
+                class="mb-6 inline-flex h-[96px] w-[96px] items-center justify-center rounded-2xl border-2 border-border bg-surface-elevated text-main"
+              >
+                <FolderOpen :size="48" />
+              </div>
+              <h3 class="mb-2 text-xl font-semibold text-main">{{ t('pages.picBedConfigs.noConfigOptions') }}</h3>
+              <p class="m-0 text-[0.9rem] text-secondary">{{ t('pages.picBedConfigs.noConfigOptionsDesc') }}</p>
             </div>
-            <h3 class="empty-title">{{ t('pages.picBedConfigs.noConfigOptions') }}</h3>
-            <p class="empty-description">{{ t('pages.picBedConfigs.noConfigOptionsDesc') }}</p>
           </div>
         </div>
-      </main>
+      </div>
     </div>
 
-    <!-- Loading Overlay -->
-    <Transition name="fade">
-      <div v-if="loading" class="loading-overlay">
-        <div class="loading-content">
-          <div class="loading-spinner">
-            <div class="spinner-ring" />
-            <Cloud :size="24" class="spinner-icon" />
-          </div>
-          <span class="loading-text">{{ 'loading' }}</span>
-        </div>
-      </div>
-    </Transition>
-
     <transition name="modal">
-      <div v-if="imageProcessDialogVisible" class="modal-overlay" :class="advancedAnimation" @click.stop>
-        <div class="modal-container" @click.stop>
-          <div class="modal-header">
-            <h3 class="modal-title">
-              {{ t('pages.imageProcess.title') }}
-            </h3>
-            <span class="modal-subtitle">
-              {{ t('pages.imageProcess.subtitle-PerPicbed') }}
-            </span>
-            <button class="modal-close" @click="imageProcessDialogVisible = false">
-              <XIcon :size="20" />
-            </button>
-          </div>
-          <div class="modal-content">
-            <ImageProcessSetting :config-id="uuidValue" :current-picbed-name="currentPicbedType" />
-          </div>
-        </div>
-      </div>
+      <CustomModal
+        v-if="imageProcessDialogVisible"
+        v-model:visible="imageProcessDialogVisible"
+        :title="t('pages.imageProcess.title')"
+        :description="t('pages.imageProcess.subtitle-PerPicbed')"
+      >
+        <ImageProcessSetting :config-id="uuidValue" :current-picbed-name="currentPicbedType" />
+      </CustomModal>
     </transition>
   </div>
 </template>
 
 <script lang="ts" setup>
 import dayjs from 'dayjs'
-import {
-  Check,
-  ChevronDown,
-  Cloud,
-  Copy,
-  ExternalLink,
-  FileJson,
-  FolderOpen,
-  Import,
-  RotateCcw,
-  Settings,
-  XIcon,
-} from 'lucide-vue-next'
+import { Check, Cloud, Copy, ExternalLink, FileJson, FolderOpen, Import, RotateCcw, Settings } from 'lucide-vue-next'
 import { v4 as uuid } from 'uuid'
-import { computed, onBeforeMount, ref, useTemplateRef } from 'vue'
+import { onBeforeMount, ref, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
+import CustomButton from '@/components/common/CustomButton.vue'
+import CustomModal from '@/components/common/CustomModal.vue'
 import ImageProcessSetting from '@/components/ImageProcessSetting.vue'
 import ConfigForm from '@/components/UnifiedConfigForm.vue'
 import useMessage from '@/hooks/useMessage'
@@ -177,10 +134,8 @@ const type = ref('')
 const config = ref<IPicGoPluginConfig[]>([])
 const picBedConfigList = ref<IUploaderConfigListItem[]>([])
 const picBedName = ref('')
-const loading = ref(false)
 const dropdownVisible = ref(false)
 const imageProcessDialogVisible = ref(false)
-const enableAdvancedAnimation = ref(false)
 const $route = useRoute()
 const $router = useRouter()
 const $configForm = useTemplateRef('$configForm')
@@ -189,26 +144,7 @@ const currentPicbedType = $route.params.type as string
 
 type.value = $route.params.type as string
 
-async function initConf() {
-  enableAdvancedAnimation.value = (await getConfig<boolean>(configPaths.settings.isCustomMiniIcon)) || false
-}
-
-const advancedAnimation = computed(() => ({
-  advancedAnimation: enableAdvancedAnimation.value,
-}))
-
-onBeforeMount(async () => {
-  loading.value = true
-  try {
-    initConf()
-    await getPicBeds()
-    await getPicBedConfigList()
-  } finally {
-    loading.value = false
-  }
-})
-
-function toggleDropdown(_: Event) {
+function toggleDropdown() {
   dropdownVisible.value = !dropdownVisible.value
 }
 
@@ -286,7 +222,6 @@ const handleReset = async () => {
   try {
     await window.electron.triggerRPC<void>(IRPCActionType.UPLOADER_RESET_CONFIG, type.value, $route.params.configId)
     message.success(t('pages.picBedConfigs.resetSuccess'))
-    $router.back()
   } catch (error) {
     console.error('Failed to reset configuration:', error)
     message.error(t('pages.picBedConfigs.resetFailed'))
@@ -333,6 +268,15 @@ async function handleCopyApi() {
     message.error(t('pages.picBedConfigs.copyAPIFailed'))
   }
 }
+
+onBeforeMount(async () => {
+  try {
+    await getPicBeds()
+    await getPicBedConfigList()
+  } catch (error) {
+    console.error('Initialization error:', error)
+  }
+})
 </script>
 
 <script lang="ts">
@@ -340,5 +284,3 @@ export default {
   name: 'PicbedsPage',
 }
 </script>
-
-<style scoped src="../css/Picbeds.css"></style>

@@ -1,7 +1,6 @@
 <template>
-  <div id="app" :key="pageReloadCount">
+  <div id="layout" :key="pageReloadCount" class="h-full min-h-screen w-full select-none">
     <router-view />
-    <div class="bg-images" />
     <UIServiceProvider />
   </div>
 </template>
@@ -27,30 +26,3 @@ export default {
   name: 'PicList',
 }
 </script>
-
-<style lang="stylus">
-body,
-html
-  padding 0
-  margin 0
-  height 100%
-
-#app
-  height 100%
-  user-select none
-
-.bg-images {
-  position: absolute;
-  inset: 0;
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  background-image: var(--background-image);
-  background-repeat: no-repeat, no-repeat;
-  opacity: var(--background-image-opacity);
-  filter: var(--background-blur);
-  z-index: -1;
-  pointer-events: none;
-}
-</style>

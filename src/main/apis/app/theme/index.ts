@@ -3,14 +3,13 @@ import path from 'node:path'
 import { themesDir } from '@core/datastore/dirs'
 import * as fsWalk from '@nodelib/fs.walk'
 import AdmZip from 'adm-zip'
-import windowManager from 'apis/app/window/windowManager'
 import axios from 'axios'
 import fs from 'fs-extra'
 
 import { randomStringGenerator } from '@/manage/utils/common'
 import { IWindowList } from '~/utils/enum'
 
-let insertedCSSKeyMain: string | undefined
+import windowManager from '../window/windowManager'
 
 export async function resolveThemes(): Promise<{ key: string; label: string }[]> {
   const files = fsWalk.walkSync(themesDir(), {
@@ -73,14 +72,9 @@ export async function readTheme(theme: string): Promise<string> {
 }
 
 export async function applyTheme(theme: string): Promise<void> {
-  theme = path.basename(theme)
-  const css = await readTheme(theme)
-  if (windowManager.has(IWindowList.SETTING_WINDOW)) {
-    try {
-      await windowManager.get(IWindowList.SETTING_WINDOW)?.webContents.removeInsertedCSS(insertedCSSKeyMain || '')
-      insertedCSSKeyMain = await windowManager.get(IWindowList.SETTING_WINDOW)?.webContents.insertCSS(css)
-    } catch (e) {
-      console.error(e)
-    }
-  }
+  const basePath = path.basename(theme)
+  const css = await readTheme(basePath)
+  windowManager.get(IWindowList.SETTING_WINDOW)?.webContents.send('THEME_UPDATE', css)
+  windowManager.get(IWindowList.UPDATE_WINDOW)?.webContents.send('THEME_UPDATE', css)
+  windowManager.get(IWindowList.TRAY_WINDOW)?.webContents.send('THEME_UPDATE', css)
 }

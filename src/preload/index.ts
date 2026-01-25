@@ -4,21 +4,71 @@ import path from 'node:path'
 import { clipboard, contextBridge, ipcRenderer, IpcRendererEvent, webFrame, webUtils } from 'electron'
 import fs from 'fs-extra'
 import mime from 'mime'
-import { isReactive, isRef, toRaw, unref } from 'vue'
+import { isProxy, isRef, toRaw, unref } from 'vue'
 import yaml from 'yaml'
 
+function setTheme(mode: string) {
+  const m = mode === 'dark' ? 'dark' : 'light'
+  document.documentElement.setAttribute('data-theme', m)
+  document.documentElement.classList.toggle('dark', m === 'dark')
+  document.documentElement.classList.toggle('light', m === 'light')
+}
+
+function injectCSS(css: string) {
+  const id = '__piclist_theme__'
+  let el = document.getElementById(id) as HTMLStyleElement | null
+  if (!el) {
+    el = document.createElement('style')
+    el.id = id
+    ;(document.head || document.documentElement).appendChild(el)
+  }
+  el.textContent = css
+}
+
+;(async () => {
+  try {
+    const { mode, css } = await ipcRenderer.invoke('RPC_ACTIONS_INVOKE', 'THEME_GET_BOOTSTRAP')
+    if (document.documentElement) setTheme(mode)
+    if (css) injectCSS(css)
+  } catch (e) {
+    console.error('[theme] bootstrap failed', e)
+  }
+})()
+
 export const getRawData = (args: any): any => {
-  if (isRef(args)) return unref(args)
-  if (isReactive(args)) return toRaw(args)
-  if (Array.isArray(args)) return args.map(getRawData)
-  if (typeof args === 'object' && args !== null) {
-    const data = {} as Record<string, any>
-    for (const key in args) {
-      data[key] = getRawData(args[key])
+  if (args === null || typeof args !== 'object') {
+    return args
+  }
+  const raw = isRef(args) ? unref(args) : isProxy(args) ? toRaw(args) : args
+  if (raw instanceof Date) return new Date(raw)
+  if (raw instanceof RegExp) return new RegExp(raw)
+  if (raw instanceof Map) {
+    const result = new Map()
+    raw.forEach((value, key) => {
+      result.set(getRawData(key), getRawData(value))
+    })
+    return result
+  }
+  if (raw instanceof Set) {
+    const result = new Set()
+    raw.forEach(value => {
+      result.add(getRawData(value))
+    })
+    return result
+  }
+  if (Array.isArray(raw)) {
+    return raw.map(item => getRawData(item))
+  }
+  if (typeof raw === 'object') {
+    const data: Record<string, any> = {}
+    for (const key in raw) {
+      if (Object.prototype.hasOwnProperty.call(raw, key)) {
+        data[key] = getRawData(raw[key])
+      }
     }
     return data
   }
-  return args
+  return raw
 }
 
 function sendToMain(channel: string, ...args: any[]) {
@@ -65,6 +115,16 @@ try {
     },
     showFilePath(file: File) {
       return webUtils.getPathForFile(file)
+    },
+    onThemeUpdate: (callback: (css: string) => void) => {
+      const subscription = (_: any, css: string) => {
+        injectCSS(css)
+        callback(css)
+      }
+      ipcRenderer.on('THEME_UPDATE', subscription)
+      return () => {
+        ipcRenderer.removeListener('THEME_UPDATE', subscription)
+      }
     },
   })
 

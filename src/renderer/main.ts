@@ -1,6 +1,7 @@
 import 'video.js/dist/video-js.css'
 import 'highlight.js/styles/stackoverflow-light.css'
 import 'highlight.js/lib/common'
+import './index.css'
 
 import hljsVuePlugin from '@highlightjs/vue-plugin'
 import VueVideoPlayer from '@videojs-player/vue'
@@ -21,9 +22,6 @@ import db from '@/utils/db'
 type MessageSchema = typeof zhCN
 
 window.electron.setVisualZoomLevelLimits(1, 1)
-const savedTheme = localStorage.getItem('systemTheme') || 'system'
-document.documentElement.setAttribute('data-theme', savedTheme)
-document.documentElement.classList.add(savedTheme)
 
 const app = createApp(App)
 

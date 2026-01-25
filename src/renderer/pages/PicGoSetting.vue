@@ -1,1837 +1,1218 @@
 <template>
-  <div>
-    <div class="piclist-settings">
+  <div class="relative flex h-full w-full items-center justify-center">
+    <div class="relative z-1 flex h-full w-full flex-col items-center justify-start gap-4 rounded-xl border-none p-4">
       <!-- Header -->
-      <div class="settings-header">
-        <div class="header-content">
-          <Settings :size="24" class="header-icon" />
+      <div
+        class="flex w-full items-center justify-between gap-4 rounded-2xl border border-border-secondary px-6 py-2 shadow-md max-md:items-stretch max-md:p-5"
+      >
+        <div class="flex flex-1 flex-wrap items-center gap-4 p-2">
+          <Settings :size="24" class="text-accent" />
           <div>
-            <h1>{{ t('pages.settings.title') }}</h1>
+            <h1 class="m-0 text-2xl font-semibold tracking-tight text-main">{{ t('pages.settings.title') }}</h1>
           </div>
         </div>
-        <div class="header-actions">
-          <button class="btn btn-secondary" @click="goConfigPage">
-            <BookOpen :size="16" />
-            {{ t('pages.settings.docs') }}
-          </button>
+        <div class="flex gap-3">
+          <CustomButton :text="t('pages.settings.docs')" type="secondary" :icon="BookOpen" @click="goConfigPage" />
         </div>
       </div>
 
       <!-- Tab Navigation -->
-      <div class="tab-navigation">
-        <button
+      <div
+        class="flex w-full items-center justify-between gap-4 rounded-2xl border border-border-secondary px-6 py-2 shadow-md max-md:items-stretch max-md:p-5"
+      >
+        <CustomButton
           v-for="tab in tabs"
           :key="tab.id"
-          class="tab-button"
-          :class="{ active: currentTab === tab.id }"
-          @click="currentTab = tab.id as 'system' | 'sync' | 'upload' | 'advanced' | 'update'"
-        >
-          <component :is="tab.icon" :size="18" />
-          <span>{{ tab.label }}</span>
-        </button>
+          :text="tab.label"
+          :icon="tab.icon"
+          :active="currentTab === tab.id"
+          :icon-size="18"
+          type="tab"
+          @click="tabClick(tab.id)"
+        />
       </div>
 
       <!-- Settings Content -->
-      <div class="settings-content">
+      <div
+        class="relative flex h-full w-full flex-1 items-center justify-center overflow-hidden rounded-2xl border border-border-secondary p-1 shadow-md"
+      >
         <!-- System Settings Tab -->
-        <div v-if="currentTab === 'system'" class="tab-content">
-          <!-- Language & Appearance Section -->
-          <div class="settings-section system-section">
-            <div class="section-header-with-icon">
-              <div class="section-icon-wrapper language small-icon">
-                <Globe :size="20" />
-              </div>
-              <div>
-                <h2>{{ t('pages.settings.system.languageAndAppearance') }}</h2>
-              </div>
-            </div>
+        <div
+          v-if="currentTab === 'system'"
+          class="border4 no-scrollbar flex h-full w-full flex-1 flex-col gap-6 overflow-auto p-4"
+        >
+          <SettingSection :title="t('pages.settings.system.languageAndAppearance')" :icon="Globe">
+            <SettingCard>
+              <CustomSelect
+                v-model="currentLanguage"
+                :select-list="languageList"
+                :title="t('pages.settings.system.chooseLanguage')"
+                :icon="Globe"
+              />
+            </SettingCard>
 
-            <div class="system-option-grid">
-              <div class="system-option-card">
-                <div class="system-option-header">
-                  <Globe :size="18" />
-                  <span>{{ t('pages.settings.system.chooseLanguage') }}</span>
-                </div>
-                <select v-model="currentLanguage" class="form-select">
-                  <option v-for="item in languageList" :key="item.value" :value="item.value">
-                    {{ item.label }}
-                  </option>
-                </select>
-              </div>
-
-              <div class="system-option-card">
-                <div class="system-option-header">
-                  <Monitor :size="18" />
-                  <span>{{ t('pages.settings.system.startMode') }}</span>
-                </div>
-                <select v-model="currentStartMode" class="form-select">
+            <SettingCard>
+              <CustomSelect v-model="currentStartMode" :title="t('pages.settings.system.startMode')" :icon="Monitor">
+                <template #extra>
                   <option value="quiet">{{ t('pages.settings.system.quietMode') }}</option>
                   <option v-if="osGlobal !== 'darwin'" value="mini">{{ t('pages.settings.system.miniMode') }}</option>
                   <option v-if="osGlobal === 'darwin'" value="no-tray">
                     {{ t('pages.settings.system.noTrayMode') }}
                   </option>
                   <option value="main">{{ t('pages.settings.system.mainMode') }}</option>
-                </select>
-              </div>
-              <!-- Performance & Animation Toggles -->
-              <div class="system-toggle-card">
-                <label class="switch-label">
-                  <input v-model="isDisableGPU" type="checkbox" class="switch-input" />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.system.isDisableGPU') }}</div>
-                    <div class="switch-description">{{ t('pages.settings.system.isDisableGPUDesc') }}</div>
-                  </div>
-                </label>
-              </div>
+                </template>
+              </CustomSelect>
+            </SettingCard>
 
-              <div class="system-toggle-card">
-                <label class="switch-label">
-                  <input v-model="formOfSetting.enableAdvancedAnimation" type="checkbox" class="switch-input" />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.system.enableAdvancedAnimation') }}</div>
-                    <div class="switch-description">{{ t('pages.settings.system.enableAdvancedAnimationDesc') }}</div>
-                  </div>
-                </label>
-              </div>
+            <SettingCard p1>
+              <CustomSwitch
+                v-model="isDisableGPU"
+                no-border
+                small
+                :title="t('pages.settings.system.isDisableGPU')"
+                :description="t('pages.settings.system.isDisableGPUDesc')"
+                @update:model-value="handleIsDisableGPUChange"
+              />
+            </SettingCard>
 
-              <div class="system-option-card">
-                <div class="system-option-header">
-                  <ImageIcon :size="18" />
-                  <span>{{ t('pages.settings.system.chooseTheme') }}</span>
-                </div>
-                <select v-model="currentTheme" class="form-select theme-dropdown">
-                  <option v-for="theme in themeList" :key="theme.key" :value="theme.key">
-                    {{ theme.label }}
-                  </option>
-                </select>
-              </div>
-            </div>
+            <SettingCard p1>
+              <CustomSwitch
+                v-model="formOfSetting.enableAdvancedAnimation"
+                no-border
+                small
+                :title="t('pages.settings.system.enableAdvancedAnimation')"
+                :description="t('pages.settings.system.enableAdvancedAnimationDesc')"
+              />
+            </SettingCard>
 
-            <div class="theme-actions-grid">
-              <button
-                class="btn btn-secondary theme-action-btn"
-                :disabled="downloadingThemes"
-                @click="handleDownloadThemes"
-              >
-                <Download :size="14" />
-                <span>{{
-                  downloadingThemes
-                    ? t('pages.settings.system.downloadingThemes')
-                    : t('pages.settings.system.downloadThemes')
-                }}</span>
-              </button>
-              <button class="btn btn-secondary theme-action-btn" @click="handleImportThemes">
-                <Import :size="14" />
-                <span>{{ t('pages.settings.system.importThemes') }}</span>
-              </button>
-            </div>
-          </div>
+            <SettingCard>
+              <CustomSelect
+                v-model="currentTheme"
+                :select-list="themeList"
+                :title="t('pages.settings.system.chooseTheme')"
+                :icon="ImageIcon"
+              />
+            </SettingCard>
+            <template #extra>
+              <div class="mt-3 flex gap-4">
+                <CustomButton
+                  :disabled="downloadingThemes"
+                  :text="
+                    downloadingThemes
+                      ? t('pages.settings.system.downloadingThemes')
+                      : t('pages.settings.system.downloadThemes')
+                  "
+                  :icon-size="14"
+                  :icon="Download"
+                  type="secondary"
+                  @click="handleDownloadThemes"
+                />
+                <CustomButton
+                  :icon="Import"
+                  :text="t('pages.settings.system.importThemes')"
+                  type="secondary"
+                  :icon-size="14"
+                  @click="handleImportThemes"
+                />
+              </div>
+            </template>
+          </SettingSection>
 
           <!-- Window Behavior Section -->
-          <div class="settings-section system-section">
-            <div class="section-header-with-icon">
-              <div class="section-icon-wrapper window small-icon">
-                <Monitor :size="20" />
-              </div>
-              <div>
-                <h2>{{ t('pages.settings.system.windowBehavior') }}</h2>
-              </div>
-            </div>
-
+          <SettingSection :icon="Monitor" :title="t('pages.settings.system.windowBehavior')">
             <!-- Main Window Size Card -->
-            <div class="window-size-card" @click="mainWindowSizeVisible = true">
-              <div class="window-size-icon">
-                <Monitor :size="15" />
-              </div>
-              <div class="window-size-info">
-                <h4>{{ t('pages.settings.system.mainWindowSize') }}</h4>
-              </div>
-              <div class="window-size-arrow">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M9 18l6-6-6-6" />
-                </svg>
-              </div>
-            </div>
 
+            <CustomNavCard
+              :title="t('pages.settings.system.mainWindowSize')"
+              :icon="Monitor"
+              @click="mainWindowSizeVisible = true"
+            />
             <!-- Window Behavior Toggles -->
-            <div class="system-toggles-grid">
-              <div v-if="osGlobal === 'darwin'" class="system-toggle-card">
-                <label class="switch-label">
-                  <input
-                    v-model="formOfSetting.isHideDock"
-                    type="checkbox"
-                    class="switch-input"
-                    @change="handleHideDockChange(formOfSetting.isHideDock)"
-                  />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.system.isHideDock') }}</div>
-                  </div>
-                </label>
-              </div>
 
-              <div v-if="osGlobal !== 'darwin'" class="system-toggle-card">
-                <label class="switch-label">
-                  <input v-model="formOfSetting.autoCloseMiniWindow" type="checkbox" class="switch-input" />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.system.autoCloseMiniWindow') }}</div>
-                  </div>
-                </label>
-              </div>
+            <SettingCard v-if="osGlobal === 'darwin'" p1>
+              <CustomSwitch
+                v-model="formOfSetting.isHideDock"
+                small
+                no-border
+                :title="t('pages.settings.system.isHideDock')"
+                @change="handleHideDockChange(formOfSetting.isHideDock)"
+              />
+            </SettingCard>
 
-              <div v-if="osGlobal !== 'darwin'" class="system-toggle-card">
-                <label class="switch-label">
-                  <input v-model="formOfSetting.autoCloseMainWindow" type="checkbox" class="switch-input" />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.system.autoCloseMainWindow') }}</div>
-                  </div>
-                </label>
-              </div>
+            <SettingCard v-if="osGlobal !== 'darwin'" p1>
+              <CustomSwitch
+                v-model="formOfSetting.autoCloseMiniWindow"
+                small
+                no-border
+                :title="t('pages.settings.system.autoCloseMiniWindow')"
+              />
+            </SettingCard>
 
-              <div v-if="osGlobal !== 'darwin'" class="system-toggle-card">
-                <label class="switch-label">
-                  <input
-                    v-model="formOfSetting.miniWindowOntop"
-                    type="checkbox"
-                    class="switch-input"
-                    @change="handleMiniWindowOntop(formOfSetting.miniWindowOntop)"
-                  />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.system.miniWindowOnTop') }}</div>
-                  </div>
-                </label>
-              </div>
+            <SettingCard v-if="osGlobal !== 'darwin'" p1>
+              <CustomSwitch
+                v-model="formOfSetting.autoCloseMainWindow"
+                small
+                no-border
+                :title="t('pages.settings.system.autoCloseMainWindow')"
+              />
+            </SettingCard>
 
-              <div v-if="osGlobal !== 'darwin'" class="system-toggle-card">
-                <label class="switch-label">
-                  <input v-model="formOfSetting.isCustomMiniIcon" type="checkbox" class="switch-input" />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.system.isCustomMiniIcon') }}</div>
-                  </div>
-                </label>
-              </div>
+            <SettingCard v-if="osGlobal !== 'darwin'" p1>
+              <CustomSwitch
+                v-model="formOfSetting.miniWindowOntop"
+                small
+                no-border
+                :title="t('pages.settings.system.miniWindowOnTop')"
+                @click="handleMiniWindowOntop(formOfSetting.miniWindowOntop)"
+              />
+            </SettingCard>
 
-              <div
-                v-if="osGlobal !== 'darwin' && formOfSetting.isCustomMiniIcon"
-                class="system-toggle-card with-action"
-              >
-                <div class="toggle-with-action-content">
-                  <ImageIcon :size="18" />
-                  <span>{{ t('pages.settings.system.customMiniIconPath') }}</span>
-                </div>
-                <button class="btn btn-secondary btn-sm" @click="handleMiniIconPath">
-                  {{ t('pages.settings.clickToSet') }}
-                </button>
-              </div>
-            </div>
-          </div>
+            <SettingCard v-if="osGlobal !== 'darwin'" p1>
+              <CustomSwitch
+                v-model="formOfSetting.isCustomMiniIcon"
+                small
+                no-border
+                :title="t('pages.settings.system.isCustomMiniIcon')"
+              />
+            </SettingCard>
+
+            <CustomNavCard
+              v-if="osGlobal !== 'darwin' && formOfSetting.isCustomMiniIcon"
+              :icon="ImageIcon"
+              noarrow
+              :title="t('pages.settings.system.customMiniIconPath')"
+            >
+              <template #extra>
+                <CustomButton type="secondary" :text="t('pages.settings.clickToSet')" @click="handleMiniIconPath" />
+              </template>
+            </CustomNavCard>
+          </SettingSection>
           <!-- Startup & Shortcuts Section -->
-          <div class="settings-section system-section">
-            <div class="section-header-with-icon">
-              <div class="section-icon-wrapper startup small-icon">
-                <Keyboard :size="20" />
-              </div>
-              <div>
-                <h2>{{ t('pages.settings.system.startupAndShortcuts') }}</h2>
-              </div>
-            </div>
-
-            <div class="startup-options-grid">
-              <!-- Auto Launch Toggle -->
-              <div class="startup-toggle-card">
-                <label class="switch-label">
-                  <input
-                    v-model="formOfSetting.autoStart"
-                    type="checkbox"
-                    class="switch-input"
-                    @change="handleAutoStartChange(formOfSetting.autoStart)"
-                  />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.system.autoLaunch') }}</div>
-                    <div class="switch-description">{{ t('pages.settings.system.autoLaunchDesc') }}</div>
-                  </div>
-                </label>
-              </div>
-
-              <!-- Shortcuts Action Card -->
-              <div class="shortcut-action-card" @click="goShortCutPage">
-                <div class="shortcut-action-icon">
-                  <Keyboard :size="22" />
-                </div>
-                <div class="shortcut-action-info">
-                  <h4>{{ t('pages.settings.system.setShortCuts') }}</h4>
-                  <p>{{ t('pages.settings.system.setShortCutsDesc') }}</p>
-                </div>
-                <div class="shortcut-action-arrow">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
+          <SettingSection :icon="Keyboard" :title="t('pages.settings.system.startupAndShortcuts')">
+            <!-- Auto Launch Toggle -->
+            <SettingCard p1>
+              <CustomSwitch
+                v-model="formOfSetting.autoStart"
+                small
+                no-border
+                :title="t('pages.settings.system.autoLaunch')"
+                :description="t('pages.settings.system.autoLaunchDesc')"
+                @change="handleAutoStartChange(formOfSetting.autoStart)"
+              />
+            </SettingCard>
+            <CustomNavCard
+              :title="t('pages.settings.system.setShortCuts')"
+              :description="t('pages.settings.system.setShortCutsDesc')"
+              :icon="Keyboard"
+              @click="goShortCutPage"
+            />
+          </SettingSection>
         </div>
 
         <!-- Sync & Configure Tab -->
-        <div v-if="currentTab === 'sync'" class="tab-content">
+        <div
+          v-if="currentTab === 'sync'"
+          class="border4 no-scrollbar flex h-full w-full flex-1 flex-col gap-6 overflow-auto p-4"
+        >
           <!-- Sync Status Overview -->
-          <div class="sync-overview-card">
-            <div class="sync-overview-header">
-              <div class="sync-overview-icon">
-                <RotateCcw :size="28" />
-              </div>
-              <div class="sync-overview-info">
-                <h2>{{ t('pages.settings.sync.syncConfiguration') }}</h2>
-                <p class="sync-status-text">
-                  <span class="sync-type-badge">{{ sync.type?.toUpperCase() || 'N/A' }}</span>
-                  <span v-if="sync.type !== 'webdav' && sync.username"
-                    >{{ sync.username }}/{{ sync.repo || '...' }}</span
-                  >
-                  <span v-else-if="sync.type === 'webdav' && sync.webdavEndpoint">{{ sync.webdavEndpoint }}</span>
-                  <span v-else class="sync-not-configured">{{ t('pages.settings.sync.notConfigured') }}</span>
-                </p>
-              </div>
-            </div>
-            <button class="btn btn-primary sync-config-btn" @click="syncVisible = true">
-              <Settings :size="16" />
-              {{ t('pages.settings.sync.configureSync') }}
-            </button>
-          </div>
+          <CustomNavCard noarrow :icon="RotateCcw" :title="t('pages.settings.sync.syncConfiguration')">
+            <template #description>
+              <p class="flex items-center gap-2 text-sm text-secondary">
+                <span
+                  class="inline-flex items-center rounded-sm bg-bg-tertiary px-2 py-1 text-xs font-semibold tracking-wide text-accent"
+                  >{{ sync.type?.toUpperCase() || 'N/A' }}</span
+                >
+                <span v-if="sync.type !== 'webdav' && sync.username" class="m-0 text-sm text-secondary"
+                  >{{ sync.username }}/{{ sync.repo || '...' }}</span
+                >
+                <span v-else-if="sync.type === 'webdav' && sync.webdavEndpoint" class="m-0 text-sm text-secondary">{{
+                  sync.webdavEndpoint
+                }}</span>
+                <span v-else class="text-sm font-semibold text-danger/70 italic">{{
+                  t('pages.settings.sync.notConfigured')
+                }}</span>
+              </p>
+            </template>
+            <template #extra>
+              <CustomButton
+                :icon="Settings"
+                :text="t('pages.settings.sync.configureSync')"
+                type="secondary"
+                @click="syncVisible = true"
+              />
+            </template>
+          </CustomNavCard>
 
           <!-- Sync Actions Section -->
-          <div class="settings-section sync-actions-section">
-            <div class="section-header-with-icon">
-              <CloudUpload :size="30" class="section-icon" />
-              <div>
-                <h2>{{ t('pages.settings.sync.syncActions') }}</h2>
-              </div>
-            </div>
+          <SettingSection :icon="CloudUpload" :title="t('pages.settings.sync.syncActions')">
+            <CustomNavCard
+              :title="t('pages.settings.sync.upDownloadSettings')"
+              :icon="CloudUpload"
+              :description="t('pages.settings.sync.upDownloadDesc')"
+              @click="() => (upDownConfigVisible = true)"
+            />
+            <CustomNavCard
+              :title="t('pages.settings.sync.migrateFromPicGo')"
+              :icon="Import"
+              :description="t('pages.settings.sync.migrateDesc')"
+              @click="handleMigrateFromPicGo"
+            />
 
-            <div class="sync-action-cards">
-              <div class="sync-action-card" @click="upDownConfigVisible = true">
-                <div class="sync-action-icon upload">
-                  <CloudUpload :size="24" />
-                </div>
-                <div class="sync-action-content">
-                  <h4>{{ t('pages.settings.sync.upDownloadSettings') }}</h4>
-                  <p>{{ t('pages.settings.sync.upDownloadDesc') }}</p>
-                </div>
-                <div class="sync-action-arrow">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                </div>
-              </div>
-
-              <div class="sync-action-card" @click="handleMigrateFromPicGo">
-                <div class="sync-action-icon migrate">
-                  <Import :size="24" />
-                </div>
-                <div class="sync-action-content">
-                  <h4>{{ t('pages.settings.sync.migrateFromPicGo') }}</h4>
-                  <p>{{ t('pages.settings.sync.migrateDesc') }}</p>
-                </div>
-                <div class="sync-action-arrow">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                </div>
-              </div>
-              <div v-if="isPortable" class="sync-action-card" @click="handleMigrateFromPicListInstallation">
-                <div class="sync-action-icon migrate">
-                  <Import :size="24" />
-                </div>
-                <div class="sync-action-content">
-                  <h4>{{ t('pages.settings.sync.migrateFromPicListInstallation') }}</h4>
-                  <p>{{ t('pages.settings.sync.migrateDescPicList') }}</p>
-                </div>
-                <div class="sync-action-arrow">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
+            <CustomNavCard
+              v-if="isPortable"
+              :title="t('pages.settings.sync.migrateFromPicListInstallation')"
+              :icon="Import"
+              :description="t('pages.settings.sync.migrateDescPicList')"
+              @click="handleMigrateFromPicListInstallation"
+            />
+          </SettingSection>
 
           <!-- File Management Section -->
-          <div class="settings-section file-management-section">
-            <div class="section-header-with-icon">
-              <FolderOpen :size="30" class="section-icon" />
-              <div>
-                <h2>{{ t('pages.settings.sync.fileManagement') }}</h2>
-              </div>
-            </div>
-
-            <div class="file-action-grid">
-              <button class="file-action-btn" @click="openFile('data.json')">
-                <FileText :size="20" />
-                <span>{{ t('pages.settings.sync.openConfigFile') }}</span>
-              </button>
-
-              <button class="file-action-btn" @click="openDirectory()">
-                <FolderOpen :size="20" />
-                <span>{{ t('pages.settings.sync.openConfigFileDir') }}</span>
-              </button>
-            </div>
-          </div>
+          <SettingSection :icon="FolderOpen" :title="t('pages.settings.sync.fileManagement')">
+            <CustomNavCard
+              :title="t('pages.settings.sync.openConfigFile')"
+              :icon="FileText"
+              @click="openFile('data.json')"
+            />
+            <CustomNavCard
+              :title="t('pages.settings.sync.openConfigFileDir')"
+              :icon="FolderOpen"
+              @click="openDirectory"
+            />
+          </SettingSection>
         </div>
         <!-- Upload Settings Tab -->
-        <div v-if="currentTab === 'upload'" class="tab-content">
+        <div
+          v-if="currentTab === 'upload'"
+          class="border4 no-scrollbar flex h-full w-full flex-1 flex-col gap-6 overflow-auto p-4"
+        >
           <!-- Upload Behavior Section -->
-          <div class="settings-section upload-section">
-            <div class="section-header-with-icon">
-              <div class="section-icon-wrapper upload small-icon">
-                <CloudUpload :size="20" />
-              </div>
-              <div>
-                <h2>{{ t('pages.settings.upload.uploadBehavior') }}</h2>
-              </div>
-            </div>
+          <SettingSection :icon="Server" :title="t('pages.settings.upload.controlShow')">
+            <SettingCard>
+              <MultiSelect
+                v-model:choosed="showPicBedList"
+                :icon="Server"
+                :tight="false"
+                :title="t('pages.settings.upload.chooseShowedPicBed')"
+                :zero-placeholder="t('pages.gallery.chooseShowedPicBed')"
+                :all-list="picBedG"
+              />
+            </SettingCard>
+            <SettingCard>
+              <MultiSelect
+                v-model:choosed="galleryPicBedFilterList"
+                :icon="ImageIcon"
+                :tight="false"
+                :title="t('pages.settings.upload.galleryPicBedFilter')"
+                :zero-placeholder="t('pages.gallery.chooseShowedPicBed')"
+                :all-list="picBedG"
+              />
+            </SettingCard>
+          </SettingSection>
+          <SettingSection :icon="CloudUpload" :title="t('pages.settings.upload.uploadBehavior')">
+            <!-- Auto Import Card -->
+            <CustomSwitch
+              v-model="formOfSetting.autoImport"
+              small
+              no-border
+              :title="t('pages.settings.upload.autoImportInManage')"
+              :description="t('pages.settings.upload.autoImportInManageHint')"
+            />
+            <!-- Auto Import PicBed Selection -->
+            <SettingCard v-if="formOfSetting.autoImport">
+              <MultiSelect
+                v-model:choosed="formOfSetting.autoImportPicBed"
+                :icon="ImageIcon"
+                :tight="false"
+                :title="t('pages.settings.upload.autoImportPicBed')"
+                :zero-placeholder="t('pages.settings.upload.autoImportPicBed')"
+                :all-list="picBedG"
+              />
+            </SettingCard>
+            <!-- Second PicBed Card -->
+            <SettingCard p1>
+              <CustomSwitch
+                v-model="formOfSetting.enableSecondUploader"
+                small
+                no-border
+                :title="t('pages.settings.upload.enableSecondPicBed')"
+                :description="t('pages.settings.upload.enableSecondPicBedHint')"
+              />
+            </SettingCard>
 
-            <div class="upload-behavior-grid">
-              <!-- Auto Import Card -->
-              <div class="upload-feature-card">
-                <label class="switch-label">
-                  <input v-model="formOfSetting.autoImport" type="checkbox" class="switch-input" />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.upload.autoImportInManage') }}</div>
-                    <div class="switch-description">{{ t('pages.settings.upload.autoImportInManageHint') }}</div>
-                  </div>
-                </label>
-              </div>
+            <CustomNavCard
+              :title="t('pages.settings.upload.setSecondPicBed')"
+              :icon="CloudUpload"
+              :description="t('pages.settings.upload.setSecondPicBedDesc')"
+              @click="handleChangeSecondPicBed"
+            />
 
-              <!-- Auto Import PicBed Selection -->
-              <div v-if="formOfSetting.autoImport" class="upload-feature-card picbed-selection">
-                <div class="picbed-selection-header">
-                  <span>{{ t('pages.settings.upload.autoImportPicBed') }}</span>
-                </div>
-                <div class="checkbox-group compact">
-                  <label v-for="item in picBedG" :key="item.type" class="checkbox-option">
-                    <input
-                      v-model="formOfSetting.autoImportPicBed"
-                      type="checkbox"
-                      :value="item.type"
-                      class="checkbox-input"
-                    />
-                    <span class="checkbox-indicator" />
-                    <span class="checkbox-label">{{ item.name }}</span>
-                  </label>
-                </div>
-              </div>
-
-              <!-- Second PicBed Card -->
-              <div class="upload-feature-card">
-                <label class="switch-label">
-                  <input v-model="formOfSetting.enableSecondUploader" type="checkbox" class="switch-input" />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.upload.enableSecondPicBed') }}</div>
-                    <div class="switch-description">{{ t('pages.settings.upload.enableSecondPicBedHint') }}</div>
-                  </div>
-                </label>
-              </div>
-
-              <!-- Set Second PicBed Action -->
-              <div class="upload-action-card" @click="handleChangeSecondPicBed">
-                <div class="upload-action-icon">
-                  <CloudUpload :size="20" />
-                </div>
-                <div class="upload-action-info">
-                  <h4>{{ t('pages.settings.upload.setSecondPicBed') }}</h4>
-                  <p>{{ t('pages.settings.upload.setSecondPicBedDesc') }}</p>
-                </div>
-                <div class="upload-action-arrow">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                </div>
-              </div>
-
-              <div class="system-option-card">
-                <div class="system-option-header">
-                  <Settings2Icon :size="18" />
-                  <span>{{ t('pages.settings.upload.chooseSecondPicBedMode') }}</span>
-                </div>
-                <select v-model="currentSecondMode" class="form-select">
-                  <option v-for="item in secondModeList" :key="item.value" :value="item.value">
-                    {{ item.label }}
-                  </option>
-                </select>
-              </div>
-            </div>
-          </div>
+            <SettingCard>
+              <CustomSelect
+                v-model="currentSecondMode"
+                :select-list="secondModeList"
+                :title="t('pages.settings.upload.chooseSecondPicBedMode')"
+                :icon="Settings2Icon"
+              />
+            </SettingCard>
+          </SettingSection>
 
           <!-- Upload Processing Section -->
-          <div class="settings-section upload-section">
-            <div class="section-header-with-icon">
-              <div class="section-icon-wrapper processing small-icon">
-                <ImageIcon :size="20" />
-              </div>
-              <div>
-                <h2>{{ t('pages.settings.upload.uploadProcessing') }}</h2>
-              </div>
-            </div>
+          <SettingSection :icon="ImageIcon" :title="t('pages.settings.upload.uploadProcessing')">
+            <CustomNavCard
+              :title="t('pages.settings.upload.advancedRname')"
+              :icon="Edit"
+              :description="t('pages.settings.upload.advancedRnameDesc')"
+              @click="advancedRenameVisible = true"
+            />
+            <CustomNavCard
+              :title="t('pages.settings.upload.imageProcessing')"
+              :icon="ImageIcon"
+              :description="t('pages.settings.upload.imageProcessingDesc')"
+              @click="imageProcessDialogVisible = true"
+            />
+            <SettingCard p1>
+              <CustomSwitch
+                v-model="formOfSetting.deleteCloudFile"
+                small
+                no-border
+                :title="t('pages.settings.upload.deleteCloud')"
+              />
+            </SettingCard>
 
-            <!-- Processing Action Cards -->
-            <div class="processing-actions-grid">
-              <div class="processing-action-card" @click="advancedRenameVisible = true">
-                <div class="processing-action-icon">
-                  <Edit :size="15" />
-                </div>
-                <div class="processing-action-info">
-                  <h4>{{ t('pages.settings.upload.advancedRname') }}</h4>
-                  <p>{{ t('pages.settings.upload.advancedRnameDesc') }}</p>
-                </div>
-              </div>
+            <SettingCard p1>
+              <CustomSwitch
+                v-model="formOfSetting.rename"
+                small
+                no-border
+                :title="t('pages.settings.upload.manualRename')"
+              />
+            </SettingCard>
 
-              <div class="processing-action-card" @click="imageProcessDialogVisible = true">
-                <div class="processing-action-icon">
-                  <ImageIcon :size="20" />
-                </div>
-                <div class="processing-action-info">
-                  <h4>{{ t('pages.settings.upload.imageProcessing') }}</h4>
-                  <p>{{ t('pages.settings.upload.imageProcessingDesc') }}</p>
-                </div>
-              </div>
-            </div>
+            <SettingCard p1>
+              <CustomSwitch
+                v-model="formOfSetting.autoRename"
+                small
+                no-border
+                :title="t('pages.settings.upload.timestampRename')"
+                description="YYYYMMDDHHmmssSSS"
+              />
+            </SettingCard>
 
-            <!-- Processing Toggles -->
-            <div class="upload-toggles-grid">
-              <div class="upload-toggle-card">
-                <label class="switch-label">
-                  <input v-model="formOfSetting.deleteCloudFile" type="checkbox" class="switch-input" />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.upload.deleteCloud') }}</div>
-                  </div>
-                </label>
-              </div>
-
-              <div class="upload-toggle-card">
-                <label class="switch-label">
-                  <input v-model="formOfSetting.rename" type="checkbox" class="switch-input" />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.upload.manualRname') }}</div>
-                  </div>
-                </label>
-              </div>
-
-              <div class="upload-toggle-card">
-                <label class="switch-label">
-                  <input v-model="formOfSetting.autoRename" type="checkbox" class="switch-input" />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.upload.timestampRname') }}</div>
-                    <div class="switch-description">YYYYMMDDHHmmssSSS</div>
-                  </div>
-                </label>
-              </div>
-
-              <div class="upload-toggle-card">
-                <label class="switch-label">
-                  <input v-model="formOfSetting.deleteLocalFile" type="checkbox" class="switch-input" />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.upload.deleteLocalFileAfterUpload') }}</div>
-                  </div>
-                </label>
-              </div>
-            </div>
-          </div>
+            <SettingCard p1 class="flex flex-col justify-center">
+              <CustomSwitch
+                v-model="formOfSetting.deleteLocalFile"
+                small
+                no-border
+                :title="t('pages.settings.upload.deleteLocalFileAfterUpload')"
+              />
+            </SettingCard>
+          </SettingSection>
 
           <!-- Clipboard & Notification Section -->
-          <div class="settings-section upload-section">
-            <div class="section-header-with-icon">
-              <div class="section-icon-wrapper clipboard small-icon">
-                <Edit :size="20" />
-              </div>
-              <div>
-                <h2>{{ t('pages.settings.upload.clipboardAndNotification') }}</h2>
-              </div>
-            </div>
+          <SettingSection :icon="Edit" :title="t('pages.settings.upload.clipboardAndNotification')">
+            <SettingCard p1>
+              <CustomSwitch
+                v-model="formOfSetting.uploadNotification"
+                small
+                no-border
+                :title="t('pages.settings.upload.enableUploadNotification')"
+              />
+            </SettingCard>
 
-            <div class="upload-toggles-grid">
-              <div class="upload-toggle-card">
-                <label class="switch-label">
-                  <input v-model="formOfSetting.uploadNotification" type="checkbox" class="switch-input" />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.upload.enableUploadNotification') }}</div>
-                  </div>
-                </label>
-              </div>
+            <SettingCard p1>
+              <CustomSwitch
+                v-model="formOfSetting.uploadResultNotification"
+                small
+                no-border
+                :title="t('pages.settings.upload.enableUploadResultNotification')"
+              />
+            </SettingCard>
 
-              <div class="upload-toggle-card">
-                <label class="switch-label">
-                  <input v-model="formOfSetting.uploadResultNotification" type="checkbox" class="switch-input" />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.upload.enableUploadResultNotification') }}</div>
-                  </div>
-                </label>
-              </div>
+            <SettingCard p1 class="flex flex-col justify-center">
+              <CustomSwitch
+                v-model="formOfSetting.autoCopy"
+                small
+                no-border
+                :title="t('pages.settings.upload.autoCopyUrlAfterUpload')"
+              />
+            </SettingCard>
 
-              <div class="upload-toggle-card">
-                <label class="switch-label">
-                  <input v-model="formOfSetting.autoCopy" type="checkbox" class="switch-input" />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.upload.autoCopyUrlAfterUpload') }}</div>
-                  </div>
-                </label>
-              </div>
+            <SettingCard p1>
+              <CustomSwitch
+                v-model="formOfSetting.useBuiltinClipboard"
+                small
+                no-border
+                :title="t('pages.settings.upload.useBuiltInClipboardUpload')"
+                :description="t('pages.settings.upload.useBuiltInClipboardUploadHint')"
+              />
+            </SettingCard>
 
-              <div class="upload-toggle-card">
-                <label class="switch-label">
-                  <input v-model="formOfSetting.useBuiltinClipboard" type="checkbox" class="switch-input" />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.upload.useBuiltInClipboardUpload') }}</div>
-                    <div class="switch-description">{{ t('pages.settings.upload.useBuiltInClipboardUploadHint') }}</div>
-                  </div>
-                </label>
-              </div>
-
-              <div class="upload-toggle-card">
-                <label class="switch-label">
-                  <input v-model="formOfSetting.isAutoListenClipboard" type="checkbox" class="switch-input" />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.upload.isAutoListenClipboard') }}</div>
-                  </div>
-                </label>
-              </div>
-            </div>
-          </div>
+            <SettingCard p1>
+              <CustomSwitch
+                v-model="formOfSetting.isAutoListenClipboard"
+                small
+                no-border
+                :title="t('pages.settings.upload.isAutoListenClipboard')"
+              />
+            </SettingCard>
+          </SettingSection>
 
           <!-- URL Format & Link Type Section -->
-          <div class="settings-section upload-section">
-            <div class="section-header-with-icon">
-              <div class="section-icon-wrapper link small-icon">
-                <Link :size="20" />
-              </div>
-              <div>
-                <h2>{{ t('pages.settings.upload.urlFormatAndLinkType') }}</h2>
-              </div>
-            </div>
-
+          <SettingSection :icon="Link" :title="t('pages.settings.upload.urlFormatAndLinkType')">
             <!-- Custom Link Format Action -->
-            <div class="url-format-action-card" @click="customLinkVisible = true">
-              <div class="url-format-icon">
-                <Link :size="15" />
-              </div>
-              <div class="url-format-info">
-                <h4>{{ t('pages.settings.upload.customLinkFormat') }}</h4>
-                <p>{{ t('pages.settings.upload.customLinkFormatDesc') }}</p>
-              </div>
-              <div class="url-format-arrow">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M9 18l6-6-6-6" />
-                </svg>
-              </div>
-            </div>
+            <CustomNavCard
+              :title="t('pages.settings.upload.customLinkFormat')"
+              :icon="Link"
+              :description="t('pages.settings.upload.customLinkFormatDesc')"
+              @click="customLinkVisible = true"
+            />
+            <SettingCard p1>
+              <CustomSwitch
+                v-model="formOfSetting.useShortUrl"
+                small
+                no-border
+                :title="t('pages.settings.upload.enableShortUrl')"
+                :description="t('pages.settings.upload.enableShortUrlDesc')"
+              />
+            </SettingCard>
 
-            <!-- Short URL Toggle -->
-            <div class="short-url-section">
-              <div class="upload-toggle-card">
-                <label class="switch-label">
-                  <input v-model="formOfSetting.useShortUrl" type="checkbox" class="switch-input" />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.upload.enableShortUrl') }}</div>
-                    <div class="switch-description">{{ t('pages.settings.upload.enableShortUrlDesc') }}</div>
-                  </div>
-                </label>
-              </div>
+            <SettingCard v-if="formOfSetting.useShortUrl">
+              <CustomSelect
+                v-model="currentShortUrlServer"
+                :select-list="shortUrlServerList"
+                :title="t('pages.settings.upload.shortUrlServer')"
+                :icon="Link"
+              />
+            </SettingCard>
 
-              <!-- Short URL Configuration -->
-              <div v-if="formOfSetting.useShortUrl" class="short-url-config">
-                <div class="short-url-field">
-                  <label>{{ t('pages.settings.upload.shortUrlServer') }}</label>
-                  <select
-                    v-model="currentShortUrlServer"
-                    class="form-select"
-                    @change="handleShortUrlServerChange(currentShortUrlServer)"
-                  >
-                    <option v-for="item in shortUrlServerList" :key="item.value" :value="item.value">
-                      {{ item.label }}
-                    </option>
-                  </select>
-                </div>
+            <SettingCard v-if="formOfSetting.useShortUrl && formOfSetting.shortUrlServer === 'c1n'">
+              <CustomInput
+                v-model="formOfSetting.c1nToken"
+                :title="t('pages.settings.upload.c1nToken')"
+                :icon="Link"
+                :placeholder="t('pages.settings.upload.c1nToken')"
+              />
+            </SettingCard>
 
-                <div v-if="formOfSetting.shortUrlServer === 'c1n'" class="short-url-field">
-                  <label>{{ t('pages.settings.upload.c1nToken') }}</label>
-                  <input
-                    v-model="formOfSetting.c1nToken"
-                    type="text"
-                    class="form-input"
-                    :placeholder="t('pages.settings.upload.c1nToken')"
-                  />
-                </div>
+            <SettingCard v-if="formOfSetting.useShortUrl && formOfSetting.shortUrlServer === 'yourls'">
+              <CustomInput
+                v-model="formOfSetting.yourlsDomain"
+                :title="t('pages.settings.upload.yourlsDomain')"
+                :icon="Link"
+                :placeholder="t('pages.settings.upload.yourlsDomain')"
+              />
+            </SettingCard>
 
-                <div v-if="formOfSetting.shortUrlServer === 'yourls'" class="short-url-field">
-                  <label>{{ t('pages.settings.upload.yourlsDomain') }}</label>
-                  <input
-                    v-model="formOfSetting.yourlsDomain"
-                    type="text"
-                    class="form-input"
-                    :placeholder="t('pages.settings.upload.yourlsDomain')"
-                  />
-                </div>
+            <SettingCard v-if="formOfSetting.useShortUrl && formOfSetting.shortUrlServer === 'yourls'">
+              <CustomInput
+                v-model="formOfSetting.yourlsSignature"
+                :title="t('pages.settings.upload.yourlsSignature')"
+                :icon="Link"
+                :placeholder="t('pages.settings.upload.yourlsSignature')"
+              />
+            </SettingCard>
 
-                <div v-if="formOfSetting.shortUrlServer === 'yourls'" class="short-url-field">
-                  <label>{{ t('pages.settings.upload.yourlsSignature') }}</label>
-                  <input
-                    v-model="formOfSetting.yourlsSignature"
-                    type="text"
-                    class="form-input"
-                    :placeholder="t('pages.settings.upload.yourlsSignature')"
-                  />
-                </div>
+            <SettingCard v-if="formOfSetting.useShortUrl && formOfSetting.shortUrlServer === 'cf_worker'">
+              <CustomInput
+                v-model="formOfSetting.cfWorkerHost"
+                :title="t('pages.settings.upload.cfWorkerHost')"
+                :icon="Link"
+                :placeholder="t('pages.settings.upload.cfWorkerHost')"
+              />
+            </SettingCard>
 
-                <div v-if="formOfSetting.shortUrlServer === 'cf_worker'" class="short-url-field">
-                  <label>{{ t('pages.settings.upload.cfWorkerHost') }}</label>
-                  <input
-                    v-model="formOfSetting.cfWorkerHost"
-                    type="text"
-                    class="form-input"
-                    :placeholder="t('pages.settings.upload.cfWorkerHost')"
-                  />
-                </div>
+            <SettingCard v-if="formOfSetting.useShortUrl && formOfSetting.shortUrlServer === 'sink'">
+              <CustomInput
+                v-model="formOfSetting.sinkDomain"
+                :title="t('pages.settings.upload.sinkDomain')"
+                :icon="Link"
+                :placeholder="t('pages.settings.upload.sinkDomain')"
+              />
+            </SettingCard>
 
-                <div v-if="formOfSetting.shortUrlServer === 'sink'" class="short-url-field">
-                  <label>{{ t('pages.settings.upload.sinkDomain') }}</label>
-                  <input
-                    v-model="formOfSetting.sinkDomain"
-                    type="text"
-                    class="form-input"
-                    :placeholder="t('pages.settings.upload.sinkDomain')"
-                  />
-                </div>
+            <SettingCard v-if="formOfSetting.useShortUrl && formOfSetting.shortUrlServer === 'sink'">
+              <CustomInput
+                v-model="formOfSetting.sinkToken"
+                :title="t('pages.settings.upload.sinkToken')"
+                :icon="Link"
+                :placeholder="t('pages.settings.upload.sinkToken')"
+              />
+            </SettingCard>
 
-                <div v-if="formOfSetting.shortUrlServer === 'sink'" class="short-url-field">
-                  <label>{{ t('pages.settings.upload.sinkToken') }}</label>
-                  <input
-                    v-model="formOfSetting.sinkToken"
-                    type="text"
-                    class="form-input"
-                    :placeholder="t('pages.settings.upload.sinkToken')"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- Encode Output URL Toggle -->
-            <div class="upload-toggle-card standalone">
-              <label class="switch-label">
-                <input v-model="formOfSetting.encodeOutputURL" type="checkbox" class="switch-input" />
-                <span class="switch-slider" />
-                <div class="switch-content">
-                  <div class="switch-title">{{ t('pages.settings.upload.encodeOutputUrl') }}</div>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          <!-- PicBed Display Section -->
-          <div class="settings-section upload-section">
-            <div class="section-header-with-icon">
-              <div class="section-icon-wrapper picbed small-icon">
-                <Server :size="15" />
-              </div>
-              <div>
-                <h2>{{ t('pages.settings.upload.chooseShowedPicBed') }}</h2>
-              </div>
-            </div>
-
-            <div class="picbed-checkbox-grid">
-              <label v-for="item in picBedG" :key="item.name" class="picbed-checkbox-card">
-                <input v-model="showPicBedList" type="checkbox" :value="item.name" class="checkbox-input" />
-                <span class="checkbox-indicator" />
-                <span class="checkbox-label">{{ item.name }}</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Gallery Filter Section -->
-          <div class="settings-section upload-section">
-            <div class="section-header-with-icon">
-              <div class="section-icon-wrapper gallery small-icon">
-                <ImageIcon :size="15" />
-              </div>
-              <div>
-                <h2>{{ t('pages.settings.upload.galleryPicBedFilter') }}</h2>
-              </div>
-            </div>
-
-            <div class="picbed-checkbox-grid">
-              <label v-for="item in picBedG" :key="`gallery-${item.name}`" class="picbed-checkbox-card">
-                <input v-model="galleryPicBedFilterList" type="checkbox" :value="item.type" class="checkbox-input" />
-                <span class="checkbox-indicator" />
-                <span class="checkbox-label">{{ item.name }}</span>
-              </label>
-            </div>
-          </div>
+            <SettingCard p1>
+              <CustomSwitch
+                v-model="formOfSetting.encodeOutputURL"
+                small
+                no-border
+                :title="t('pages.settings.upload.encodeOutputUrl')"
+              />
+            </SettingCard>
+          </SettingSection>
         </div>
 
-        <!-- Advanced Settings Tab -->
-        <div v-if="currentTab === 'advanced'" class="tab-content">
-          <!-- Logging Section -->
-          <div class="settings-section advanced-section">
-            <div class="section-header-with-icon">
-              <div class="section-icon-wrapper log small-icon">
-                <FileText :size="15" />
-              </div>
-              <div>
-                <h2>{{ t('pages.settings.advanced.logging') }}</h2>
-              </div>
-            </div>
+        <div
+          v-if="currentTab === 'advanced'"
+          class="border4 no-scrollbar flex h-full w-full flex-1 flex-col gap-6 overflow-auto p-4"
+        >
+          <SettingSection :icon="FileText" :title="t('pages.settings.advanced.logging')">
+            <CustomNavCard
+              :title="t('pages.settings.advanced.logFilePath')"
+              :description="t('pages.settings.advanced.logFilePathDesc')"
+              :icon="FolderOpen"
+              @click="openDirectory"
+            />
+            <CustomNavCard
+              :title="t('pages.settings.advanced.setLog')"
+              :description="t('pages.settings.advanced.setLogDesc')"
+              :icon="Settings"
+              @click="openLogSetting"
+            />
+          </SettingSection>
 
-            <div class="advanced-action-grid">
-              <div class="advanced-action-card" @click="openDirectory()">
-                <div class="advanced-action-icon">
-                  <FolderOpen :size="22" />
-                </div>
-                <div class="advanced-action-info">
-                  <h4>{{ t('pages.settings.advanced.logFilePath') }}</h4>
-                  <p>{{ t('pages.settings.advanced.logFilePathDesc') }}</p>
-                </div>
-              </div>
-
-              <div class="advanced-action-card" @click="openLogSetting">
-                <div class="advanced-action-icon">
-                  <Settings :size="22" />
-                </div>
-                <div class="advanced-action-info">
-                  <h4>{{ t('pages.settings.advanced.setLog') }}</h4>
-                  <p>{{ t('pages.settings.advanced.setLogDesc') }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Network & Proxy Section -->
-          <div class="settings-section advanced-section">
-            <div class="section-header-with-icon">
-              <div class="section-icon-wrapper network small-icon">
-                <Globe :size="15" />
-              </div>
-              <div>
-                <h2>{{ t('pages.settings.advanced.networkAndProxy') }}</h2>
-              </div>
-            </div>
-
-            <div class="advanced-action-card standalone" @click="proxyVisible = true">
-              <div class="advanced-action-icon">
-                <Globe :size="22" />
-              </div>
-              <div class="advanced-action-info">
-                <h4>{{ t('pages.settings.advanced.setProxyAndMirror') }}</h4>
-                <p>{{ t('pages.settings.advanced.setProxyAndMirrorDesc') }}</p>
-              </div>
-              <div class="advanced-action-arrow">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M9 18l6-6-6-6" />
-                </svg>
-              </div>
-            </div>
-          </div>
+          <SettingSection :icon="Globe" :title="t('pages.settings.advanced.networkAndProxy')">
+            <CustomNavCard
+              :title="t('pages.settings.advanced.setProxyAndMirror')"
+              :description="t('pages.settings.advanced.setProxyAndMirrorDesc')"
+              :icon="Globe"
+              @click="proxyVisible = true"
+            />
+          </SettingSection>
 
           <!-- Server Settings Section -->
-          <div class="settings-section advanced-section">
-            <div class="section-header-with-icon">
-              <div class="section-icon-wrapper server small-icon">
-                <Server :size="15" />
-              </div>
-              <div>
-                <h2>{{ t('pages.settings.advanced.serverSettings') }}</h2>
-              </div>
-            </div>
-
-            <div class="server-config-grid">
-              <div class="server-config-card" @click="webServerVisible = true">
-                <div class="server-config-header">
-                  <div class="server-config-icon web">
-                    <Globe :size="20" />
-                  </div>
-                  <span class="server-config-badge">Web</span>
-                </div>
-                <h4>{{ t('pages.settings.advanced.webServerSettings') }}</h4>
-                <p>{{ t('pages.settings.advanced.webServerSettingsDesc') }}</p>
-              </div>
-
-              <div class="server-config-card" @click="serverVisible = true">
-                <div class="server-config-header">
-                  <div class="server-config-icon api">
-                    <Server :size="20" />
-                  </div>
-                  <span class="server-config-badge">API</span>
-                </div>
-                <h4>{{ t('pages.settings.advanced.uploadServer') }}</h4>
-                <p>{{ t('pages.settings.advanced.uploadServerDesc') }}</p>
-              </div>
-            </div>
-
-            <div class="encryption-key-section">
-              <div class="encryption-key-header">
-                <div class="encryption-key-icon">
-                  <Keyboard :size="18" />
-                </div>
-                <div>
-                  <label>{{ t('pages.settings.advanced.serverEncryptionKey') }}</label>
-                  <small>{{ t('pages.settings.advanced.serverEncryptionKeyDesc') }}</small>
-                </div>
-              </div>
-              <div class="input-with-icon">
-                <input
-                  v-model.trim="formOfSetting.aesPassword"
-                  type="text"
-                  class="form-input"
-                  :placeholder="t('pages.settings.advanced.serverEncryptionKey')"
-                  @change="handleAesPasswordChange(formOfSetting.aesPassword)"
-                />
-              </div>
-            </div>
-          </div>
+          <SettingSection :icon="Server" :title="t('pages.settings.advanced.serverSettings')">
+            <CustomNavCard
+              :title="t('pages.settings.advanced.webServerSettings')"
+              :description="t('pages.settings.advanced.webServerSettingsDesc')"
+              :icon="Globe"
+              @click="webServerVisible = true"
+            />
+            <CustomNavCard
+              :title="t('pages.settings.advanced.uploadServer')"
+              :description="t('pages.settings.advanced.uploadServerDesc')"
+              :icon="Globe"
+              @click="serverVisible = true"
+            />
+            <SettingCard>
+              <CustomInput
+                v-model="formOfSetting.aesPassword"
+                :is-password="true"
+                :title="t('pages.settings.advanced.serverEncryptionKey')"
+                :placeholder="t('pages.settings.advanced.serverEncryptionKey')"
+              />
+            </SettingCard>
+          </SettingSection>
         </div>
-
-        <!-- Update Settings Tab -->
-        <div v-if="currentTab === 'update'" class="tab-content">
-          <!-- Version Status Card -->
-          <div class="update-status-card">
-            <div class="update-status-icon">
-              <RefreshCw :size="16" />
-            </div>
-            <div class="update-status-info">
-              <h2>PicList</h2>
-              <div class="version-info">
-                <span class="version-badge">v{{ version }}</span>
-                <span class="version-label">{{ t('pages.settings.update.currentVersion') }}</span>
-              </div>
-            </div>
-            <button class="btn btn-primary update-check-btn" @click="checkUpdate">
-              <RefreshCw :size="16" />
-              {{ t('pages.settings.update.clickToCheck') }}
-            </button>
-          </div>
-
-          <!-- Update Preferences -->
-          <div class="settings-section update-preferences-section">
-            <div class="update-preference-card">
-              <label class="switch-label">
-                <input v-model="formOfSetting.showUpdateTip" type="checkbox" class="switch-input" />
-                <span class="switch-slider" />
-                <div class="switch-content">
-                  <div class="switch-title">{{ t('pages.settings.update.openUpdateHelper') }}</div>
-                  <div class="switch-description">
-                    {{ t('pages.settings.update.openUpdateHelperDesc') }}
-                  </div>
+        <div
+          v-if="currentTab === 'update'"
+          class="border4 no-scrollbar flex h-full w-full flex-1 flex-col gap-6 overflow-auto p-4"
+        >
+          <SettingSection :icon="RefreshCw" :title="t('pages.settings.update.applicationUpdates')">
+            <CustomNavCard noarrow :icon="RotateCcw" :title="t('pages.settings.update.currentVersion')">
+              <template #description>
+                <div class="flex items-center gap-2">
+                  <span class="rounded-md bg-accent/30 px-2 py-1 text-sm font-semibold text-secondary"
+                    >v{{ version }}</span
+                  >
                 </div>
-              </label>
-            </div>
-          </div>
+              </template>
+              <template #extra>
+                <CustomButton
+                  :icon="RefreshCw"
+                  :text="t('pages.settings.update.clickToCheck')"
+                  type="secondary"
+                  @click="checkUpdate"
+                />
+              </template>
+            </CustomNavCard>
+
+            <SettingCard p1>
+              <CustomSwitch
+                v-model="formOfSetting.showUpdateTip"
+                small
+                no-border
+                :title="t('pages.settings.update.openUpdateHelper')"
+                :description="t('pages.settings.update.openUpdateHelperDesc')"
+              />
+            </SettingCard>
+          </SettingSection>
 
           <!-- Release Notes Section -->
-          <div class="settings-section release-notes-section">
-            <div class="release-notes-card enhanced">
-              <div class="release-notes-header">
-                <div class="release-notes-title">
-                  <BookOpen :size="18" />
-                  <h3>{{ t('pages.settings.update.latestReleaseNotes') }}</h3>
-                </div>
-                <div class="release-notes-actions">
-                  <button
-                    class="btn btn-secondary btn-sm refresh-btn"
-                    :disabled="fetchingReleaseNotes"
-                    @click="fetchReleaseNotesManually"
-                  >
-                    <RefreshCw :size="14" :class="{ rotate: fetchingReleaseNotes }" />
-                    {{ t('pages.settings.update.refresh') }}
-                  </button>
-                </div>
-              </div>
-
-              <div class="release-notes-content">
-                <div v-if="fetchingReleaseNotes" class="release-notes-loading">
-                  <div class="loading-spinner">
-                    <RefreshCw :size="24" class="rotate" />
+          <SettingSection
+            :only-one-row="true"
+            :icon="BookOpen"
+            :title="t('pages.settings.update.latestReleaseNotes')"
+            class="relative"
+          >
+            <div class="absolute top-4 right-4 flex items-center gap-2">
+              <CustomButton
+                :icon="RefreshCw"
+                :text="t('pages.settings.update.refresh')"
+                type="secondary"
+                :disabled="fetchingReleaseNotes"
+                @click="fetchReleaseNotesManually"
+              />
+            </div>
+            <div class="relative w-full rounded-lg border border-border bg-bg-secondary shadow-sm">
+              <div class="max-h-[400px] overflow-y-auto bg-bg-secondary">
+                <div
+                  v-if="fetchingReleaseNotes"
+                  class="flex flex-col items-center justify-center gap-2 p-4 text-center text-sm font-semibold text-secondary"
+                >
+                  <div class="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 text-accent">
+                    <RefreshCw :size="24" class="animate-ping" />
                   </div>
                   <span>{{ t('pages.settings.update.loadingReleaseNotes') }}</span>
                 </div>
                 <div v-else-if="releaseNotes" class="notes-body" v-html="renderedReleaseNotes"></div>
-                <div v-else-if="releaseNotesError" class="release-notes-error">
-                  <div class="error-icon">⚠️</div>
+                <div
+                  v-else-if="releaseNotesError"
+                  class="flex flex-col items-center justify-center gap-6 bg-error/10 p-4 text-sm text-danger"
+                >
+                  <div class="text-[4rem]">⚠️</div>
                   <span>{{ releaseNotesError }}</span>
-                  <button class="btn btn-link btn-sm" @click="fetchReleaseNotesManually">
-                    {{ t('pages.settings.update.retry') }}
-                  </button>
-                </div>
-                <div v-else class="release-notes-empty">
-                  <div class="empty-icon">📋</div>
-                  <span>{{ t('pages.settings.update.noReleaseNotes') }}</span>
+                  <CustomButton
+                    :icon="RefreshCw"
+                    :text="t('pages.settings.update.retry')"
+                    type="secondary"
+                    @click="fetchReleaseNotesManually"
+                  />
                 </div>
               </div>
 
-              <div v-if="releaseNotesLastFetch" class="release-notes-footer">
-                <small>
+              <div v-if="releaseNotesLastFetch" class="border-t border-border-secondary bg-bg-secondary p-3 text-right">
+                <small class="flex flex-row justify-end gap-1 text-xs text-secondary">
                   <RefreshCw :size="12" />
-                  {{ t('pages.settings.update.lastUpdated') }}: {{ formatLastFetchTime(releaseNotesLastFetch) }}
+                  <div>
+                    {{ t('pages.settings.update.lastUpdated') }}: {{ formatLastFetchTime(releaseNotesLastFetch) }}
+                  </div>
                 </small>
               </div>
             </div>
-          </div>
+          </SettingSection>
         </div>
       </div>
     </div>
 
     <!-- Dialogs -->
     <!-- Custom Link Format Dialog -->
-    <div v-if="customLinkVisible" class="dialog-overlay" :class="advancedAnimation" @click="customLinkVisible = false">
-      <div class="dialog enhanced-dialog" @click.stop>
-        <div class="dialog-header">
-          <div class="dialog-header-content">
-            <div class="dialog-icon-wrapper link">
-              <Link :size="20" />
-            </div>
-            <div>
-              <h3 class="dialog-title">{{ t('pages.settings.upload.customLinkFormat') }}</h3>
-            </div>
+    <CustomModal
+      v-if="customLinkVisible"
+      v-model:visible="customLinkVisible"
+      height="auto"
+      width="auto"
+      :title="t('pages.settings.upload.customLinkFormat')"
+    >
+      <div class="flex flex-col gap-4 p-4">
+        <div class="rounded-lg border border-border p-4">
+          <div class="mb-2 flex items-center gap-2 p-1">
+            <FileText :size="16" class="text-accent" />
+            <span class="text-sm font-semibold text-main">{{
+              t('pages.settings.upload.availablePlaceholdersTitle')
+            }}</span>
           </div>
-          <button class="dialog-close" @click="customLinkVisible = false">×</button>
-        </div>
-        <div class="dialog-content">
-          <div class="placeholder-info-card">
-            <div class="placeholder-info-title">
-              <FileText :size="16" />
-              <span>{{ t('pages.settings.upload.availablePlaceholdersTitle') }}</span>
-            </div>
-            <div class="placeholder-info-list">
-              <div class="placeholder-info-item">
-                <code>$url</code>
-                <span>{{ t('pages.settings.upload.urlPlaceholder') }}</span>
+          <div class="flex flex-col gap-2">
+            <template v-for="item in placeholderList" :key="item.code">
+              <div class="flex items-center gap-3">
+                <code
+                  class="min-w-[80px] rounded-sm border border-border bg-bg-secondary px-2 py-1 text-center font-['SF_Mono,Monaco,Menlo,monospace'] text-sm font-semibold text-main"
+                  >{{ item.code }}</code
+                >
+                <span class="text-sm font-semibold text-secondary">{{
+                  t(`pages.settings.upload.${item.description}`)
+                }}</span>
               </div>
-              <div class="placeholder-info-item">
-                <code>$fileName</code>
-                <span>{{ t('pages.settings.upload.fileNamePlaceholder') }}</span>
-              </div>
-              <div class="placeholder-info-item">
-                <code>$extName</code>
-                <span>{{ t('pages.settings.upload.extNamePlaceholder') }}</span>
-              </div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>{{ t('pages.settings.upload.customLinkFormatInput') }}</label>
-            <input v-model="customLink.value" type="text" class="form-input" :placeholder="'![$fileName]($url)'" />
+            </template>
           </div>
         </div>
-        <div class="dialog-footer">
-          <button class="btn btn-secondary" @click="cancelCustomLink">
-            {{ t('common.cancel') }}
-          </button>
-          <button class="btn btn-primary" @click="confirmCustomLink">
-            {{ t('common.confirm') }}
-          </button>
+        <div>
+          <SettingCard>
+            <CustomInput
+              v-model="customLink"
+              :title="t('pages.settings.upload.customLinkFormatInput')"
+              :placeholder="'![$fileName]($url)'"
+            />
+          </SettingCard>
         </div>
       </div>
-    </div>
+    </CustomModal>
 
     <!-- Proxy Settings Dialog -->
-    <div v-if="proxyVisible" class="dialog-overlay" :class="advancedAnimation" @click="proxyVisible = false">
-      <div class="dialog enhanced-dialog" @click.stop>
-        <div class="dialog-header">
-          <div class="dialog-header-content">
-            <div class="dialog-icon-wrapper network">
-              <Globe :size="20" />
-            </div>
-            <div>
-              <h3 class="dialog-title">{{ t('pages.settings.advanced.setProxyAndMirror') }}</h3>
-              <p class="dialog-subtitle">{{ t('pages.settings.advanced.proxyDialogDesc') }}</p>
-            </div>
-          </div>
-          <button class="dialog-close" @click="proxyVisible = false">×</button>
-        </div>
-        <div class="dialog-content">
-          <div class="proxy-config-grid">
-            <div class="proxy-config-card">
-              <div class="proxy-config-icon">
-                <CloudUpload :size="18" />
-              </div>
-              <div class="proxy-config-field">
-                <label>{{ t('pages.settings.advanced.uploadProxy') }}</label>
-                <input v-model="proxy" type="text" class="form-input" placeholder="http://127.0.0.1:1080" />
-              </div>
-            </div>
-            <div class="proxy-config-card">
-              <div class="proxy-config-icon">
-                <Settings :size="18" />
-              </div>
-              <div class="proxy-config-field">
-                <label>{{ t('pages.settings.advanced.pluginInstallProxy') }}</label>
-                <input
-                  v-model="formOfSetting.proxy"
-                  type="text"
-                  class="form-input"
-                  placeholder="http://127.0.0.1:1080"
-                />
-              </div>
-            </div>
-            <div class="proxy-config-card full-width">
-              <div class="proxy-config-icon">
-                <Globe :size="18" />
-              </div>
-              <div class="proxy-config-field">
-                <label>{{ t('pages.settings.advanced.pluginInstallMirror') }}</label>
-                <input
-                  v-model="formOfSetting.registry"
-                  type="text"
-                  class="form-input"
-                  placeholder="https://registry.npmmirror.com"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="dialog-footer">
-          <button class="btn btn-secondary" @click="proxyVisible = false">
-            {{ t('common.cancel') }}
-          </button>
-          <button class="btn btn-primary" @click="proxyVisible = false">
-            {{ t('common.confirm') }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <CustomModal
+      v-if="proxyVisible"
+      v-model:visible="proxyVisible"
+      height="auto"
+      width="600px"
+      :title="t('pages.settings.advanced.setProxyAndMirror')"
+    >
+      <SettingSection>
+        <SettingCard>
+          <CustomInput
+            v-model="proxy"
+            :title="t('pages.settings.advanced.uploadProxy')"
+            placeholder="http://127.0.0.1:1080"
+          />
+        </SettingCard>
+        <SettingCard>
+          <CustomInput
+            v-model="formOfSetting.proxy"
+            :title="t('pages.settings.advanced.pluginInstallProxy')"
+            placeholder="http://127.0.0.1:1080"
+          />
+        </SettingCard>
+        <SettingCard>
+          <CustomInput
+            v-model="formOfSetting.registry"
+            :title="t('pages.settings.advanced.pluginInstallMirror')"
+            placeholder="https://registry.npmmirror.com"
+          />
+        </SettingCard>
+      </SettingSection>
+    </CustomModal>
 
     <!-- Main Window Size Dialog -->
-    <div v-if="mainWindowSizeVisible" class="dialog-overlay" :class="advancedAnimation">
-      <div class="dialog enhanced-dialog" @click.stop>
-        <div class="dialog-header">
-          <div class="dialog-header-content">
-            <div class="dialog-icon-wrapper window">
-              <Monitor :size="20" />
-            </div>
-            <div>
-              <h3 class="dialog-title">{{ t('pages.settings.system.setMainWindowSize') }}</h3>
-            </div>
-          </div>
-          <button class="dialog-close" @click="cancelWindowSize">X</button>
-        </div>
-        <div class="dialog-content">
-          <div class="window-size-grid">
-            <div class="window-size-field">
-              <label>
-                <Monitor :size="14" />
-                {{ t('pages.settings.system.mainWindowWidth') }}
-              </label>
-              <input v-model="formOfSetting.mainWindowWidth" type="number" class="form-input" placeholder="1200" />
-            </div>
-            <div class="window-size-field">
-              <label>
-                <Monitor :size="14" />
-                {{ t('pages.settings.system.mainWindowHeight') }}
-              </label>
-              <input v-model="formOfSetting.mainWindowHeight" type="number" class="form-input" placeholder="800" />
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="switch-label">
-              <input v-model="rawPicGoSize" type="checkbox" class="switch-input" />
-              <span class="switch-slider" />
-              <div class="switch-content">
-                <div class="switch-title">{{ t('pages.settings.system.rawPicGoSize') }}</div>
-                <div class="switch-description">
-                  {{ t('pages.settings.system.rawPicGoSizeHint') }}
-                </div>
-              </div>
-            </label>
-          </div>
-        </div>
-        <div class="dialog-footer">
-          <button class="btn btn-secondary" @click="cancelWindowSize">
-            {{ t('common.cancel') }}
-          </button>
-          <button class="btn btn-primary" @click="confirmWindowSize">
-            {{ t('common.confirm') }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <CustomModal
+      v-if="mainWindowSizeVisible"
+      v-model:visible="mainWindowSizeVisible"
+      height="auto"
+      width="600px"
+      :title="t('pages.settings.system.setMainWindowSize')"
+    >
+      <SettingSection>
+        <SettingCard>
+          <CustomInput
+            v-model="formOfSetting.mainWindowWidth"
+            type="number"
+            min="1"
+            max="10000"
+            :title="t('pages.settings.system.mainWindowWidth')"
+            placeholder="1200"
+          />
+        </SettingCard>
+        <SettingCard>
+          <CustomInput
+            v-model="formOfSetting.mainWindowHeight"
+            type="number"
+            min="1"
+            max="10000"
+            :title="t('pages.settings.system.mainWindowHeight')"
+            placeholder="800"
+          />
+        </SettingCard>
+        <CustomSwitch
+          v-model="rawPicGoSize"
+          small
+          :title="t('pages.settings.system.rawPicGoSize')"
+          :description="t('pages.settings.system.rawPicGoSizeHint')"
+        />
+      </SettingSection>
+    </CustomModal>
 
     <!-- Check Update Dialog -->
-    <div v-if="checkUpdateVisible" class="dialog-overlay" :class="advancedAnimation" @click="cancelCheckVersion">
-      <div class="dialog enhanced-dialog update-dialog" @click.stop>
-        <div class="dialog-header">
-          <div class="dialog-header-content">
-            <div class="dialog-icon-wrapper update">
-              <RefreshCw :size="20" />
+    <CustomModal
+      v-if="checkUpdateVisible"
+      v-model:visible="checkUpdateVisible"
+      height="auto"
+      width="500px"
+      :title="t('pages.settings.update.checkUpdate')"
+    >
+      <div class="mb-4 no-scrollbar overflow-y-auto p-1">
+        <div class="mt-5 flex items-center justify-center gap-4">
+          <div class="min-w-[120px] flex-1 rounded-lg border border-border bg-bg-tertiary px-5 py-4 text-center">
+            <div class="mb-1.5 text-sm font-semibold text-secondary">
+              {{ t('pages.settings.update.currentVersionLabel') }}
             </div>
-            <div>
-              <h3 class="dialog-title">{{ t('pages.settings.update.checkUpdate') }}</h3>
-              <p class="dialog-subtitle">{{ t('pages.settings.update.checkUpdateDialogDesc') }}</p>
-            </div>
+            <div class="text-lg font-bold text-main">v{{ version }}</div>
           </div>
-          <button class="dialog-close" @click="cancelCheckVersion">×</button>
-        </div>
-        <div class="dialog-content">
-          <div class="update-version-comparison">
-            <div class="version-card current">
-              <div class="version-card-label">{{ t('pages.settings.update.currentVersionLabel') }}</div>
-              <div class="version-card-value">v{{ version }}</div>
-            </div>
-            <div class="version-arrow">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </div>
-            <div class="version-card latest" :class="{ 'has-update': needUpdate }">
-              <div class="version-card-label">{{ t('pages.settings.update.newestVersion') }}</div>
-              <div class="version-card-value">
-                {{ latestVersion ? `${latestVersion}` : t('pages.settings.update.getting') }}
-              </div>
-            </div>
+          <div class="shrink-0 text-tertiary">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
           </div>
-          <div v-if="needUpdate" class="update-notice-card">
-            <RefreshCw :size="18" />
-            <span>{{ t('pages.settings.update.hasNewVersion') }}</span>
+          <div
+            class="group latest min-w-[120px] flex-1 rounded-lg border border-border bg-bg-tertiary px-5 py-4 text-center"
+            :class="{ 'has-update': needUpdate }"
+          >
+            <div class="mb-1.5 text-sm font-semibold text-secondary group-[.has-update]:text-success">
+              {{ t('pages.settings.update.newestVersion') }}
+            </div>
+            <div class="text-lg font-bold text-main group-[.has-update]:text-success">
+              {{ latestVersion ? `${latestVersion}` : t('pages.settings.update.getting') }}
+            </div>
           </div>
         </div>
-        <div class="dialog-footer">
-          <button class="btn btn-secondary" @click="cancelCheckVersion">
-            {{ t('common.cancel') }}
-          </button>
-          <button class="btn btn-primary" @click="confirmCheckVersion">
-            {{ needUpdate ? t('pages.settings.update.updateNow') : t('common.confirm') }}
-          </button>
+        <div
+          v-if="!needUpdate"
+          class="flex items-center justify-center gap-2 rounded-lg p-4 text-sm font-semibold text-success"
+        >
+          <RefreshCw :size="18" />
+          <span>{{ t('pages.settings.update.hasNewVersion') }}</span>
         </div>
       </div>
-    </div>
+      <template #footer>
+        <CustomButton type="secondary" :text="t('common.cancel')" @click="cancelCheckVersion" />
+        <CustomButton
+          type="primary"
+          :text="needUpdate ? t('pages.settings.update.updateNow') : t('common.confirm')"
+          @click="confirmCheckVersion"
+        />
+      </template>
+    </CustomModal>
 
     <!-- Advanced Rename Dialog -->
-    <div
+    <CustomModal
       v-if="advancedRenameVisible"
-      class="dialog-overlay"
-      :class="advancedAnimation"
-      @click="handleCancelAdvancedRename"
+      v-model:visible="advancedRenameVisible"
+      height="85vh"
+      width="65vw"
+      :title="t('pages.settings.upload.advancedRname')"
     >
-      <div class="dialog enhanced-dialog rename-dialog" @click.stop>
-        <div class="dialog-header">
-          <div class="dialog-header-content">
-            <div class="dialog-icon-wrapper rename">
-              <Edit :size="20" />
-            </div>
-            <div>
-              <h3 class="dialog-title">{{ t('pages.settings.upload.advancedRname') }}</h3>
-              <p class="dialog-subtitle">{{ t('pages.settings.upload.advancedRnameDialogDesc') }}</p>
-            </div>
-          </div>
-          <button class="dialog-close" @click="handleCancelAdvancedRename">×</button>
-        </div>
-        <div class="dialog-content">
-          <div class="rename-toggle-card">
-            <label class="switch-label">
-              <input v-model="advancedRename.enable" type="checkbox" class="switch-input" />
-              <span class="switch-slider" />
-              <div class="switch-content">
-                <div class="switch-title">{{ t('pages.settings.upload.enableAdvancedRname') }}</div>
-                <div class="switch-description">{{ t('pages.settings.upload.enableAdvancedRnameDesc') }}</div>
-              </div>
-            </label>
-          </div>
-          <div class="form-group rename-format-field">
-            <label>
-              <Edit :size="14" />
-              {{ t('pages.settings.upload.advancedRnameFormat') }}
-            </label>
-            <input v-model="advancedRename.format" type="text" class="form-input" placeholder="Ex. {Y}-{m}-{uuid}" />
-            <div class="dialog-footer">
-              <button class="btn btn-secondary" @click="handleCancelAdvancedRename">
-                {{ t('common.cancel') }}
-              </button>
-              <button class="btn btn-primary" @click="handleSaveAdvancedRename">
-                {{ t('common.confirm') }}
-              </button>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>{{ t('pages.settings.upload.availablePlaceholders') }}</label>
-            <div class="placeholder-help">
-              <div class="placeholder-category">
-                <div class="category-title">
-                  {{ t('pages.settings.upload.placeholder.categoryTime') }}
-                </div>
-                <div class="placeholder-grid">
-                  <div
-                    v-for="item in advancedRenameList.categoryTime"
-                    :key="item.value"
-                    class="placeholder-item"
-                    @click="copyPlaceholder(item.value)"
-                  >
-                    <code>{{ item.value }}</code>
-                    <span>{{ item.label }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="placeholder-category">
-                <div class="category-title">
-                  {{ t('pages.settings.upload.placeholder.categoryHash') }}
-                </div>
-                <div class="placeholder-grid">
-                  <div
-                    v-for="item in advancedRenameList.categoryHash"
-                    :key="item.value"
-                    class="placeholder-item"
-                    @click="copyPlaceholder(item.value)"
-                  >
-                    <code>{{ item.value }}</code>
-                    <span>{{ item.label }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="placeholder-category">
-                <div class="category-title">
-                  {{ t('pages.settings.upload.placeholder.categoryFile') }}
-                </div>
-                <div class="placeholder-grid">
-                  <div
-                    v-for="item in advancedRenameList.categoryFile"
-                    :key="item.value"
-                    class="placeholder-item"
-                    @click="copyPlaceholder(item.value)"
-                  >
-                    <code>{{ item.value }}</code>
-                    <span>{{ item.label }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      <div class="flex h-full w-full flex-col p-2">
+        <SettingSection>
+          <CustomSwitch
+            v-model="advancedRename.enable"
+            :title="t('pages.settings.upload.enableAdvancedRname')"
+            :description="t('pages.settings.upload.enableAdvancedRnameDesc')"
+          />
+          <CustomInput
+            v-model="advancedRename.format"
+            :title="t('pages.settings.upload.advancedRnameFormat')"
+            placeholder="Ex. {Y}-{m}-{uuid}"
+          />
+        </SettingSection>
+        <div class="flex w-full flex-1 flex-col overflow-hidden p-2">
+          <label class="text-xl font-bold text-secondary">{{ t('pages.settings.upload.availablePlaceholders') }}</label>
+          <placeholderTable :list="advancedRenameList" :title-list="advancedRenameTitleList" />
         </div>
       </div>
-    </div>
+    </CustomModal>
 
     <!-- Log Settings Dialog -->
-    <div v-if="logFileVisible" class="dialog-overlay" :class="advancedAnimation" @click="cancelLogLevelSetting">
-      <div class="dialog enhanced-dialog log-dialog" @click.stop>
-        <div class="dialog-header">
-          <div class="dialog-header-content">
-            <div class="dialog-icon-wrapper log">
-              <FileText :size="20" />
-            </div>
-            <div>
-              <h3 class="dialog-title">{{ t('pages.settings.advanced.setLog') }}</h3>
-              <p class="dialog-subtitle">{{ t('pages.settings.advanced.logDialogDesc') }}</p>
-            </div>
-          </div>
-          <button class="dialog-close" @click="cancelLogLevelSetting">×</button>
-        </div>
-        <div class="dialog-content">
-          <div class="log-files-section">
-            <div class="log-files-title">
-              <FolderOpen :size="16" />
-              <span>{{ t('pages.settings.advanced.logFilesTitle') }}</span>
-            </div>
-            <div class="log-files-grid">
-              <div class="log-file-card" @click="openFile('piclist.log')">
-                <div class="log-file-icon">
-                  <FileText :size="18" />
-                </div>
-                <div class="log-file-info">
-                  <span class="log-file-name">{{ t('pages.settings.advanced.logFile') }}</span>
-                  <span class="log-file-hint">piclist.log</span>
-                </div>
-              </div>
-              <div class="log-file-card" @click="openFile('piclist-gui-local.log')">
-                <div class="log-file-icon">
-                  <FileText :size="18" />
-                </div>
-                <div class="log-file-info">
-                  <span class="log-file-name">{{ t('pages.settings.advanced.guiLogFile') }}</span>
-                  <span class="log-file-hint">piclist-gui-local.log</span>
-                </div>
-              </div>
-              <div class="log-file-card" @click="openFile('manage.log')">
-                <div class="log-file-icon">
-                  <FileText :size="18" />
-                </div>
-                <div class="log-file-info">
-                  <span class="log-file-name">{{ t('pages.settings.advanced.manageLogFile') }}</span>
-                  <span class="log-file-hint">manage.log</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="log-settings-grid">
-            <div class="form-group">
-              <label>
-                <Settings :size="14" />
-                {{ t('pages.settings.advanced.logLevel') }}
-              </label>
-              <select v-model="formOfSetting.logLevel" multiple class="form-select">
-                <option v-for="(value, key) of logLevel" :key="key" :value="key">
-                  {{ value }}
-                </option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>
-                <FileText :size="14" />
-                {{ t('pages.settings.advanced.logFileSize') }} (MB)
-              </label>
-              <input
-                v-model="formOfSetting.logFileSizeLimit"
-                type="number"
-                class="form-input"
-                placeholder="10"
-                min="1"
-              />
-            </div>
-          </div>
-        </div>
-        <div class="dialog-footer">
-          <button class="btn btn-secondary" @click="cancelLogLevelSetting">
-            {{ t('common.cancel') }}
-          </button>
-          <button class="btn btn-primary" @click="confirmLogLevelSetting">
-            {{ t('common.confirm') }}
-          </button>
-        </div>
+    <CustomModal
+      v-if="logFileVisible"
+      v-model:visible="logFileVisible"
+      height="auto"
+      width="800px"
+      :title="t('pages.settings.advanced.setLog')"
+    >
+      <div class="flex h-full w-full flex-col p-4">
+        <SettingSection>
+          <CustomNavCard
+            :title="t('pages.settings.advanced.logFile')"
+            description="piclist.log"
+            :icon="FileText"
+            @click="openFile('piclist.log')"
+          />
+          <CustomNavCard
+            :title="t('pages.settings.advanced.guiLogFile')"
+            description="piclist-gui-local.log"
+            :icon="FileText"
+            @click="openFile('piclist-gui-local.log')"
+          />
+          <CustomNavCard
+            :title="t('pages.settings.advanced.manageLogFile')"
+            description="manage.log"
+            :icon="FileText"
+            @click="openFile('manage.log')"
+          />
+          <CustomInput
+            v-model="formOfSetting.logFileSizeLimit"
+            :title="t('pages.settings.advanced.logFileSize')"
+            placeholder="10"
+            type="number"
+            min="1"
+            max="1024"
+            step="1"
+          />
+          <SettingCard>
+            <MultiSelect
+              v-model:choosed="formOfSetting.logLevel"
+              :icon="FileText"
+              :tight="false"
+              :title="t('pages.settings.advanced.logLevel')"
+              :zero-placeholder="t('pages.settings.advanced.logLevel')"
+              :all-list="logLevel"
+          /></SettingCard>
+        </SettingSection>
       </div>
-    </div>
+    </CustomModal>
 
     <!-- Server Settings Dialog -->
-    <div v-if="serverVisible" class="dialog-overlay" :class="advancedAnimation" @click="cancelServerSetting">
-      <div class="dialog enhanced-dialog server-dialog" @click.stop>
-        <div class="dialog-header">
-          <div class="dialog-header-content">
-            <div class="dialog-icon-wrapper server">
-              <Server :size="20" />
-            </div>
-            <div>
-              <h3 class="dialog-title">{{ t('pages.settings.advanced.uploadServer') }}</h3>
-              <p class="dialog-subtitle">{{ t('pages.settings.advanced.serverDialogDesc') }}</p>
-            </div>
-          </div>
-          <button class="dialog-close" @click="cancelServerSetting">×</button>
+    <CustomModal
+      v-if="serverVisible"
+      v-model:visible="serverVisible"
+      height="auto"
+      width="600px"
+      :title="t('pages.settings.advanced.uploadServer')"
+    >
+      <div class="flex w-full flex-col gap-4 p-4">
+        <div
+          class="mb-4 flex items-start gap-3 rounded-lg border border-border bg-success/10 px-4 py-3 text-sm leading-1.5 font-semibold text-secondary"
+        >
+          <span>{{ t('pages.settings.advanced.serverSettingsNotice') }}</span>
         </div>
-        <div class="dialog-content">
-          <div class="server-notice-card">
-            <span>{{ t('pages.settings.advanced.serverSettingsNotice') }}</span>
-          </div>
-          <div class="server-toggle-card">
-            <label class="switch-label">
-              <input v-model="server.enable" type="checkbox" class="switch-input" />
-              <span class="switch-slider" />
-              <div class="switch-content">
-                <div class="switch-title">{{ t('pages.settings.advanced.enableServer') }}</div>
-              </div>
-            </label>
-          </div>
-          <div v-if="server.enable" class="server-config-section">
-            <div class="server-config-title">
-              <Settings :size="16" />
-              <span>{{ t('pages.settings.advanced.serverConfig') }}</span>
-            </div>
-            <div class="server-fields-grid">
-              <div class="form-group">
-                <label>
-                  <Globe :size="14" />
-                  {{ t('pages.settings.advanced.serverHost') }}
-                </label>
-                <input v-model="server.host" type="text" class="form-input" placeholder="127.0.0.1" />
-              </div>
-              <div class="form-group">
-                <label>
-                  <Server :size="14" />
-                  {{ t('pages.settings.advanced.serverPort') }}
-                </label>
-                <input v-model="server.port" type="number" class="form-input" placeholder="36677" />
-              </div>
-            </div>
-            <div class="form-group server-key-field">
-              <label>
-                <Keyboard :size="14" />
-                {{ t('pages.settings.advanced.serverKey') }}
-              </label>
-              <div class="input-with-icon">
-                <input
-                  v-model="formOfSetting.serverKey"
-                  type="text"
-                  class="form-input"
-                  :placeholder="t('pages.settings.advanced.serverKeyPlaceholder')"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="dialog-footer">
-          <button class="btn btn-secondary" @click="cancelServerSetting">
-            {{ t('common.cancel') }}
-          </button>
-          <button class="btn btn-primary" @click="confirmServerSetting">
-            {{ t('common.confirm') }}
-          </button>
-        </div>
+        <SettingCard p1>
+          <CustomSwitch v-model="server.enable" :title="t('pages.settings.advanced.enableServer')" no-border small />
+        </SettingCard>
+        <SettingSection v-if="server.enable">
+          <SettingCard>
+            <CustomInput
+              v-model="server.host"
+              type="text"
+              :title="t('pages.settings.advanced.serverHost')"
+              placeholder="127.0.0.1"
+            />
+          </SettingCard>
+          <SettingCard>
+            <CustomInput
+              v-model="server.port"
+              type="number"
+              :min="1"
+              :max="65535"
+              :step="1"
+              :title="t('pages.settings.advanced.serverPort')"
+              placeholder="36677"
+            />
+          </SettingCard>
+          <SettingCard>
+            <CustomInput
+              v-model="formOfSetting.serverKey"
+              :is-password="true"
+              :title="t('pages.settings.advanced.serverKey')"
+              :placeholder="t('pages.settings.advanced.serverKeyPlaceholder')"
+            />
+          </SettingCard>
+        </SettingSection>
       </div>
-    </div>
+      <template #footer>
+        <CustomButton type="secondary" :text="t('common.cancel')" @click="cancelServerSetting" />
+        <CustomButton type="primary" :text="t('common.confirm')" @click="confirmServerSetting" />
+      </template>
+    </CustomModal>
 
     <!-- Web Server Settings Dialog -->
-    <div v-if="webServerVisible" class="dialog-overlay" :class="advancedAnimation" @click="confirmWebServerSetting">
-      <div class="dialog enhanced-dialog webserver-dialog" @click.stop>
-        <div class="dialog-header">
-          <div class="dialog-header-content">
-            <div class="dialog-icon-wrapper webserver">
-              <Globe :size="20" />
-            </div>
-            <div>
-              <h3 class="dialog-title">{{ t('pages.settings.advanced.webServerSettings') }}</h3>
-              <p class="dialog-subtitle">{{ t('pages.settings.advanced.webServerDialogDesc') }}</p>
-            </div>
-          </div>
-          <button class="dialog-close" @click="confirmWebServerSetting">×</button>
+    <CustomModal
+      v-if="webServerVisible"
+      v-model:visible="webServerVisible"
+      height="auto"
+      width="600px"
+      :title="t('pages.settings.advanced.webServerSettings')"
+    >
+      <div class="flex w-full flex-col gap-4 p-4">
+        <div
+          class="mb-4 flex items-start gap-3 rounded-lg border border-border bg-success/10 px-4 py-3 text-sm leading-1.5 font-semibold text-secondary"
+        >
+          <span>{{ t('pages.settings.advanced.webServerNotice') }}</span>
         </div>
-        <div class="dialog-content">
-          <div class="server-notice-card">
-            <span>{{ t('pages.settings.advanced.webServerNotice') }}</span>
-          </div>
-          <div class="server-toggle-card">
-            <label class="switch-label">
-              <input v-model="formOfSetting.enableWebServer" type="checkbox" class="switch-input" />
-              <span class="switch-slider" />
-              <div class="switch-content">
-                <div class="switch-title">{{ t('pages.settings.advanced.enableWebServer') }}</div>
-              </div>
-            </label>
-          </div>
-          <div v-if="formOfSetting.enableWebServer" class="server-config-section">
-            <div class="server-config-title">
-              <Settings :size="16" />
-              <span>{{ t('pages.settings.advanced.webServerConfig') }}</span>
-            </div>
-            <div class="server-fields-grid">
-              <div class="form-group">
-                <label>
-                  <Globe :size="14" />
-                  {{ t('pages.settings.advanced.webServerHost') }}
-                </label>
-                <input
-                  v-model="formOfSetting.webServerHost"
-                  type="text"
-                  class="form-input"
-                  :placeholder="t('pages.settings.advanced.webServerPlaceholderHost')"
-                />
-              </div>
-              <div class="form-group">
-                <label>
-                  <Server :size="14" />
-                  {{ t('pages.settings.advanced.webServerPort') }}
-                </label>
-                <input
-                  v-model.number="formOfSetting.webServerPort"
-                  type="number"
-                  class="form-input"
-                  min="1"
-                  max="65535"
-                  :placeholder="t('pages.settings.advanced.webServerPlaceholderPort')"
-                />
-              </div>
-            </div>
-            <div class="form-group server-path-field">
-              <label>
-                <FolderOpen :size="14" />
-                {{ t('pages.settings.advanced.webServerPath') }}
-              </label>
-              <input
-                v-model="formOfSetting.webServerPath"
-                type="text"
-                class="form-input"
-                :placeholder="t('pages.settings.advanced.webServerPathPlaceholder')"
-              />
-            </div>
-          </div>
-        </div>
-        <div class="dialog-footer">
-          <button class="btn btn-primary" @click="confirmWebServerSetting">
-            {{ t('common.confirm') }}
-          </button>
-        </div>
+        <SettingCard p1>
+          <CustomSwitch
+            v-model="formOfSetting.enableWebServer"
+            :title="t('pages.settings.advanced.enableWebServer')"
+            no-border
+            small
+          />
+        </SettingCard>
+        <SettingSection
+          v-if="formOfSetting.enableWebServer"
+          :icon="Settings"
+          :title="t('pages.settings.advanced.webServerConfig')"
+        >
+          <SettingCard>
+            <CustomInput
+              v-model="formOfSetting.webServerHost"
+              type="text"
+              :title="t('pages.settings.advanced.webServerHost')"
+              placeholder="127.0.0.1"
+            />
+          </SettingCard>
+          <SettingCard>
+            <CustomInput
+              v-model="formOfSetting.webServerPort"
+              type="number"
+              :min="1"
+              :max="65535"
+              :step="1"
+              :title="t('pages.settings.advanced.webServerPort')"
+              placeholder="37777"
+            />
+          </SettingCard>
+          <SettingCard>
+            <CustomInput
+              v-model="formOfSetting.webServerPath"
+              :title="t('pages.settings.advanced.webServerPath')"
+              :placeholder="t('pages.settings.advanced.webServerPathPlaceholder')"
+            />
+          </SettingCard>
+        </SettingSection>
       </div>
-    </div>
+      <template #footer>
+        <CustomButton type="primary" :text="t('common.confirm')" @click="confirmWebServerSetting" />
+      </template>
+    </CustomModal>
 
     <!-- Sync Configuration Dialog -->
-    <div v-if="syncVisible" class="dialog-overlay" :class="advancedAnimation">
-      <div class="dialog sync-config-dialog" @click.stop>
-        <div class="dialog-header">
-          <div class="dialog-header-content">
-            <div class="sync-dialog-icon">
-              <RotateCcw :size="24" />
-            </div>
-            <div>
-              <h3 class="dialog-title">{{ t('pages.settings.sync.syncEndpointConfig') }}</h3>
-            </div>
+    <CustomModal
+      v-if="syncVisible"
+      v-model:visible="syncVisible"
+      height="auto"
+      width="700px"
+      :title="t('pages.settings.sync.syncEndpointConfig')"
+    >
+      <div class="flex w-full flex-col gap-4 p-4">
+        <div class="p-2">
+          <div class="grid grid-cols-4 gap-3">
+            <button
+              v-for="typeitem of syncType"
+              :key="typeitem"
+              class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-border bg-bg-tertiary px-2 py-4 hover:border-accent/50 hover:bg-accent/10 [.active]:border-accent [.active]:bg-accent/10 [.active]:text-accent [.active]:shadow-md"
+              :class="{ active: sync.type === typeitem }"
+              @click="sync.type = typeitem"
+            >
+              <GitBranch v-if="typeitem.includes('git')" class="text-secondary" :size="20" />
+              <Store v-else-if="typeitem === 'webdav'" class="text-secondary" :size="20" />
+              <span class="text-sm font-semibold text-secondary">{{
+                typeitem.slice(0, 1).toUpperCase() + typeitem.slice(1)
+              }}</span>
+            </button>
           </div>
-          <button class="dialog-close" @click="cancelSyncSetting">×</button>
         </div>
-        <div class="dialog-content sync-dialog-content">
-          <div class="sync-type-selector">
-            <label class="sync-type-label">{{ t('pages.settings.sync.selectType') }}</label>
-            <div class="sync-type-grid">
-              <button
-                v-for="typeitem of syncType"
-                :key="typeitem"
-                :class="['sync-type-btn', { active: sync.type === typeitem }]"
-                @click="sync.type = typeitem"
-              >
-                <GitBranch v-if="typeitem.includes('git')" :size="20" />
-                <Store v-else-if="typeitem === 'webdav'" :size="20" />
-                <span>{{ typeitem.slice(0, 1).toUpperCase() + typeitem.slice(1) }}</span>
-              </button>
-            </div>
-          </div>
 
-          <!-- Configuration Fields -->
-          <div class="sync-config-fields">
-            <div v-if="sync.type === 'gitea'" class="sync-field-group">
-              <label>
-                <Server :size="16" />
-                {{ t('pages.settings.sync.giteaHost') }}
-              </label>
-              <input
+        <!-- Configuration Fields -->
+        <div class="flex w-full flex-col gap-4">
+          <SettingSection :icon="Settings" :title="sync.type">
+            <SettingCard v-if="sync.type === 'gitea'">
+              <CustomInput
                 v-model.trim="sync.endpoint"
-                type="text"
-                class="form-input"
+                :title="t('pages.settings.sync.giteaHost')"
                 :placeholder="t('pages.settings.sync.giteaHost')"
               />
-            </div>
-
-            <!-- WebDAV Endpoint -->
-            <div v-if="sync.type === 'webdav'" class="sync-field-group">
-              <label>
-                <Globe :size="16" />
-                {{ t('pages.settings.sync.webdavEndpoint') }}
-              </label>
-              <input
+            </SettingCard>
+            <SettingCard v-if="sync.type === 'webdav'">
+              <CustomInput
                 v-model.trim="sync.webdavEndpoint"
-                type="text"
-                class="form-input"
+                :title="t('pages.settings.sync.webdavEndpoint')"
                 :placeholder="t('pages.settings.sync.webdavEndpoint')"
               />
-            </div>
-
-            <!-- Git-based fields -->
+            </SettingCard>
             <template v-if="sync.type !== 'webdav'">
-              <div class="sync-fields-grid">
-                <div
-                  v-for="inputItem in ['username', 'repo', 'branch', 'token']"
-                  :key="inputItem"
-                  class="sync-field-group"
-                >
-                  <label>
-                    {{ t(`pages.settings.sync.${sync.type.toLowerCase()}.${inputItem.toLowerCase()}`) }}
-                  </label>
-                  <input
-                    v-model.trim="sync[inputItem as any]"
-                    type="text"
-                    class="form-input"
-                    :placeholder="t(`pages.settings.sync.${sync.type.toLowerCase()}.${inputItem.toLowerCase()}`)"
-                  />
-                </div>
-              </div>
+              <SettingCard v-for="inputItem in ['username', 'repo', 'branch', 'token']" :key="inputItem">
+                <CustomInput
+                  v-model.trim="sync[inputItem as any]"
+                  :is-password="inputItem === 'token'"
+                  :title="t(`pages.settings.sync.${sync.type.toLowerCase()}.${inputItem.toLowerCase()}`)"
+                  :placeholder="t(`pages.settings.sync.${sync.type.toLowerCase()}.${inputItem.toLowerCase()}`)"
+                />
+              </SettingCard>
             </template>
-
-            <!-- WebDAV fields -->
-            <template v-if="sync.type === 'webdav'">
-              <div class="sync-fields-grid">
-                <div class="sync-field-group">
-                  <label>{{ t('pages.settings.sync.webdav.username') }}</label>
-                  <input
-                    v-model.trim="sync.webdavUsername"
-                    type="text"
-                    class="form-input"
-                    :placeholder="t('pages.settings.sync.webdav.username')"
-                  />
-                </div>
-                <div class="sync-field-group">
-                  <label>{{ t('pages.settings.sync.webdav.password') }}</label>
-                  <input
-                    v-model.trim="sync.webdavPassword"
-                    type="text"
-                    class="form-input"
-                    :placeholder="t('pages.settings.sync.webdav.password')"
-                  />
-                </div>
-                <div class="sync-field-group">
-                  <label>{{ t('pages.settings.sync.webdav.savePath') }}</label>
-                  <input
-                    v-model.trim="sync.webdavSavePath"
-                    type="text"
-                    class="form-input"
-                    :placeholder="t('pages.settings.sync.webdav.savePath')"
-                  />
-                </div>
-                <div class="sync-field-group">
-                  <label>{{ t('pages.settings.sync.webdav.authType') }}</label>
-                  <select v-model="sync.webdavAuthType" class="form-select">
-                    <option value="basic">Basic</option>
-                    <option value="digest">Digest</option>
-                  </select>
-                </div>
-              </div>
-              <div class="sync-ssl-toggle">
-                <label class="switch-label">
-                  <input v-model="sync.webdavSslEnabled" type="checkbox" class="switch-input" />
-                  <span class="switch-slider" />
-                  <div class="switch-content">
-                    <div class="switch-title">{{ t('pages.settings.sync.webdav.enableSSL') }}</div>
-                    <div class="switch-description">{{ t('pages.settings.sync.webdav.enableSSLDesc') }}</div>
-                  </div>
-                </label>
-              </div>
-            </template>
-
-            <!-- GitHub Proxy -->
-            <div v-if="sync.type === 'github'" class="sync-field-group">
-              <label>
-                <Globe :size="16" />
-                {{ t('pages.settings.sync.syncConfigProxy') }}
-              </label>
-              <input
+            <SettingCard v-if="sync.type === 'webdav'">
+              <CustomInput
+                v-model.trim="sync.webdavUsername"
+                :title="t('pages.settings.sync.webdav.username')"
+                :placeholder="t('pages.settings.sync.webdav.username')"
+              />
+            </SettingCard>
+            <SettingCard v-if="sync.type === 'webdav'">
+              <CustomInput
+                v-model.trim="sync.webdavPassword"
+                :is-password="true"
+                :title="t('pages.settings.sync.webdav.password')"
+                :placeholder="t('pages.settings.sync.webdav.password')"
+              />
+            </SettingCard>
+            <SettingCard v-if="sync.type === 'webdav'">
+              <CustomInput
+                v-model.trim="sync.webdavSavePath"
+                :title="t('pages.settings.sync.webdav.savePath')"
+                :placeholder="t('pages.settings.sync.webdav.savePath')"
+              />
+            </SettingCard>
+            <SettingCard v-if="sync.type === 'webdav'">
+              <CustomSelect
+                v-model="sync.webdavAuthType"
+                :select-list="[
+                  { label: 'Basic', value: 'basic' },
+                  { label: 'Digest', value: 'digest' },
+                ]"
+                :title="t('pages.settings.sync.webdav.authType')"
+                :icon="Settings"
+              />
+            </SettingCard>
+            <SettingCard v-if="sync.type === 'webdav'">
+              <CustomSwitch
+                v-model="sync.webdavSslEnabled"
+                small
+                no-border
+                :title="t('pages.settings.sync.webdav.enableSSL')"
+                :description="t('pages.settings.sync.webdav.enableSSLDesc')"
+              />
+            </SettingCard>
+            <SettingCard v-if="sync.type === 'github'">
+              <CustomInput
                 v-model.trim="sync.proxy"
-                type="text"
-                class="form-input"
+                :title="t('pages.settings.sync.syncConfigProxy')"
                 :placeholder="t('pages.settings.sync.syncConfigProxy')"
               />
-            </div>
-          </div>
-        </div>
-        <div class="dialog-footer">
-          <button class="btn btn-secondary" @click="cancelSyncSetting">
-            {{ t('common.cancel') }}
-          </button>
-          <button class="btn btn-primary" @click="confirmSyncSetting">
-            {{ t('common.confirm') }}
-          </button>
+            </SettingCard>
+          </SettingSection>
         </div>
       </div>
-    </div>
+      <template #footer>
+        <CustomButton type="secondary" :text="t('common.cancel')" @click="cancelSyncSetting" />
+        <CustomButton type="primary" :text="t('common.confirm')" @click="confirmSyncSetting" />
+      </template>
+    </CustomModal>
 
     <!-- Upload/Download Config Dialog -->
-    <div
+    <CustomModal
       v-if="upDownConfigVisible"
-      class="dialog-overlay"
-      :class="advancedAnimation"
-      @click="upDownConfigVisible = false"
+      v-model:visible="upDownConfigVisible"
+      height="auto"
+      width="700px"
+      :title="t('pages.settings.sync.upDownloadSettings')"
     >
-      <div class="dialog config-dialog" @click.stop>
-        <div class="dialog-header">
-          <div class="dialog-header-content">
-            <RotateCcw :size="20" class="dialog-icon" />
-            <h3 class="dialog-title">
-              {{ t('pages.settings.sync.upDownloadSettings') }}
-            </h3>
-          </div>
-          <button class="dialog-close" @click="upDownConfigVisible = false">×</button>
-        </div>
-        <div class="dialog-content">
-          <!-- Upload Settings Section -->
-          <div class="config-section">
-            <div class="config-section-header">
-              <CloudUpload :size="18" />
-              <h4>{{ t('pages.settings.sync.uploadSettings') }}</h4>
-            </div>
-            <div class="config-button-grid">
-              <button
-                v-for="item in syncTaskList.slice(0, 3)"
-                :key="item.task"
-                class="config-button"
-                @click="syncTaskFn(item.task, item.number)"
-              >
-                <CloudUpload :size="16" class="button-icon" />
-                <span>{{ item.label }}</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Download Settings Section -->
-          <div class="config-section">
-            <div class="config-section-header">
-              <Download :size="18" />
-              <h4>{{ t('pages.settings.sync.downloadSettings') }}</h4>
-            </div>
-            <div class="config-button-grid">
-              <button
-                v-for="item in syncTaskList.slice(3, 6)"
-                :key="item.task"
-                class="config-button"
-                @click="syncTaskFn(item.task, item.number)"
-              >
-                <Download :size="16" class="button-icon" />
-                <span>{{ item.label }}</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Gallery DB Section -->
-          <div class="config-section">
-            <div class="config-section-header">
-              <ImageIcon :size="18" />
-              <h4>{{ t('pages.settings.sync.galleryDB') }}</h4>
-            </div>
-            <div class="config-button-grid full-width">
-              <button
-                v-for="item in syncTaskList.slice(6, 7)"
-                :key="item.task"
-                class="config-button"
-                @click="syncTaskFn(item.task, item.number)"
-              >
-                <RefreshCw :size="16" class="button-icon" />
-                <span>{{ item.label }}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="dialog-footer">
-          <button class="btn btn-secondary" @click="upDownConfigVisible = false">
-            {{ t('common.close') }}
-          </button>
-        </div>
+      <div class="flex flex-col gap-6 p-4">
+        <SettingSection :icon="CloudUpload" :title="t('pages.settings.sync.uploadSettings')">
+          <CustomButton
+            v-for="item in syncTaskList.slice(0, 3)"
+            :key="item.task"
+            type="secondary"
+            :icon="CloudUpload"
+            :text="item.label"
+            @click="syncTaskFn(item.task, item.number)"
+          />
+        </SettingSection>
+        <SettingSection :icon="Download" :title="t('pages.settings.sync.downloadSettings')">
+          <CustomButton
+            v-for="item in syncTaskList.slice(3, 6)"
+            :key="item.task"
+            type="secondary"
+            :icon="Download"
+            :text="item.label"
+            @click="syncTaskFn(item.task, item.number)"
+          />
+        </SettingSection>
+        <SettingSection :icon="ImageIcon" :title="t('pages.settings.sync.galleryDB')">
+          <CustomButton
+            v-for="item in syncTaskList.slice(6, 7)"
+            :key="item.task"
+            type="secondary"
+            :icon="ImageIcon"
+            :text="item.label"
+            @click="syncTaskFn(item.task, item.number)"
+          />
+        </SettingSection>
       </div>
-    </div>
+    </CustomModal>
 
     <!-- Image Process Dialog -->
-    <div
+    <CustomModal
       v-if="imageProcessDialogVisible"
-      class="dialog-overlay"
-      :class="advancedAnimation"
-      @click="imageProcessDialogVisible = false"
+      v-model:visible="imageProcessDialogVisible"
+      :title="t('pages.imageProcess.title')"
+      :description="t('pages.imageProcess.subtitle-Global')"
     >
-      <div class="dialog large" @click.stop>
-        <div class="dialog-header">
-          <h3 class="dialog-title">
-            {{ t('pages.imageProcess.title') }}
-          </h3>
-          <span class="dialog-title">
-            {{ t('pages.imageProcess.subtitle-Global') }}
-          </span>
-          <button class="dialog-close" @click="imageProcessDialogVisible = false">X</button>
-        </div>
-        <div class="dialog-content">
-          <ImageProcessSetting :config-id="''" :current-picbed-name="''" />
-        </div>
-      </div>
-    </div>
+      <ImageProcessSetting :config-id="''" :current-picbed-name="''" />
+    </CustomModal>
   </div>
 </template>
 
@@ -1862,10 +1243,20 @@ import {
 import { marked } from 'marked'
 import type { IConfig } from 'piclist'
 import pkg from 'root/package.json'
-import { computed, onBeforeMount, reactive, ref, toRaw, watch } from 'vue'
+import { computed, nextTick, onBeforeMount, onBeforeUnmount, onMounted, ref, toRaw, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
+import CustomButton from '@/components/common/CustomButton.vue'
+import CustomInput from '@/components/common/CustomInput.vue'
+import CustomModal from '@/components/common/CustomModal.vue'
+import CustomNavCard from '@/components/common/CustomNavCard.vue'
+import CustomSelect from '@/components/common/CustomSelect.vue'
+import CustomSwitch from '@/components/common/CustomSwitch.vue'
+import MultiSelect from '@/components/common/MultiSelect.vue'
+import placeholderTable from '@/components/common/PlaceholderTable.vue'
+import SettingCard from '@/components/common/SettingCard.vue'
+import SettingSection from '@/components/common/SettingSection.vue'
 import ImageProcessSetting from '@/components/ImageProcessSetting.vue'
 import useConfirm from '@/hooks/useConfirm'
 import { osGlobal, usePicBed } from '@/hooks/useGlobal'
@@ -1878,47 +1269,62 @@ import { getConfig, saveConfig } from '@/utils/dataSender'
 import { II18nLanguage, IRPCActionType, ISartMode } from '@/utils/enum'
 import { getLatestVersion } from '@/utils/getLatestVersion'
 
+/* reactive data and refs */
 const { t, locale } = useI18n()
 const $router = useRouter()
 const { confirm } = useConfirm()
 const message = useMessage()
 const { picBedG, updatePicBeds } = usePicBed()
-
 const showPicBedList = ref<string[]>([])
 const galleryPicBedFilterList = ref<string[]>([])
-const themeList = ref<{ key: string; label: string }[]>([{ key: 'default.css', label: '默认' }])
+const themeList = ref<{ value: string; label: string }[]>([{ value: 'default.css', label: '默认' }])
 const currentTheme = ref('default.css')
+const proxy = ref('')
 const downloadingThemes = ref(false)
 const isDisableGPU = ref(false)
 const isPortable = ref(false)
+const currentLanguage = ref()
+const currentSecondMode = ref()
+const currentStartMode = ref()
+const currentShortUrlServer = ref()
+/* dialog visibility refs */
+const logFileVisible = ref(false)
+const customLinkVisible = ref(false)
+const checkUpdateVisible = ref(false)
+const serverVisible = ref(false)
+const webServerVisible = ref(false)
+const syncVisible = ref(false)
+const upDownConfigVisible = ref(false)
+const proxyVisible = ref(false)
+
+const latestVersion = ref('')
+const releaseNotes = ref('')
+const releaseNotesError = ref('')
+const releaseNotesLastFetch = ref<Date | null>(null)
+const fetchingReleaseNotes = ref(false)
+const mainWindowSizeVisible = ref(false)
+const advancedRenameVisible = ref(false)
+const imageProcessDialogVisible = ref(false)
+const rawPicGoSize = ref(false)
+const customLink = ref('![$fileName]($url)')
 const currentTab = useStorage<'system' | 'sync' | 'upload' | 'advanced' | 'update'>('settings-current-tab', 'system')
-
-// Tab configuration
-const tabs = computed(() => [
-  { id: 'system', label: t('pages.settings.system.title'), icon: Settings },
-  { id: 'sync', label: t('pages.settings.sync.title'), icon: RotateCcw },
-  { id: 'upload', label: t('pages.settings.upload.title'), icon: CloudUpload },
-  { id: 'advanced', label: t('pages.settings.advanced.title'), icon: Server },
-  { id: 'update', label: t('pages.settings.update.title'), icon: RefreshCw },
-])
-
-const shortUrlServerList = [
-  { label: 'c1n', value: 'c1n' },
-  { label: 'yourls', value: 'yourls' },
-  { label: 'xyTom/Url-Shorten-Worker', value: 'cf_worker' },
-  { label: 'ccbikai/Sink', value: 'sink' },
-]
-
-const languageList = [
-  { label: '简体中文', value: 'zh-CN' },
-  { label: '繁體中文', value: 'zh-TW' },
-  { label: 'English', value: 'en' },
-]
-
-const secondModeList = [
-  { label: t('pages.settings.upload.secondPicBedMode.backup'), value: 'backup' },
-  { label: t('pages.settings.upload.secondPicBedMode.seperate'), value: 'seperate' },
-]
+const server = ref({ port: 36677, host: '0.0.0.0', enable: true })
+const advancedRename = ref({ enable: false, format: '{filename}' })
+const sync = ref<any>({
+  type: 'github',
+  username: '',
+  repo: '',
+  branch: '',
+  token: '',
+  endpoint: '',
+  proxy: '',
+  interval: 60,
+  // WebDAV-specific fields
+  password: '',
+  authType: 'basic',
+  sslEnabled: true,
+  webdavSavePath: '',
+})
 
 const formOfSetting = ref<ISettingForm>({
   showUpdateTip: true,
@@ -1966,7 +1372,68 @@ const formOfSetting = ref<ISettingForm>({
   theme: 'default.css',
 })
 
-const proxy = ref('')
+/* computed properties */
+const tabs = computed(() => [
+  { id: 'system', label: t('pages.settings.system.title'), icon: Settings },
+  { id: 'sync', label: t('pages.settings.sync.title'), icon: RotateCcw },
+  { id: 'upload', label: t('pages.settings.upload.title'), icon: CloudUpload },
+  { id: 'advanced', label: t('pages.settings.advanced.title'), icon: Server },
+  { id: 'update', label: t('pages.settings.update.title'), icon: RefreshCw },
+])
+
+const needUpdate = computed(() => {
+  if (latestVersion.value) {
+    return compareVersion2Update(version, latestVersion.value)
+  }
+  return false
+})
+
+const renderedReleaseNotes = computed(() => {
+  return marked(releaseNotes.value, { breaks: true, gfm: true })
+})
+
+/* constants and enums */
+const syncTaskList = [
+  { task: IRPCActionType.CONFIGURE_UPLOAD_COMMON_CONFIG, label: t('pages.settings.sync.commonConfig'), number: 2 },
+  { task: IRPCActionType.CONFIGURE_UPLOAD_MANAGE_CONFIG, label: t('pages.settings.sync.manageConfig'), number: 2 },
+  { task: IRPCActionType.CONFIGURE_UPLOAD_ALL_CONFIG, label: t('pages.settings.sync.allConfig'), number: 4 },
+  { task: IRPCActionType.CONFIGURE_DOWNLOAD_COMMON_CONFIG, label: t('pages.settings.sync.commonConfig'), number: 2 },
+  { task: IRPCActionType.CONFIGURE_DOWNLOAD_MANAGE_CONFIG, label: t('pages.settings.sync.manageConfig'), number: 2 },
+  { task: IRPCActionType.CONFIGURE_DOWNLOAD_ALL_CONFIG, label: t('pages.settings.sync.allConfig'), number: 4 },
+  { task: IRPCActionType.CONFIGURE_SYNC_GALLERY_DB, label: t('pages.settings.sync.galleryDB'), number: 2 },
+]
+
+const logLevel = [
+  { type: 'all', name: t('pages.settings.advanced.logLevelList.all') },
+  { type: 'success', name: t('pages.settings.advanced.logLevelList.success') },
+  { type: 'error', name: t('pages.settings.advanced.logLevelList.error') },
+  { type: 'info', name: t('pages.settings.advanced.logLevelList.info') },
+  { type: 'warn', name: t('pages.settings.advanced.logLevelList.warn') },
+  { type: 'none', name: t('pages.settings.advanced.logLevelList.none') },
+]
+
+const syncType = ['github', 'gitee', 'gitea', 'webdav']
+const version = pkg.version
+
+const RELEASE_NOTES_CACHE_DURATION = 30 * 60 * 1000
+
+const shortUrlServerList = [
+  { label: 'c1n', value: 'c1n' },
+  { label: 'yourls', value: 'yourls' },
+  { label: 'xyTom/Url-Shorten-Worker', value: 'cf_worker' },
+  { label: 'ccbikai/Sink', value: 'sink' },
+]
+
+const languageList = [
+  { label: '简体中文', value: 'zh-CN' },
+  { label: '繁體中文', value: 'zh-TW' },
+  { label: 'English', value: 'en' },
+]
+
+const secondModeList = [
+  { label: t('pages.settings.upload.secondPicBedMode.backup'), value: 'backup' },
+  { label: t('pages.settings.upload.secondPicBedMode.seperate'), value: 'seperate' },
+]
 const formKeys = Object.keys(formOfSetting.value) as (keyof ISettingForm)[]
 const autoWatchKeys = [
   'showUpdateTip',
@@ -2003,10 +1470,54 @@ const autoWatchKeys = [
   'enableAdvancedAnimation',
 ]
 
-const advancedAnimation = computed(() => ({
-  advancedAnimation: formOfSetting.value.enableAdvancedAnimation,
+const advancedRenameList = {
+  categoryTime: [
+    { label: t('pages.settings.upload.placeholder.year4'), value: '{Y}' },
+    { label: t('pages.settings.upload.placeholder.year2'), value: '{y}' },
+    { label: t('pages.settings.upload.placeholder.month'), value: '{m}' },
+    { label: t('pages.settings.upload.placeholder.date'), value: '{d}' },
+    { label: t('pages.settings.upload.placeholder.hour'), value: '{h}' },
+    { label: t('pages.settings.upload.placeholder.minute'), value: '{i}' },
+    { label: t('pages.settings.upload.placeholder.second'), value: '{s}' },
+    { label: t('pages.settings.upload.placeholder.millisecond'), value: '{ms}' },
+    { label: t('pages.settings.upload.placeholder.timestamp'), value: '{timestamp}' },
+  ],
+  categoryHash: [
+    { label: t('pages.settings.upload.placeholder.md5'), value: '{md5}' },
+    { label: t('pages.settings.upload.placeholder.md5-16'), value: '{md5-16}' },
+    { label: t('pages.settings.upload.placeholder.uuid'), value: '{uuid}' },
+    { label: t('pages.settings.upload.placeholder.sha256'), value: '{sha256}' },
+    { label: t('pages.settings.upload.placeholder.sha256-n'), value: '{sha256-n}' },
+  ],
+  categoryFile: [
+    { label: t('pages.settings.upload.placeholder.filename'), value: '{filename}' },
+    { label: t('pages.settings.upload.placeholder.localFolder'), value: '{localFolder:n}' },
+    { label: t('pages.settings.upload.placeholder.randomString'), value: '{str-n}' },
+  ],
+}
+
+const advancedRenameTitleList = computed(() => ({
+  categoryTime: t('pages.settings.upload.placeholder.categoryTime'),
+  categoryHash: t('pages.settings.upload.placeholder.categoryHash'),
+  categoryFile: t('pages.settings.upload.placeholder.categoryFile'),
 }))
 
+const placeholderList = [
+  {
+    code: '$url',
+    description: 'urlPlaceholder',
+  },
+  {
+    code: '$fileName',
+    description: 'fileNamePlaceholder',
+  },
+  {
+    code: '$extName',
+    description: 'extNamePlaceholder',
+  },
+]
+
+/* watchers and effects */
 const addWatch = () => {
   autoWatchKeys.forEach(key => {
     watch(
@@ -2016,6 +1527,21 @@ const addWatch = () => {
       },
     )
   })
+
+  watch(showPicBedList, val => {
+    handleShowPicBedListChange(val)
+  })
+
+  watch(galleryPicBedFilterList, val => {
+    handleGalleryPicBedFilterChange(val)
+  })
+
+  watch(
+    () => formOfSetting.value.aesPassword,
+    val => {
+      handleAesPasswordChange(val)
+    },
+  )
 
   watch(currentSecondMode, newVal => {
     if (newVal) {
@@ -2049,101 +1575,79 @@ const addWatch = () => {
     }
   })
 
-  watch(isDisableGPU, newVal => {
-    message.info(t('pages.settings.system.needRestart'))
-    saveConfig({ [configPaths.settings.isDisableGPU]: newVal })
-  })
-}
+  watch(
+    advancedRename,
+    newVal => {
+      saveConfig(configPaths.buildIn.rename, toRaw(newVal))
+      if (newVal.enable) {
+        formOfSetting.value.autoRename = false
+        saveConfig(configPaths.settings.autoRename, false)
+      }
+    },
+    { deep: true },
+  )
 
-const addProxyWatch = () => {
+  watch(
+    () => formOfSetting.value.mainWindowWidth,
+    newVal => {
+      console.log('Main window width changed:', newVal)
+      const width = enforceNumber(newVal)
+      saveConfig({ [configPaths.settings.mainWindowWidth]: rawPicGoSize.value ? 800 : Math.max(width, 100) })
+    },
+  )
+
+  watch(
+    () => formOfSetting.value.mainWindowHeight,
+    newVal => {
+      console.log('Main window height changed:', newVal)
+      const height = enforceNumber(newVal)
+      saveConfig({ [configPaths.settings.mainWindowHeight]: rawPicGoSize.value ? 450 : Math.max(height, 100) })
+    },
+  )
+
+  watch(rawPicGoSize, newVal => {
+    if (newVal) {
+      formOfSetting.value.mainWindowWidth = 800
+      formOfSetting.value.mainWindowHeight = 450
+    }
+  })
+
+  watch(customLink, newVal => {
+    saveConfig(configPaths.settings.customLink, newVal)
+  })
+
   watch(proxy, value => {
     saveConfig({ 'picBed.proxy': value })
   })
+
+  watch(
+    () => formOfSetting.value.logFileSizeLimit,
+    newVal => {
+      const size = enforceNumber(newVal)
+      if (size < 1) {
+        formOfSetting.value.logFileSizeLimit = 1
+        saveConfig({ [configPaths.settings.logFileSizeLimit]: 1 })
+      } else {
+        saveConfig({ [configPaths.settings.logFileSizeLimit]: size })
+      }
+    },
+  )
+
+  watch(
+    () => formOfSetting.value.logLevel,
+    newVal => {
+      if (newVal.length === 0) {
+        message.error(t('pages.settings.advanced.chooseLogLevel'))
+        return
+      }
+      saveConfig({
+        [configPaths.settings.logLevel]: newVal,
+      })
+    },
+  )
 }
 
-const advancedRenameList = {
-  categoryTime: [
-    { label: t('pages.settings.upload.placeholder.year4'), value: '{Y}' },
-    { label: t('pages.settings.upload.placeholder.year2'), value: '{y}' },
-    { label: t('pages.settings.upload.placeholder.month'), value: '{m}' },
-    { label: t('pages.settings.upload.placeholder.date'), value: '{d}' },
-    { label: t('pages.settings.upload.placeholder.hour'), value: '{h}' },
-    { label: t('pages.settings.upload.placeholder.minute'), value: '{i}' },
-    { label: t('pages.settings.upload.placeholder.second'), value: '{s}' },
-    { label: t('pages.settings.upload.placeholder.millisecond'), value: '{ms}' },
-    { label: t('pages.settings.upload.placeholder.timestamp'), value: '{timestamp}' },
-  ],
-  categoryHash: [
-    { label: t('pages.settings.upload.placeholder.md5'), value: '{md5}' },
-    { label: t('pages.settings.upload.placeholder.md5-16'), value: '{md5-16}' },
-    { label: t('pages.settings.upload.placeholder.uuid'), value: '{uuid}' },
-    { label: t('pages.settings.upload.placeholder.sha256'), value: '{sha256}' },
-    { label: t('pages.settings.upload.placeholder.sha256-n'), value: '{sha256-n}' },
-  ],
-  categoryFile: [
-    { label: t('pages.settings.upload.placeholder.filename'), value: '{filename}' },
-    { label: t('pages.settings.upload.placeholder.localFolder'), value: '{localFolder:n}' },
-    { label: t('pages.settings.upload.placeholder.randomString'), value: '{str-n}' },
-  ],
-}
-
-function copyPlaceholder(placeholder: string) {
-  window.electron.clipboard.writeText(placeholder)
-  message.success(t('pages.settings.upload.copySuccess', { content: placeholder }))
-}
-
-const currentLanguage = ref()
-const currentSecondMode = ref()
-const currentStartMode = ref()
-const currentShortUrlServer = ref()
-
-const logFileVisible = ref(false)
-const customLinkVisible = ref(false)
-const checkUpdateVisible = ref(false)
-const serverVisible = ref(false)
-const webServerVisible = ref(false)
-const syncVisible = ref(false)
-const upDownConfigVisible = ref(false)
-const proxyVisible = ref(false)
-const mainWindowSizeVisible = ref(false)
-const advancedRenameVisible = ref(false)
-const imageProcessDialogVisible = ref(false)
-
-const rawPicGoSize = ref(false)
-
-const customLink = reactive({ value: '![$fileName]($url)' })
-
-const logLevel = {
-  all: t('pages.settings.advanced.logLevelList.all'),
-  success: t('pages.settings.advanced.logLevelList.success'),
-  error: t('pages.settings.advanced.logLevelList.error'),
-  info: t('pages.settings.advanced.logLevelList.info'),
-  warn: t('pages.settings.advanced.logLevelList.warn'),
-  none: t('pages.settings.advanced.logLevelList.none'),
-}
-
-const server = ref({ port: 36677, host: '0.0.0.0', enable: true })
-
-const advancedRename = ref({ enable: false, format: '{filename}' })
-
-const sync = ref<any>({
-  type: 'github',
-  username: '',
-  repo: '',
-  branch: '',
-  token: '',
-  endpoint: '',
-  proxy: '',
-  interval: 60,
-  // WebDAV-specific fields
-  password: '',
-  authType: 'basic',
-  sslEnabled: true,
-  webdavSavePath: '',
-})
-
-const syncType = ['github', 'gitee', 'gitea', 'webdav']
-
+/* methods */
 async function cancelSyncSetting() {
   syncVisible.value = false
   sync.value = (await getConfig(configPaths.settings.sync)) || {
@@ -2170,25 +1674,9 @@ function confirmSyncSetting() {
   syncVisible.value = false
 }
 
-const version = pkg.version
-const latestVersion = ref('')
-const releaseNotes = ref('')
-const releaseNotesError = ref('')
-const releaseNotesLastFetch = ref<Date | null>(null)
-const fetchingReleaseNotes = ref(false)
-
-const RELEASE_NOTES_CACHE_DURATION = 30 * 60 * 1000
-
-const needUpdate = computed(() => {
-  if (latestVersion.value) {
-    return compareVersion2Update(version, latestVersion.value)
-  }
-  return false
-})
-
-onBeforeMount(() => {
-  initData()
-})
+function tabClick(tabId: string) {
+  currentTab.value = tabId as 'system' | 'sync' | 'upload' | 'advanced' | 'update'
+}
 
 async function loadThemes() {
   try {
@@ -2196,11 +1684,15 @@ async function loadThemes() {
       IRPCActionType.THEME_RESOLVE_THEMES,
     )
     if (themes && themes.length > 0) {
-      themeList.value = themes.sort((a, b) => {
+      const sortedThemes = themes.sort((a, b) => {
         if (a.key === 'default.css') return -1
         if (b.key === 'default.css') return 1
         return a.label.localeCompare(b.label)
       })
+      themeList.value = sortedThemes.map(theme => ({
+        value: theme.key,
+        label: theme.label,
+      }))
     }
   } catch (error) {
     console.error('Failed to load themes:', error)
@@ -2252,13 +1744,19 @@ async function handleThemeChange(theme: string) {
   }
 }
 
+function handleIsDisableGPUChange(value: boolean | undefined) {
+  if (value === undefined) return
+  message.info(t('pages.settings.system.needRestart'))
+  saveConfig({ [configPaths.settings.isDisableGPU]: value })
+}
+
 async function initData() {
   const config = (await getConfig<IConfig>()) || ({} as IConfig)
   const settings = config.settings || {}
   const picBed = config.picBed
   isDisableGPU.value = settings.isDisableGPU || false
   isPortable.value = (await window.electron.triggerRPC<boolean>(IRPCActionType.GET_IS_PORTABLE)) || false
-  showPicBedList.value = picBedG.value.filter(item => item.visible).map(item => item.name)
+  showPicBedList.value = picBedG.value.filter(item => item.visible).map(item => item.type)
   galleryPicBedFilterList.value = settings.galleryPicBedFilter || []
   currentTheme.value = settings.theme || 'default.css'
   loadThemes()
@@ -2312,10 +1810,7 @@ async function initData() {
     webdavSavePath: '',
   }
   formOfSetting.value.logFileSizeLimit = enforceNumber(settings.logFileSizeLimit) || 10
-  addProxyWatch()
   addWatch()
-
-  // Fetch release notes on initialization
   fetchReleaseNotes()
 }
 
@@ -2344,32 +1839,6 @@ function openDirectory(directory?: string, inStorePath = true) {
 
 function openLogSetting() {
   logFileVisible.value = true
-}
-
-async function cancelCustomLink() {
-  customLinkVisible.value = false
-  customLink.value = (await getConfig<string>(configPaths.settings.customLink)) || '![$fileName]($url)'
-}
-
-function confirmCustomLink() {
-  saveConfig(configPaths.settings.customLink, customLink.value)
-  customLinkVisible.value = false
-}
-
-async function handleCancelAdvancedRename() {
-  advancedRenameVisible.value = false
-  advancedRename.value = toRaw(
-    (await getConfig<any>(configPaths.buildIn.rename)) || { enable: false, format: '{filename}' },
-  )
-}
-
-function handleSaveAdvancedRename() {
-  saveConfig(configPaths.buildIn.rename, toRaw(advancedRename.value))
-  if (advancedRename.value.enable) {
-    formOfSetting.value.autoRename = false
-    saveConfig(configPaths.settings.autoRename, false)
-  }
-  advancedRenameVisible.value = false
 }
 
 function handleMigrateFromPicGo() {
@@ -2426,18 +1895,16 @@ function handleHideDockChange(val: ICheckBoxValueType) {
   window.electron.sendRPC(IRPCActionType.HIDE_DOCK, val)
 }
 
-watch(showPicBedList, val => {
-  handleShowPicBedListChange(val)
-})
-
-watch(galleryPicBedFilterList, val => {
-  handleGalleryPicBedFilterChange(val)
-})
-
 function handleShowPicBedListChange(val: ICheckBoxValueType[]) {
-  const list = picBedG.value.map(item => ({ ...item, visible: val.includes(item.name) }))
-  saveConfig({ [configPaths.picBed.list]: list })
-  updatePicBeds()
+  try {
+    const list = picBedG.value.map(item => ({ ...item, visible: val.includes(item.type) }))
+    saveConfig({ [configPaths.picBed.list]: list })
+    nextTick(() => {
+      updatePicBeds()
+    })
+  } catch (error) {
+    console.error('Error updating PicBed visibility:', error)
+  }
 }
 
 function handleGalleryPicBedFilterChange(val: ICheckBoxValueType[]) {
@@ -2471,10 +1938,6 @@ function formatLastFetchTime(date: Date): string {
     }
   }
 }
-
-const renderedReleaseNotes = computed(() => {
-  return marked(releaseNotes.value, { breaks: true, gfm: true })
-})
 
 async function fetchReleaseNotes(forceRefresh = false): Promise<void> {
   if (!forceRefresh && releaseNotesLastFetch.value) {
@@ -2538,33 +2001,12 @@ function confirmWebServerSetting() {
   webServerVisible.value = false
 }
 
-async function getMainWindowSize() {
-  formOfSetting.value.mainWindowWidth = (await getConfig<number>(configPaths.settings.mainWindowWidth)) || 1200
-  formOfSetting.value.mainWindowHeight = (await getConfig<number>(configPaths.settings.mainWindowHeight)) || 800
-}
-
-async function cancelWindowSize() {
-  mainWindowSizeVisible.value = false
-  await getMainWindowSize()
-}
-
-async function confirmWindowSize() {
-  mainWindowSizeVisible.value = false
-  const width = enforceNumber(formOfSetting.value.mainWindowWidth)
-  const height = enforceNumber(formOfSetting.value.mainWindowHeight)
-  saveConfig({
-    [configPaths.settings.mainWindowWidth]: rawPicGoSize.value ? 800 : width < 100 ? 100 : width,
-    [configPaths.settings.mainWindowHeight]: rawPicGoSize.value ? 450 : height < 100 ? 100 : height,
-  })
-  await getMainWindowSize()
-}
-
 function handleMiniWindowOntop(val: ICheckBoxValueType) {
   saveConfig(configPaths.settings.miniWindowOntop, val)
   window.electron.sendRPC(IRPCActionType.MINI_WINDOW_ON_TOP, val)
 }
 
-async function handleMiniIconPath(_: Event) {
+async function handleMiniIconPath() {
   const result = await window.electron.triggerRPC<string[]>(IRPCActionType.MANAGE_OPEN_FILE_SELECT_DIALOG)
   if (result && result[0]) {
     formOfSetting.value.customMiniIcon = result[0]
@@ -2582,33 +2024,6 @@ function handleAesPasswordChange(val: string) {
   saveConfig(configPaths.settings.aesPassword, val || 'PicList-aesPassword')
 }
 
-function confirmLogLevelSetting() {
-  if (formOfSetting.value.logLevel.length === 0) {
-    message.error(t('pages.settings.advanced.chooseLogLevel'))
-    return
-  }
-  saveConfig({
-    [configPaths.settings.logLevel]: formOfSetting.value.logLevel,
-    [configPaths.settings.logFileSizeLimit]: formOfSetting.value.logFileSizeLimit,
-  })
-  logFileVisible.value = false
-}
-
-async function cancelLogLevelSetting() {
-  logFileVisible.value = false
-  let logLevel = await getConfig<string | string[]>(configPaths.settings.logLevel)
-  const logFileSizeLimit = (await getConfig<number>(configPaths.settings.logFileSizeLimit)) || 10
-  if (!Array.isArray(logLevel)) {
-    if (logLevel && logLevel.length > 0) {
-      logLevel = [logLevel]
-    } else {
-      logLevel = ['all']
-    }
-  }
-  formOfSetting.value.logLevel = logLevel
-  formOfSetting.value.logFileSizeLimit = logFileSizeLimit
-}
-
 function syncMessage(failed: number) {
   if (failed) {
     message.error(t('pages.settings.sync.syncResult.failed'))
@@ -2616,16 +2031,6 @@ function syncMessage(failed: number) {
     message.success(t('pages.settings.sync.syncResult.success'))
   }
 }
-
-const syncTaskList = [
-  { task: IRPCActionType.CONFIGURE_UPLOAD_COMMON_CONFIG, label: t('pages.settings.sync.commonConfig'), number: 2 },
-  { task: IRPCActionType.CONFIGURE_UPLOAD_MANAGE_CONFIG, label: t('pages.settings.sync.manageConfig'), number: 2 },
-  { task: IRPCActionType.CONFIGURE_UPLOAD_ALL_CONFIG, label: t('pages.settings.sync.allConfig'), number: 4 },
-  { task: IRPCActionType.CONFIGURE_DOWNLOAD_COMMON_CONFIG, label: t('pages.settings.sync.commonConfig'), number: 2 },
-  { task: IRPCActionType.CONFIGURE_DOWNLOAD_MANAGE_CONFIG, label: t('pages.settings.sync.manageConfig'), number: 2 },
-  { task: IRPCActionType.CONFIGURE_DOWNLOAD_ALL_CONFIG, label: t('pages.settings.sync.allConfig'), number: 4 },
-  { task: IRPCActionType.CONFIGURE_SYNC_GALLERY_DB, label: t('pages.settings.sync.galleryDB'), number: 2 },
-]
 
 async function syncTaskFn(task: string, number: number) {
   const failed = number - ((await window.electron.triggerRPC<number>(task)) || 0)
@@ -2673,6 +2078,24 @@ async function goConfigPage() {
 function goShortCutPage() {
   $router.push({ name: SHORTKEY_PAGE })
 }
+
+/* lifecycle hooks */
+onBeforeMount(() => {
+  initData()
+})
+
+let unbindTheme: () => void
+onMounted(() => {
+  unbindTheme = window.electron.onThemeUpdate((_: string) => {
+    console.log('Applying theme CSS update:')
+  })
+})
+
+onBeforeUnmount(() => {
+  if (unbindTheme) {
+    unbindTheme()
+  }
+})
 </script>
 <script lang="ts">
 export default { name: 'SettingPage' }

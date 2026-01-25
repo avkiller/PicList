@@ -62,7 +62,7 @@
     "copySuccess": "複製成功",
     "expand": "展開側邊欄",
     "gallery": "相簿",
-    "manage": "管理",
+    "manage": "雲端",
     "moreOptions": "更多選項",
     "picbed": "圖床",
     "picBedQrCode": "圖床配置 QRCODE",
@@ -75,7 +75,8 @@
   "pages": {
     "configForm": {
       "configName": "配置名稱",
-      "configNamePlaceholder": "請輸入配置名稱"
+      "configNamePlaceholder": "請輸入配置名稱",
+      "configNameRequired": "配置名稱為必填項"
     },
     "gallery": {
       "batchEditUrl": "批量修改URL",
@@ -461,7 +462,7 @@
           "webPathTips": "用於拼接對外存取網址"
         },
         "smms": {
-          "explain": "中國大陸地區請訪問備用網域 https://sm.ms，請勿在短時間內大量請求",
+          "explain": "中國大陸地區請訪問備用網域 https://smms.app，請勿在短時間內大量請求",
           "tokenDesc": "SM.MS Token，可在 SM.MS 個人中心取得",
           "tokenPlaceholder": "請輸入 SM.MS Token"
         },
@@ -520,6 +521,7 @@
         "noDataDesc": "請先建立儲存桶或上傳圖片"
       },
       "login": {
+        "aliasExistMsg": "別名與已有配置重複",
         "aliasMsg": "別名只能包含中文、英文、數字、底線和連字號",
         "configChangeMsg": "設定已變更",
         "configSaveMsg": "設定已儲存",
@@ -540,10 +542,10 @@
         "refresh": "重新整理",
         "reset": "重設",
         "save": "儲存",
-        "savedConfigs": "已儲存設定",
+        "savedConfigs": "已配置雲端",
         "selectPlaceholder": "請選擇",
         "tips": "提示",
-        "title": "圖床管理",
+        "title": "雲端存儲管理",
         "viewDetails": "查看詳情"
       },
       "main": {
@@ -640,10 +642,17 @@
         "preSignedUrlExpireDesc": "建議依實際需求調整",
         "randomStringRenameTips": "20 位隨機字元",
         "randomStringRenameTitle": "上傳檔案隨機字串重新命名（中優先級）",
+        "section": {
+          "cache": "快取設置",
+          "general": "通用設置",
+          "naming": "命名設置",
+          "up-down": "上傳/下載設置"
+        },
         "selectDownloadFolderTips": "選擇下載目錄",
         "selectDownloadFolderTitle": "選擇下載資料夾",
         "timestampRenameTips": "啟用後，上傳的檔案將自動更名為時間戳",
-        "timestampRenameTitle": "上傳檔案時間戳重新命名（最高優先級）"
+        "timestampRenameTitle": "上傳檔案時間戳重新命名（最高優先級）",
+        "title": "管理通用設置"
       }
     },
     "picBedConfigs": {
@@ -685,7 +694,7 @@
       "noPluginsFound": "未找到插件",
       "NoPluginsInstalled": "尚未安裝任何插件",
       "notGuiImplement": "該插件未針對圖形介面進行優化，是否繼續安裝？",
-      "openRemoteList": "打開遠程插件列表",
+      "openRemoteList": "遠程列表",
       "pluginList": "插件列表",
       "restartApp": "重啟應用",
       "searchInBrowse": "在瀏覽中搜索",
@@ -914,6 +923,7 @@
         "chooseSecondPicBedMode": "選擇第二圖床模式",
         "chooseShowedPicBed": "請選擇顯示在菜單的圖床",
         "clipboardAndNotification": "剪貼板和通知",
+        "controlShow": "控制顯示的圖床",
         "copySuccess": "複製成功: {content}",
         "customLinkFormat": "自定義鏈接格式",
         "customLinkFormatDesc": "設置自定義的鏈接輸出格式",
@@ -936,7 +946,7 @@
         "imageProcessing": "圖片預處理設置",
         "imageProcessingDesc": "配置上傳前的圖片預處理選項",
         "isAutoListenClipboard": "軟件啟動時自動監聽剪貼板上傳",
-        "manualRname": "手動重命名",
+        "manualRename": "手動重命名",
         "placeholder": {
           "categoryFile": "文件相關",
           "categoryHash": "哈希相關",
@@ -968,7 +978,7 @@
         "shortUrlServer": "短鏈接服務",
         "sinkDomain": "Sink 域名",
         "sinkToken": "Sink Token",
-        "timestampRname": "時間戳重命名",
+        "timestampRename": "時間戳重命名",
         "title": "上傳",
         "uploadBehavior": "上傳行為",
         "uploadProcessing": "上傳處理",

@@ -62,7 +62,7 @@
     "copySuccess": "Copy Success",
     "expand": "Expand Sidebar",
     "gallery": "Gallery",
-    "manage": "Manage",
+    "manage": "Cloud",
     "moreOptions": "More Options",
     "picbed": "PicBed",
     "picBedQrCode": "PicBed QR Code",
@@ -75,7 +75,8 @@
   "pages": {
     "configForm": {
       "configName": "Config Name",
-      "configNamePlaceholder": "Please enter config name"
+      "configNamePlaceholder": "Please enter config name",
+      "configNameRequired": "Configure name is required"
     },
     "gallery": {
       "batchEditUrl": "Batch Edit URL",
@@ -461,7 +462,7 @@
           "webPathTips": "Used to assemble the public URL"
         },
         "smms": {
-          "explain": "For mainland China, please use the backup domain https://sm.ms and avoid sending too many requests in a short time",
+          "explain": "For mainland China, please use the backup domain https://smms.app and avoid sending too many requests in a short time",
           "tokenDesc": "SM.MS Token, available in your SM.MS profile",
           "tokenPlaceholder": "Please enter SM.MS Token"
         },
@@ -520,6 +521,7 @@
         "noDataDesc": "Please create a bucket or upload images first"
       },
       "login": {
+        "aliasExistMsg": "Alias duplicate ",
         "aliasMsg": "Alias may only contain Chinese characters, letters, numbers, underscores, and hyphens",
         "configChangeMsg": "Configuration changed",
         "configSaveMsg": "Configuration saved",
@@ -540,10 +542,10 @@
         "refresh": "Refresh",
         "reset": "Reset",
         "save": "Save",
-        "savedConfigs": "Saved Configurations",
+        "savedConfigs": "Saved Cloud",
         "selectPlaceholder": "Please select",
         "tips": "Tips",
-        "title": "Image Host Management",
+        "title": "Cloud Management",
         "viewDetails": "View details"
       },
       "main": {
@@ -640,10 +642,17 @@
         "preSignedUrlExpireDesc": "Adjust based on actual needs",
         "randomStringRenameTips": "20 random characters",
         "randomStringRenameTitle": "Random string rename on upload (medium priority)",
+        "section": {
+          "cache": "Cache Settings",
+          "general": "General Settings",
+          "naming": "Naming Settings",
+          "up-down": "Upload/Download Settings"
+        },
         "selectDownloadFolderTips": "Select download directory",
         "selectDownloadFolderTitle": "Choose download folder",
         "timestampRenameTips": "When enabled, uploaded files will be renamed to a timestamp",
-        "timestampRenameTitle": "Timestamp rename on upload (highest priority)"
+        "timestampRenameTitle": "Timestamp rename on upload (highest priority)",
+        "title": "Manage General Settings"
       }
     },
     "picBedConfigs": {
@@ -685,7 +694,7 @@
       "noPluginsFound": "No Plugins Found",
       "NoPluginsInstalled": "No Plugins Installed",
       "notGuiImplement": "This plugin does not have a GUI implementation, continue?",
-      "openRemoteList": "Open Remote Plugin List",
+      "openRemoteList": "Remote List",
       "pluginList": "Plugin List",
       "restartApp": "Restart Application",
       "searchInBrowse": "Search in Browse",
@@ -914,6 +923,7 @@
         "chooseSecondPicBedMode": "Choose Second Image Bed Mode",
         "chooseShowedPicBed": "Please select the image bed to display in the menu",
         "clipboardAndNotification": "Clipboard and Notification",
+        "controlShow": "Control Showed PicBeds",
         "copySuccess": "Copy Successful: {content}",
         "customLinkFormat": "Custom Link Format",
         "customLinkFormatDesc": "Set custom link output format",
@@ -936,7 +946,7 @@
         "imageProcessing": "Image Processing Settings",
         "imageProcessingDesc": "Configure image preprocessing options before upload",
         "isAutoListenClipboard": "Automatically listen for clipboard uploads when the software starts.",
-        "manualRname": "Manual Rename",
+        "manualRename": "Manual Rename",
         "placeholder": {
           "categoryFile": "File Related",
           "categoryHash": "Hash Related",
@@ -968,7 +978,7 @@
         "shortUrlServer": "Short URL Service",
         "sinkDomain": "Sink Domain",
         "sinkToken": "Sink Token",
-        "timestampRname": "Timestamp Rename",
+        "timestampRename": "Timestamp Rename",
         "title": "Upload",
         "uploadBehavior": "Upload Behavior",
         "uploadProcessing": "Upload Processing",

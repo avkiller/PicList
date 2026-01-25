@@ -62,7 +62,7 @@
     "copySuccess": "复制成功",
     "expand": "展开侧边栏",
     "gallery": "相册",
-    "manage": "管理",
+    "manage": "云端",
     "moreOptions": "更多选项",
     "picbed": "图床",
     "picBedQrCode": "图床配置二维码",
@@ -75,7 +75,8 @@
   "pages": {
     "configForm": {
       "configName": "配置名",
-      "configNamePlaceholder": "请输入配置名称"
+      "configNamePlaceholder": "请输入配置名称",
+      "configNameRequired": "配置名称为必填项"
     },
     "gallery": {
       "batchEditUrl": "批量修改URL",
@@ -461,7 +462,7 @@
           "webPathTips": "用于拼接访问网址"
         },
         "smms": {
-          "explain": "大陆地区请访问备用域名https://sm.ms，不要短时大量请求",
+          "explain": "大陆地区请访问备用域名https://smms.app，不要短时大量请求",
           "tokenDesc": "SM.MS Token, 可在 SM.MS 个人中心获取",
           "tokenPlaceholder": "请输入 SM.MS Token"
         },
@@ -520,6 +521,7 @@
         "noDataDesc": "请先创建存储桶或上传图片"
       },
       "login": {
+        "aliasExistMsg": "别名与已有配置重复",
         "aliasMsg": "别名只能包含中文、英文、数字、下划线和中划线",
         "configChangeMsg": "配置已更改",
         "configSaveMsg": "配置已保存",
@@ -540,10 +542,10 @@
         "refresh": "刷新",
         "reset": "重置",
         "save": "保存",
-        "savedConfigs": "已保存配置",
+        "savedConfigs": "已配置云端",
         "selectPlaceholder": "请选择",
         "tips": "提示",
-        "title": "图床管理",
+        "title": "云端管理",
         "viewDetails": "查看详情"
       },
       "main": {
@@ -640,10 +642,17 @@
         "preSignedUrlExpireDesc": "建议根据实际需求调整",
         "randomStringRenameTips": "20位随机字符",
         "randomStringRenameTitle": "上传文件随机字符串重命名(中优先级)",
+        "section": {
+          "cache": "缓存设置",
+          "general": "通用设置",
+          "naming": "命名设置",
+          "up-down": "上传/下载设置"
+        },
         "selectDownloadFolderTips": "选择下载目录",
         "selectDownloadFolderTitle": "选择下载文件夹",
         "timestampRenameTips": "开启后，上传的文件将自动重命名为时间戳",
-        "timestampRenameTitle": "上传文件时间戳重命名(最高优先级)"
+        "timestampRenameTitle": "上传文件时间戳重命名(最高优先级)",
+        "title": "管理通用设置"
       }
     },
     "picBedConfigs": {
@@ -685,7 +694,7 @@
       "noPluginsFound": "未找到插件",
       "NoPluginsInstalled": "暂无已安装插件",
       "notGuiImplement": "该插件未对可视化界面进行优化, 是否继续安装?",
-      "openRemoteList": "打开远程插件列表",
+      "openRemoteList": "远程列表",
       "pluginList": "插件列表",
       "restartApp": "重启应用",
       "searchInBrowse": "搜索插件",
@@ -914,6 +923,7 @@
         "chooseSecondPicBedMode": "选择第二图床模式",
         "chooseShowedPicBed": "请选择显示在菜单的图床",
         "clipboardAndNotification": "剪贴板和通知",
+        "controlShow": "图床显示控制",
         "copySuccess": "复制成功: {content}",
         "customLinkFormat": "自定义链接格式",
         "customLinkFormatDesc": "设置自定义的链接输出格式",
@@ -936,7 +946,7 @@
         "imageProcessing": "图片预处理设置",
         "imageProcessingDesc": "配置上传前的图片预处理选项",
         "isAutoListenClipboard": "软件启动时自动监听剪贴板上传",
-        "manualRname": "手动重命名",
+        "manualRename": "手动重命名",
         "placeholder": {
           "categoryFile": "文件相关",
           "categoryHash": "哈希相关",
@@ -968,7 +978,7 @@
         "shortUrlServer": "短链接服务",
         "sinkDomain": "Sink 域名",
         "sinkToken": "Sink Token",
-        "timestampRname": "时间戳重命名",
+        "timestampRename": "时间戳重命名",
         "title": "上传",
         "uploadBehavior": "上传行为",
         "uploadProcessing": "上传处理",
