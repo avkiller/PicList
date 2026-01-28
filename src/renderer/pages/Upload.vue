@@ -9,21 +9,22 @@
       >
         <div class="flex max-w-[calc(100%-300px)] flex-1 flex-wrap items-center gap-2 max-md:order-1">
           <button
-            class="provider-button group/provider flex w-auto min-w-[150px] shrink-0 cursor-pointer items-center gap-3 rounded-lg bg-bg-secondary px-4 py-2 font-[inherit] shadow-sm duration-fast ease-standard hover:-translate-y-px hover:border-accent-hover/70 hover:bg-surface hover:shadow-sm focus-visible:focus-ring max-xs:w-full max-xs:min-w-[100px]"
+            class="provider-button group/provider flex w-auto min-w-[150px] shrink-0 cursor-pointer items-center gap-3 rounded-lg bg-bg-secondary px-4 py-2 font-[inherit] shadow-sm duration-fast ease-standard hover:-translate-y-px hover:bg-accent/30 hover:text-white hover:shadow-sm focus-visible:focus-ring max-xs:w-full max-xs:min-w-[100px]"
             :title="t('pages.upload.uploadViewHint')"
             @click="handlePicBedNameClick(picBedName)"
           >
             <div class="flex flex-1 flex-col items-start">
-              <span class="text-sm leading-[1.2] font-semibold text-main">{{ picBedName }}</span>
-              <span class="text-xs leading-[1.2] text-secondary">{{ defaultConfigNameG || 'Default' }}</span>
+              <span class="text-sm leading-[1.2] font-semibold text-main group-hover/provider:text-white">{{
+                picBedName
+              }}</span>
+              <span class="text-xs leading-[1.2] text-secondary group-hover/provider:text-white">{{
+                defaultConfigNameG || 'Default'
+              }}</span>
             </div>
-            <EditIcon
-              :size="16"
-              class="text-secondary duration-fast ease-standard group-hover/provider:text-accent-hover"
-            />
+            <EditIcon :size="16" class="text-secondary duration-fast ease-standard group-hover/provider:text-white" />
           </button>
           <div
-            class="flex h-[22px] w-[22px] shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-surface font-[inherit] text-secondary duration-fast ease-standard hover:-translate-y-px hover:border-accent-hover hover:text-accent-hover data-[disabled=true]:pointer-events-none data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-50"
+            class="flex h-[22px] w-[22px] shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-surface font-[inherit] text-secondary duration-fast ease-standard hover:-translate-y-px hover:bg-accent/30 hover:text-white data-[disabled=true]:pointer-events-none data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-50"
             :title="t('pages.upload.addToFavorites')"
             :data-disabled="favoritePicbeds.length >= MAX_FAVORITE_PICBEDS || isCurrentPicBedInFavorites"
             @click="addCurrentPicbedToFavorites"
@@ -47,7 +48,7 @@
             <button
               v-for="picbedType in favoritePicbeds"
               :key="picbedType.id"
-              class="group/badge relative flex w-[85px] shrink-0 cursor-pointer items-center gap-2 overflow-hidden rounded-md bg-bg-secondary pt-1.5 pr-2 pb-1.5 pl-3 text-xs font-medium whitespace-nowrap text-secondary shadow-sm transition-all duration-fast ease-standard select-none hover:-translate-y-px hover:border-accent-hover hover:bg-bg-tertiary hover:text-accent-hover [.is-active]:border-[0.1rem] [.is-active]:border-accent-hover [.is-active]:font-semibold [.show-delete]:pr-2"
+              class="group/badge relative flex w-[85px] shrink-0 cursor-pointer items-center gap-2 overflow-hidden rounded-md bg-bg-secondary pt-1.5 pr-2 pb-1.5 pl-3 text-xs font-medium whitespace-nowrap text-secondary shadow-sm transition-all duration-fast ease-standard select-none hover:-translate-y-px hover:border-accent-hover hover:bg-accent/30 hover:text-white [.is-active]:border-[0.1rem] [.is-active]:border-accent-hover [.is-active]:font-semibold [.show-delete]:pr-2"
               :class="{ 'is-active': isCurrentPicbed(picbedType), 'show-delete': longPressedBadge === picbedType.id }"
               :title="t('pages.upload.longPressToRemoveFromFavorites') + getPicbedName(picbedType)"
               @click="handleBadgeClick(picbedType)"
@@ -111,6 +112,7 @@
       >
         <div
           id="upload-area"
+          ref="uploadArea"
           class="group/upload relative flex h-full w-full cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-border bg-bg-secondary px-1 py-12 duration-medium ease-standard focus-visible:focus-ring focus-visible:outline-offset-4 max-md:px-4 max-md:py-8 max-xs:px-2 max-xs:py-6 [:hover,.drag-active]:border-accent [:hover,.drag-active]:bg-[linear-gradient(135deg,var(--color-surface-elevated)_0%,color-mix(in_srgb,var(--color-accent),transparent_95%)_100%)] [:hover,.drag-active]:shadow-lg [:hover,.drag-active&]:-translate-y-[2px]"
           :class="{ 'drag-active': dragover }"
           @drop.prevent="onDrop"
@@ -172,24 +174,30 @@
           </h4>
         </div>
         <div class="flex w-full flex-1 flex-row flex-wrap items-center justify-center gap-4 max-md:gap-3 max-md:px-5">
-          <button class="quick-action-button" @click="uploadClipboardFiles">
-            <ClipboardIcon class="shrink-0 text-accent" :size="15" />
-            <span class="text-sm font-medium text-secondary">{{ t('pages.upload.clipboardPicture') }}</span>
+          <button class="quick-action-button group" @click="uploadClipboardFiles">
+            <ClipboardIcon class="shrink-0 text-accent group-hover:text-white" :size="15" />
+            <span class="text-sm font-medium text-secondary group-hover:text-white">{{
+              t('pages.upload.clipboardPicture')
+            }}</span>
           </button>
-          <button class="quick-action-button" @click="uploadURLFiles">
-            <LinkIcon class="shrink-0 text-accent" :size="15" />
-            <span class="text-sm font-medium text-secondary">{{ t('pages.upload.urlUpload') }}</span>
+          <button class="quick-action-button group" @click="uploadURLFiles">
+            <LinkIcon class="shrink-0 text-accent group-hover:text-white" :size="15" />
+            <span class="text-sm font-medium text-secondary group-hover:text-white">{{
+              t('pages.upload.urlUpload')
+            }}</span>
           </button>
           <button
-            class="quick-action-button"
+            class="quick-action-button group"
             :class="{ 'has-badge': taskQueueStatus.tasks.length > 0 }"
             @click="openTaskDialog"
           >
-            <ListTodoIcon class="shrink-0 text-accent" :size="15" />
-            <span class="mt-1 text-sm font-medium text-secondary">{{ t('pages.upload.taskUpload') }}</span>
+            <ListTodoIcon class="shrink-0 text-accent group-hover:text-white" :size="15" />
+            <span class="mt-1 text-sm font-medium text-secondary group-hover:text-white">{{
+              t('pages.upload.taskUpload')
+            }}</span>
             <span
               v-if="taskQueueStatus.tasks.length > 0"
-              class="absolute top-1/2 right-3 flex min-w-6 -translate-y-1/2 animate-[badge-pulse_2s_ease-in-out_infinite] items-center justify-center rounded-full border border-border-secondary px-1.5 py-0 text-sm font-bold text-accent"
+              class="absolute top-1/2 right-3 flex min-w-6 -translate-y-1/2 animate-[badge-pulse_2s_ease-in-out_infinite] items-center justify-center rounded-full border border-border-secondary px-1.5 py-0 text-sm font-bold text-accent group-hover:text-white"
             >
               {{ taskQueueStatus.tasks.length }}
             </span>
@@ -214,7 +222,7 @@
               <button
                 v-for="(format, key) in pasteFormatList"
                 :key="key"
-                class="flex-1 cursor-pointer rounded-md border border-border-secondary bg-bg-secondary px-1 py-1 font-['SF_Mono',Monaco,'Cascadia_Code','Roboto_Mono',Consolas,'Courier_New',monospace] text-[0.7rem] font-medium text-secondary duration-fast ease-standard hover:border-accent-hover hover:text-main focus-visible:focus-ring data-[active=true]:border-accent data-[active=true]:bg-accent data-[active=true]:text-white"
+                class="flex-1 cursor-pointer rounded-md border border-border-secondary bg-bg-secondary px-1 py-1 font-['SF_Mono',Monaco,'Cascadia_Code','Roboto_Mono',Consolas,'Courier_New',monospace] text-[0.7rem] font-medium text-secondary duration-fast ease-standard hover:bg-accent/30 hover:text-white focus-visible:focus-ring data-[active=true]:border-accent data-[active=true]:bg-accent data-[active=true]:text-white"
                 :data-active="pasteStyle === key"
                 :title="format"
                 @click="updatePasteStyle(key)"
@@ -229,14 +237,14 @@
             <label class="m-0 text-xs font-medium text-secondary">{{ t('pages.upload.urlType.title') }}</label>
             <div class="flex w-full overflow-hidden rounded-md border border-border-secondary bg-bg-secondary">
               <button
-                class="flex-1 cursor-pointer border-0 bg-transparent py-1 font-[inherit] text-xs font-medium text-secondary duration-fast ease-standard hover:text-main focus-visible:focus-ring data-[active=true]:bg-accent data-[active=true]:text-white"
+                class="flex-1 cursor-pointer border-0 bg-transparent py-1 font-[inherit] text-xs font-medium text-secondary duration-fast ease-standard hover:bg-accent/30 hover:text-white focus-visible:focus-ring data-[active=true]:bg-accent data-[active=true]:text-white"
                 :data-active="!useShortUrl"
                 @click="updateUrlType(false)"
               >
                 <span>{{ t('pages.upload.urlType.normal') }}</span>
               </button>
               <button
-                class="flex-1 cursor-pointer border-0 bg-transparent py-1 font-[inherit] text-xs font-medium text-secondary duration-fast ease-standard hover:text-main focus-visible:focus-ring data-[active=true]:bg-accent data-[active=true]:text-white"
+                class="flex-1 cursor-pointer border-0 bg-transparent py-1 font-[inherit] text-xs font-medium text-secondary duration-fast ease-standard hover:bg-accent/30 hover:text-white focus-visible:focus-ring data-[active=true]:bg-accent data-[active=true]:text-white"
                 :data-active="useShortUrl"
                 @click="updateUrlType(true)"
               >
@@ -286,75 +294,62 @@
             class="flex flex-wrap items-center justify-between gap-4 border-b border-b-border px-5 py-4 max-md:flex-col max-md:items-stretch"
           >
             <div class="flex flex-wrap items-center gap-2.5 max-md:w-full max-md:justify-center">
-              <button
+              <CustomButton
                 v-show="taskQueueStatus.tasks.length > 0"
-                class="flex cursor-pointer items-center justify-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-medium whitespace-nowrap text-white shadow-sm transition-all duration-fast ease-standard hover:-translate-y-[2px] hover:shadow-md"
+                type="primary"
+                :icon="PlusIcon"
+                :text="t('pages.upload.taskQueue.addFiles')"
                 @click="addFilesToTask"
-              >
-                <PlusIcon :size="16" />
-                <span>{{ t('pages.upload.taskQueue.addFiles') }}</span>
-              </button>
-              <button
+              />
+              <CustomButton
                 v-if="!taskQueueStatus.config.isRunning && taskQueueStatus.stats.pending > 0"
-                class="flex cursor-pointer items-center gap-2 rounded-md bg-success px-4 py-2.5 text-sm font-medium whitespace-nowrap text-white shadow-sm transition-all duration-fast ease-standard hover:-translate-y-[2px] hover:shadow-md"
+                class="bg-success hover:bg-success!"
+                :icon="PlayIcon"
+                :text="t('pages.upload.taskQueue.start')"
                 @click="startTaskQueue"
-              >
-                <PlayIcon :size="16" />
-                <span>{{ t('pages.upload.taskQueue.start') }}</span>
-              </button>
-              <button
+              />
+              <CustomButton
                 v-if="taskQueueStatus.config.isRunning && !taskQueueStatus.config.isPaused"
-                class="flex cursor-pointer items-center gap-2 rounded-md bg-warning px-4 py-2.5 text-sm font-medium whitespace-nowrap text-white shadow-sm transition-all duration-fast ease-standard hover:-translate-y-[2px] hover:shadow-md"
+                class="bg-warning hover:bg-warning!"
+                :icon="PauseIcon"
+                :text="t('pages.upload.taskQueue.pause')"
                 @click="pauseTaskQueue"
-              >
-                <PauseIcon :size="16" />
-                <span>{{ t('pages.upload.taskQueue.pause') }}</span>
-              </button>
-              <button
+              />
+              <CustomButton
                 v-if="taskQueueStatus.config.isPaused"
-                class="flex cursor-pointer items-center gap-2 rounded-md bg-success px-4 py-2.5 text-sm font-medium whitespace-nowrap text-white shadow-sm transition-all duration-fast ease-standard hover:-translate-y-[2px] hover:shadow-md"
+                class="bg-success hover:bg-success!"
+                :icon="PlayIcon"
+                :text="t('pages.upload.taskQueue.resume')"
                 @click="resumeTaskQueue"
-              >
-                <PlayIcon :size="16" />
-                <span>{{ t('pages.upload.taskQueue.resume') }}</span>
-              </button>
+              />
             </div>
             <div class="flex flex-wrap items-center gap-2.5 max-md:w-full max-md:justify-center">
-              <button
+              <CustomButton
                 v-if="taskQueueStatus.stats.failed > 0"
-                class="flex cursor-pointer items-center gap-2 rounded-md bg-warning px-4 py-2.5 text-sm font-medium whitespace-nowrap text-white shadow-sm transition-all duration-fast ease-standard hover:-translate-y-[2px] hover:shadow-md"
+                class="bg-warning hover:bg-warning!"
+                :icon="RefreshCwIcon"
+                :text="t('pages.upload.taskQueue.retryAllFailed')"
                 @click="retryAllFailedTasks"
-              >
-                <RefreshCwIcon :size="16" />
-                <span>{{ t('pages.upload.taskQueue.retryAllFailed') }}</span>
-              </button>
-              <button
+              />
+              <CustomButton
                 v-if="taskQueueStatus.config.isRunning || taskQueueStatus.stats.pending > 0"
-                class="flex cursor-pointer items-center gap-2 rounded-md bg-danger px-4 py-2.5 text-sm font-medium whitespace-nowrap text-white shadow-sm transition-all duration-fast ease-standard hover:-translate-y-[2px] hover:shadow-md"
+                class="bg-error hover:bg-error!"
+                :icon="XIcon"
+                :text="t('pages.upload.taskQueue.cancelAll')"
                 @click="cancelAllTasks"
-              >
-                <XIcon :size="16" />
-                <span>{{ t('pages.upload.taskQueue.cancelAll') }}</span>
-              </button>
-              <button
+              />
+              <CustomButton
                 v-if="
                   taskQueueStatus.stats.completed > 0 ||
                   taskQueueStatus.stats.failed > 0 ||
                   taskQueueStatus.stats.cancelled > 0
                 "
-                class="flex cursor-pointer items-center gap-2 rounded-md bg-danger px-4 py-2.5 text-sm font-medium whitespace-nowrap text-white shadow-sm transition-all duration-fast ease-standard hover:-translate-y-[2px] hover:shadow-md"
+                class="bg-danger hover:bg-danger!"
+                :icon="Trash2Icon"
+                :text="t('pages.upload.taskQueue.clearFinished')"
                 @click="clearFinishedTasks"
-              >
-                <Trash2Icon :size="16" />
-                <span>{{ t('pages.upload.taskQueue.clearFinished') }}</span>
-              </button>
-              <button
-                class="flex cursor-pointer items-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-medium whitespace-nowrap text-white shadow-sm transition-all duration-fast ease-standard hover:-translate-y-[2px] hover:shadow-md"
-                :class="{ active: showTaskSettings }"
-                @click="showTaskSettings = !showTaskSettings"
-              >
-                <SettingsIcon :size="16" />
-              </button>
+              />
+              <CustomButton type="primary" :icon="SettingsIcon" text="" @click="showTaskSettings = !showTaskSettings" />
             </div>
           </div>
 
@@ -478,22 +473,13 @@
               />
             </div>
             <div class="flex flex-wrap gap-2.5">
-              <button class="filter-tab" :class="{ active: taskFilter === 'all' }" @click="taskFilter = 'all'">
-                {{ t('pages.upload.taskQueue.filterAll') }}
-              </button>
-              <button class="filter-tab" :class="{ active: taskFilter === 'pending' }" @click="taskFilter = 'pending'">
-                {{ t('pages.upload.taskQueue.filterPending') }}
-              </button>
-              <button
-                class="filter-tab"
-                :class="{ active: taskFilter === 'completed' }"
-                @click="taskFilter = 'completed'"
-              >
-                {{ t('pages.upload.taskQueue.filterCompleted') }}
-              </button>
-              <button class="filter-tab" :class="{ active: taskFilter === 'failed' }" @click="taskFilter = 'failed'">
-                {{ t('pages.upload.taskQueue.filterFailed') }}
-              </button>
+              <CustomButton
+                v-for="status in ['all', 'pending', 'completed', 'failed']"
+                :key="status"
+                :type="taskFilter === status ? 'primary' : 'secondary'"
+                :text="t(`pages.upload.taskQueue.filter${status.charAt(0).toUpperCase() + status.slice(1)}`)"
+                @click="taskFilter = status"
+              />
             </div>
           </div>
 
@@ -633,13 +619,12 @@
             <ListTodoIcon class="text-accent opacity-90" :size="48" />
             <h4 class="m-0 text-xl font-semibold text-main">{{ t('pages.upload.taskQueue.empty') }}</h4>
             <p class="m-0 max-w-[400px] text-base text-secondary">{{ t('pages.upload.taskQueue.emptyHint') }}</p>
-            <button
-              class="flex cursor-pointer items-center justify-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-medium whitespace-nowrap text-white shadow-sm transition-all duration-fast ease-standard hover:-translate-y-[2px] hover:shadow-md"
+            <CustomButton
+              type="primary"
+              :icon="PlusIcon"
+              :text="t('pages.upload.taskQueue.selectFiles')"
               @click="addFilesToTask"
-            >
-              <PlusIcon :size="16" />
-              <span class="mt-0.5">{{ t('pages.upload.taskQueue.selectFiles') }}</span>
-            </button>
+            />
           </div>
         </div>
       </CustomModal>
@@ -680,6 +665,7 @@ import { computed, onBeforeMount, onBeforeUnmount, reactive, ref, useTemplateRef
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
+import CustomButton from '@/components/common/CustomButton.vue'
 import CustomModal from '@/components/common/CustomModal.vue'
 import ImageProcessSetting from '@/components/ImageProcessSetting.vue'
 import { usePicBed } from '@/hooks/useGlobal'
@@ -736,7 +722,8 @@ interface IUploadTaskQueueStatus {
   }
 }
 
-useDragEventListeners()
+const uploadArea = useTemplateRef('uploadArea')
+useDragEventListeners(uploadArea)
 const $router = useRouter()
 const { t } = useI18n()
 const message = useMessage()
@@ -755,7 +742,7 @@ const fileInput = useTemplateRef('fileInput')
 const uploadInterval = ref(1000)
 const showTaskSettings = useStorage('upload-task-queue-show-settings', true)
 const taskSearchQuery = ref('')
-const taskFilter = ref<'all' | 'pending' | 'completed' | 'failed'>('all')
+const taskFilter = ref<string>('all')
 const autoStart = ref(false)
 const pauseOnError = ref(false)
 const maxRetryCount = ref(3)

@@ -93,6 +93,9 @@ export interface IConfigStruct {
   needReload: boolean
   picgoPlugins: IPicGoPlugins
   uploader: IUploaderConfig
+  scripts: {
+    disabledList: string[]
+  }
   buildIn: {
     compress: IBuildInCompressOptions
     watermark: IBuildInWaterMarkOptions
@@ -185,10 +188,17 @@ export const configPaths = {
     systemTheme: 'settings.systemTheme',
     enableAdvancedAnimation: 'settings.enableAdvancedAnimation',
     isDisableGPU: 'settings.isDisableGPU',
+    enableCustomBgImg: 'settings.enableCustomBgImg',
+    customBgImgPath: 'settings.customBgImgPath',
+    customBgImgOpacity: 'settings.customBgImgOpacity',
+    customBgImgBlur: 'settings.customBgImgBlur',
   },
   needReload: 'needReload',
   picgoPlugins: 'picgoPlugins',
   uploader: 'uploader',
+  scripts: {
+    disabledList: 'scripts.disabledList',
+  },
   buildIn: {
     _name: 'buildIn',
     compress: 'buildIn.compress',

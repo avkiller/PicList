@@ -40,16 +40,30 @@
     >
       <div class="flex h-full w-full">
         <div
-          class="flex min-h-0 max-w-[400px] min-w-[40px] flex-col border-r-2 border-r-border transition-all duration-100 ease-out"
+          class="flex min-h-0 w-[40px] max-w-[400px] min-w-[40px] flex-col border-r-2 border-r-border transition-all duration-100 ease-out"
           :style="{ width: sidebarWidth + 'px' }"
         >
-          <div class="shrink-0 border-b-2 border-b-border-secondary p-2">
+          <div v-if="menuTitleMap[currentPicBedName]" class="shrink-0 border-b-2 border-b-border-secondary p-2">
             <h3 class="m-0 text-center text-sm font-semibold text-secondary">
               {{ menuTitleMap[currentPicBedName] }}
             </h3>
           </div>
+          <div
+            class="mb-2 rounded-md border border-t-0 border-border"
+            :class="{
+              'border-t-0': menuTitleMap[currentPicBedName],
+            }"
+          >
+            <input
+              v-if="bucketNameList.length > 5"
+              v-model="bucketSearchText"
+              class="w-full rounded-md border-none bg-bg-secondary p-1 text-sm text-main placeholder:text-secondary focus:border-accent focus:outline-none"
+              type="text"
+              placeholder="search..."
+            />
+          </div>
 
-          <div class="min-h-0 flex-1 overflow-y-auto p-2">
+          <div class="min-h-0 flex-1 overflow-y-auto">
             <div v-if="isLoadingBucketList" class="flex flex-col items-center justify-center gap-2 p-8">
               <div
                 class="h-[25px] w-[25px] animate-spin rounded-full border-3 border-t-2 border-border border-t-accent"
@@ -57,7 +71,7 @@
               <span class="text-sm font-semibold text-secondary">{{ t('pages.manage.main.loading') }}</span>
             </div>
             <div v-else class="flex flex-col gap-1">
-              <template v-for="item in bucketNameList" :key="item">
+              <template v-for="item in filteredBucketNameList" :key="item">
                 <div
                   class="flex cursor-pointer items-center gap-3 rounded-sm p-3 text-sm shadow-xs hover:bg-surface [.active]:bg-accent/20"
                   :class="{ active: item === currentSelectedBucket }"
@@ -139,12 +153,13 @@
         v-if="picBedSwitchDialogVisible"
         v-model:visible="picBedSwitchDialogVisible"
         :title="t('pages.manage.main.switchPicBed')"
+        height="auto"
       >
         <div class="no-scrollbar h-full w-full overflow-auto p-8">
           <div class="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
             <!-- Back to main card -->
             <div
-              class="relative flex cursor-pointer flex-col items-center rounded-lg border-2 border-success/80 bg-bg-secondary p-6 transition-all duration-fast ease-apple"
+              class="relative flex cursor-pointer flex-col items-center rounded-lg border-2 border-success/80 bg-bg-secondary p-6 transition-all duration-fast ease-apple hover:border-accent"
               @click="switchPicBed('main')"
             >
               <div class="mb-3 flex h-[40px] w-[40px] items-center justify-center">
@@ -161,7 +176,7 @@
             <div
               v-for="(config, alias) in allPicBedConfigure"
               :key="String(alias)"
-              class="relative flex cursor-pointer flex-col items-center rounded-lg border-2 border-border/80 bg-bg-secondary p-6 transition-all duration-fast ease-apple [.active]:border-accent"
+              class="relative flex cursor-pointer flex-col items-center rounded-lg border-2 border-border/80 bg-bg-secondary p-6 transition-all duration-fast ease-apple hover:border-accent [.active]:border-accent"
               :class="{ active: String(alias) === currentAlias }"
               @click="switchPicBed(String(alias))"
             >
@@ -256,7 +271,7 @@ import {
   PlusIcon,
   SettingsIcon,
 } from 'lucide-vue-next'
-import { onBeforeMount, reactive, ref, watch } from 'vue'
+import { computed, onBeforeMount, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -287,7 +302,7 @@ const configMap = ref<any>(null)
 const currentAlias = ref(route.query.alias as string)
 const currentPicBedName = ref(route.query.picBedName as string)
 
-const sidebarWidth = ref(160)
+const sidebarWidth = ref(120)
 const isResizing = ref(false)
 
 let allPicBedConfigure = JSON.parse(route.query.allPicBedConfigure as string)
@@ -297,10 +312,18 @@ const newBucketConfigResult: IStringKeyMap = reactive({})
 const bucketList = ref({} as IStringKeyMap)
 const currentSelectedBucket = ref('')
 const bucketNameList = ref([] as string[])
+const bucketSearchText = ref('')
 
 const isLoadingBucketList = ref(false)
 const bucketDrawerVisible = ref(false)
 const picBedSwitchDialogVisible = ref(false)
+
+const filteredBucketNameList = computed(() => {
+  if (!bucketSearchText.value) {
+    return bucketNameList.value
+  }
+  return bucketNameList.value.filter(name => name.toLowerCase().includes(bucketSearchText.value.toLowerCase()))
+})
 
 watch(
   route,

@@ -37,7 +37,7 @@
             <config-form :id="type" ref="$configForm" :config="config" type="uploader">
               <!-- Action Buttons -->
               <div class="mb-4 flex flex-wrap gap-3 rounded-xl border border-border bg-accent/10 p-4">
-                <CustomButton type="secondary" :icon="RotateCcw" :text="t('common.reset')" @click="handleReset" />
+                <CustomButton type="secondary" :icon="RotateCcw" :text="t('common.clear')" @click="handleReset" />
                 <CustomButton type="primary" :icon="Check" :text="t('common.confirm')" @click="handleConfirm" />
 
                 <div v-if="picBedConfigList.length > 0" class="relative">
@@ -220,7 +220,30 @@ async function handleConfigImport(configItem: IUploaderConfigListItem) {
 
 const handleReset = async () => {
   try {
-    await window.electron.triggerRPC<void>(IRPCActionType.UPLOADER_RESET_CONFIG, type.value, $route.params.configId)
+    config.value.forEach(item => {
+      let defaultValue
+      switch (item.type) {
+        case 'text':
+        case 'password':
+          defaultValue = ''
+          break
+        case 'number':
+          defaultValue = 0
+          break
+        case 'checkbox':
+          defaultValue = []
+          break
+        case 'select':
+          defaultValue = item.choices && item.choices.length > 0 ? item.choices[0].value : null
+          break
+        case 'switch':
+          defaultValue = false
+          break
+        default:
+          defaultValue = null
+      }
+      $configForm.value?.updateRuleForm(item.name, defaultValue)
+    })
     message.success(t('pages.picBedConfigs.resetSuccess'))
   } catch (error) {
     console.error('Failed to reset configuration:', error)

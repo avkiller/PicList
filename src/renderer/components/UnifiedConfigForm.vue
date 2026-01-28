@@ -95,6 +95,7 @@
           </div>
         </template>
       </SettingCard>
+      <slot name="extra-config" />
       <slot />
     </SettingSection>
   </div>
@@ -175,7 +176,6 @@ function validateForm(): boolean {
 }
 
 function clearFieldError(fieldName: string) {
-  console.log('Clearing error for field:', fieldName)
   if (validationErrors[fieldName]) {
     delete validationErrors[fieldName]
   }

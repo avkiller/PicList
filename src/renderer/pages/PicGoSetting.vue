@@ -86,36 +86,91 @@
             </SettingCard>
 
             <SettingCard>
-              <CustomSelect
+              <SingleSelect
                 v-model="currentTheme"
-                :select-list="themeList"
                 :title="t('pages.settings.system.chooseTheme')"
-                :icon="ImageIcon"
+                :fronticon="false"
+                :key-list="themeList.map(item => item.value)"
+                :placeholder="themeList.find(theme => theme.value === currentTheme)?.label || ''"
+              >
+                <template #item="{ item }">
+                  {{ themeList.find(theme => theme.value === item)?.label || item }}
+                </template>
+              </SingleSelect>
+              <template #extra>
+                <div class="mt-3 flex gap-4">
+                  <CustomButton
+                    :disabled="downloadingThemes"
+                    :text="
+                      downloadingThemes
+                        ? t('pages.settings.system.downloadingThemes')
+                        : t('pages.settings.system.downloadThemes')
+                    "
+                    :icon-size="14"
+                    :icon="Download"
+                    type="secondary"
+                    @click="handleDownloadThemes"
+                  />
+                  <CustomButton
+                    :icon="Import"
+                    :text="t('pages.settings.system.importThemes')"
+                    type="secondary"
+                    :icon-size="14"
+                    @click="handleImportThemes"
+                  />
+                  <CustomButton
+                    :icon="Edit2"
+                    :text="t('pages.settings.system.editTheme')"
+                    type="primary"
+                    :icon-size="14"
+                    @click="handleEditTheme"
+                  />
+                </div>
+              </template>
+            </SettingCard>
+
+            <SettingCard p1 class="flex flex-col justify-center">
+              <CustomSwitch
+                v-model="formOfSetting.enableCustomBgImg"
+                no-border
+                small
+                :title="t('pages.settings.system.enableCustomBgImg')"
               />
             </SettingCard>
-            <template #extra>
-              <div class="mt-3 flex gap-4">
-                <CustomButton
-                  :disabled="downloadingThemes"
-                  :text="
-                    downloadingThemes
-                      ? t('pages.settings.system.downloadingThemes')
-                      : t('pages.settings.system.downloadThemes')
-                  "
-                  :icon-size="14"
-                  :icon="Download"
-                  type="secondary"
-                  @click="handleDownloadThemes"
-                />
-                <CustomButton
-                  :icon="Import"
-                  :text="t('pages.settings.system.importThemes')"
-                  type="secondary"
-                  :icon-size="14"
-                  @click="handleImportThemes"
-                />
-              </div>
-            </template>
+
+            <CustomNavCard
+              v-if="formOfSetting.enableCustomBgImg"
+              :icon="ImageIcon"
+              noarrow
+              :title="t('pages.settings.system.customBgImgPath')"
+            >
+              <template #extra>
+                <CustomButton type="primary" :text="t('pages.settings.clickToSet')" @click="handleCustomBgImg" />
+              </template>
+            </CustomNavCard>
+            <SettingCard v-if="formOfSetting.enableCustomBgImg">
+              <CustomInput
+                v-model="formOfSetting.customBgImgOpacity"
+                type="number"
+                min="0"
+                max="1"
+                step="0.01"
+                :title="t('pages.settings.system.customBgImgOpacity')"
+                placeholder="0.7"
+                @blur="handleBlurCustomBgImgOpacity"
+              />
+            </SettingCard>
+            <SettingCard v-if="formOfSetting.enableCustomBgImg">
+              <CustomInput
+                v-model="formOfSetting.customBgImgBlur"
+                type="number"
+                min="1"
+                step="1"
+                :title="t('pages.settings.system.customBgImgBlur')"
+                placeholder="5"
+                @blur="handleBlurCustomBgImgBlur"
+              />
+            </SettingCard>
           </SettingSection>
 
           <!-- Window Behavior Section -->
@@ -135,7 +190,7 @@
                 small
                 no-border
                 :title="t('pages.settings.system.isHideDock')"
-                @change="handleHideDockChange(formOfSetting.isHideDock)"
+                @change="handleHideDockChange"
               />
             </SettingCard>
 
@@ -163,7 +218,7 @@
                 small
                 no-border
                 :title="t('pages.settings.system.miniWindowOnTop')"
-                @click="handleMiniWindowOntop(formOfSetting.miniWindowOntop)"
+                @change="handleMiniWindowOntop"
               />
             </SettingCard>
 
@@ -183,7 +238,7 @@
               :title="t('pages.settings.system.customMiniIconPath')"
             >
               <template #extra>
-                <CustomButton type="secondary" :text="t('pages.settings.clickToSet')" @click="handleMiniIconPath" />
+                <CustomButton type="primary" :text="t('pages.settings.clickToSet')" @click="handleMiniIconPath" />
               </template>
             </CustomNavCard>
           </SettingSection>
@@ -197,7 +252,7 @@
                 no-border
                 :title="t('pages.settings.system.autoLaunch')"
                 :description="t('pages.settings.system.autoLaunchDesc')"
-                @change="handleAutoStartChange(formOfSetting.autoStart)"
+                @change="handleAutoStartChange"
               />
             </SettingCard>
             <CustomNavCard
@@ -275,6 +330,16 @@
               @click="openFile('data.json')"
             />
             <CustomNavCard
+              :title="t('pages.settings.sync.editConfigFile')"
+              :icon="Edit"
+              @click="editFile('data.json')"
+            />
+            <CustomNavCard
+              :title="t('pages.settings.sync.editCloudConfigFile')"
+              :icon="Edit"
+              @click="editFile('manage.json')"
+            />
+            <CustomNavCard
               :title="t('pages.settings.sync.openConfigFileDir')"
               :icon="FolderOpen"
               @click="openDirectory"
@@ -311,13 +376,15 @@
           </SettingSection>
           <SettingSection :icon="CloudUpload" :title="t('pages.settings.upload.uploadBehavior')">
             <!-- Auto Import Card -->
-            <CustomSwitch
-              v-model="formOfSetting.autoImport"
-              small
-              no-border
-              :title="t('pages.settings.upload.autoImportInManage')"
-              :description="t('pages.settings.upload.autoImportInManageHint')"
-            />
+            <SettingCard p1>
+              <CustomSwitch
+                v-model="formOfSetting.autoImport"
+                small
+                no-border
+                :title="t('pages.settings.upload.autoImportInManage')"
+                :description="t('pages.settings.upload.autoImportInManageHint')"
+              />
+            </SettingCard>
             <!-- Auto Import PicBed Selection -->
             <SettingCard v-if="formOfSetting.autoImport">
               <MultiSelect
@@ -557,10 +624,22 @@
         >
           <SettingSection :icon="FileText" :title="t('pages.settings.advanced.logging')">
             <CustomNavCard
-              :title="t('pages.settings.advanced.logFilePath')"
-              :description="t('pages.settings.advanced.logFilePathDesc')"
-              :icon="FolderOpen"
-              @click="openDirectory"
+              :title="t('pages.settings.advanced.logFile')"
+              description="piclist.log"
+              :icon="FileText"
+              @click="openFile('piclist.log')"
+            />
+            <CustomNavCard
+              :title="t('pages.settings.advanced.guiLogFile')"
+              description="piclist-gui-local.log"
+              :icon="FileText"
+              @click="openFile('piclist-gui-local.log')"
+            />
+            <CustomNavCard
+              :title="t('pages.settings.advanced.manageLogFile')"
+              description="manage.log"
+              :icon="FileText"
+              @click="openFile('manage.log')"
             />
             <CustomNavCard
               :title="t('pages.settings.advanced.setLog')"
@@ -842,7 +921,7 @@
           </div>
         </div>
         <div
-          v-if="!needUpdate"
+          v-if="needUpdate"
           class="flex items-center justify-center gap-2 rounded-lg p-4 text-sm font-semibold text-success"
         >
           <RefreshCw :size="18" />
@@ -871,6 +950,7 @@
         <SettingSection>
           <CustomSwitch
             v-model="advancedRename.enable"
+            small
             :title="t('pages.settings.upload.enableAdvancedRname')"
             :description="t('pages.settings.upload.enableAdvancedRnameDesc')"
           />
@@ -897,24 +977,6 @@
     >
       <div class="flex h-full w-full flex-col p-4">
         <SettingSection>
-          <CustomNavCard
-            :title="t('pages.settings.advanced.logFile')"
-            description="piclist.log"
-            :icon="FileText"
-            @click="openFile('piclist.log')"
-          />
-          <CustomNavCard
-            :title="t('pages.settings.advanced.guiLogFile')"
-            description="piclist-gui-local.log"
-            :icon="FileText"
-            @click="openFile('piclist-gui-local.log')"
-          />
-          <CustomNavCard
-            :title="t('pages.settings.advanced.manageLogFile')"
-            description="manage.log"
-            :icon="FileText"
-            @click="openFile('manage.log')"
-          />
           <CustomInput
             v-model="formOfSetting.logFileSizeLimit"
             :title="t('pages.settings.advanced.logFileSize')"
@@ -1213,6 +1275,14 @@
     >
       <ImageProcessSetting :config-id="''" :current-picbed-name="''" />
     </CustomModal>
+
+    <CustomModal v-if="editorVisible" v-model:visible="editorVisible" :title="t('common.edit')">
+      <Editor v-model="editorContent" :language="editorLanguage" />
+      <template #footer>
+        <CustomButton type="secondary" :text="t('common.cancel')" @click="editorVisible = false" />
+        <CustomButton type="primary" :text="t('common.save')" @click="saveEditorContent" />
+      </template>
+    </CustomModal>
   </div>
 </template>
 
@@ -1224,6 +1294,7 @@ import {
   CloudUpload,
   Download,
   Edit,
+  Edit2,
   FileText,
   FolderOpen,
   GitBranch,
@@ -1257,6 +1328,8 @@ import MultiSelect from '@/components/common/MultiSelect.vue'
 import placeholderTable from '@/components/common/PlaceholderTable.vue'
 import SettingCard from '@/components/common/SettingCard.vue'
 import SettingSection from '@/components/common/SettingSection.vue'
+import SingleSelect from '@/components/common/SingleSelect.vue'
+import Editor from '@/components/Editor.vue'
 import ImageProcessSetting from '@/components/ImageProcessSetting.vue'
 import useConfirm from '@/hooks/useConfirm'
 import { osGlobal, usePicBed } from '@/hooks/useGlobal'
@@ -1296,6 +1369,10 @@ const webServerVisible = ref(false)
 const syncVisible = ref(false)
 const upDownConfigVisible = ref(false)
 const proxyVisible = ref(false)
+const editorVisible = ref(false)
+const editorContent = ref('// 在这里开始编写代码...\nfunction hello() {\n  console.log("Hello Electron!");\n}')
+const editorLanguage = ref('json')
+const currentEditFile = ref('')
 
 const latestVersion = ref('')
 const releaseNotes = ref('')
@@ -1325,6 +1402,12 @@ const sync = ref<any>({
   sslEnabled: true,
   webdavSavePath: '',
 })
+
+const defaultStartMode = {
+  darwin: ISartMode.QUIET,
+  win32: ISartMode.MAIN,
+  linux: ISartMode.MINI,
+}
 
 const formOfSetting = ref<ISettingForm>({
   showUpdateTip: true,
@@ -1370,6 +1453,10 @@ const formOfSetting = ref<ISettingForm>({
   enableSecondUploader: false,
   enableAdvancedAnimation: false,
   theme: 'default.css',
+  enableCustomBgImg: false,
+  customBgImgPath: '',
+  customBgImgOpacity: 0.7,
+  customBgImgBlur: 5,
 })
 
 /* computed properties */
@@ -1414,6 +1501,21 @@ const logLevel = [
 
 const syncType = ['github', 'gitee', 'gitea', 'webdav']
 const version = pkg.version
+
+const buildInThemesList = [
+  'adwaita.css',
+  'anime.css',
+  'bilibili.css',
+  'Catppucin.css',
+  'CoolApk.css',
+  'Cupertino.css',
+  'default.css',
+  'goldensand.css',
+  'Huorong.css',
+  'purple.css',
+  'wechat.css',
+  'win11.css',
+]
 
 const RELEASE_NOTES_CACHE_DURATION = 30 * 60 * 1000
 
@@ -1590,7 +1692,6 @@ const addWatch = () => {
   watch(
     () => formOfSetting.value.mainWindowWidth,
     newVal => {
-      console.log('Main window width changed:', newVal)
       const width = enforceNumber(newVal)
       saveConfig({ [configPaths.settings.mainWindowWidth]: rawPicGoSize.value ? 800 : Math.max(width, 100) })
     },
@@ -1599,7 +1700,6 @@ const addWatch = () => {
   watch(
     () => formOfSetting.value.mainWindowHeight,
     newVal => {
-      console.log('Main window height changed:', newVal)
       const height = enforceNumber(newVal)
       saveConfig({ [configPaths.settings.mainWindowHeight]: rawPicGoSize.value ? 450 : Math.max(height, 100) })
     },
@@ -1645,6 +1745,24 @@ const addWatch = () => {
       })
     },
   )
+
+  watch(
+    () => formOfSetting.value.enableCustomBgImg,
+    newVal => {
+      saveConfig({ [configPaths.settings.enableCustomBgImg]: newVal })
+      window.electron.sendRPC(IRPCActionType.RELOAD_WINDOW)
+    },
+  )
+}
+
+function handleBlurCustomBgImgBlur() {
+  saveConfig({ [configPaths.settings.customBgImgBlur]: formOfSetting.value.customBgImgBlur })
+  window.electron.sendRPC(IRPCActionType.RELOAD_WINDOW)
+}
+
+function handleBlurCustomBgImgOpacity() {
+  saveConfig({ [configPaths.settings.customBgImgOpacity]: formOfSetting.value.customBgImgOpacity })
+  window.electron.sendRPC(IRPCActionType.RELOAD_WINDOW)
 }
 
 /* methods */
@@ -1734,6 +1852,19 @@ async function handleImportThemes() {
   }
 }
 
+async function handleEditTheme() {
+  try {
+    const themeContent = await window.electron.triggerRPC<string>(IRPCActionType.THEME_READ_THEME, currentTheme.value)
+    editorContent.value = themeContent || ''
+    currentEditFile.value = currentTheme.value
+    editorLanguage.value = 'css'
+    editorVisible.value = true
+  } catch (error) {
+    console.error('Failed to open theme folder:', error)
+    message.error(t('pages.settings.system.getThemeContentFailed'))
+  }
+}
+
 async function handleThemeChange(theme: string) {
   try {
     await window.electron.triggerRPC(IRPCActionType.THEME_APPLY_THEME, theme)
@@ -1777,7 +1908,10 @@ async function initData() {
   formOfSetting.value.logLevel = initArray(settings.logLevel || [], ['all'])
   formOfSetting.value.autoImportPicBed = initArray(settings.autoImportPicBed || [], [])
   currentLanguage.value = settings.language || 'zh-CN'
-  currentStartMode.value = settings.startMode || ISartMode.QUIET
+  currentStartMode.value =
+    settings.startMode !== undefined
+      ? settings.startMode
+      : defaultStartMode[osGlobal.value as keyof typeof defaultStartMode] || ISartMode.MAIN
   currentSecondMode.value = settings.secondPicBedMode || 'backup'
   if (osGlobal.value === 'darwin' && currentStartMode.value === ISartMode.MINI) {
     currentStartMode.value = ISartMode.QUIET
@@ -1829,8 +1963,68 @@ async function handleChangeSecondPicBed() {
   window.electron.sendRPC(IRPCActionType.SHOW_SECOND_UPLOADER_MENU)
 }
 
-function openFile(file: string) {
+async function openFile(file: string) {
   window.electron.sendRPC(IRPCActionType.PICLIST_OPEN_FILE, file)
+}
+
+async function editFile(file: string) {
+  const content = (await window.electron.triggerRPC<string>(IRPCActionType.READ_FILE_CONTENT, file)) || ''
+  try {
+    editorContent.value = JSON.stringify(JSON.parse(content), null, 2)
+  } catch (error) {
+    editorContent.value = content
+  }
+  currentEditFile.value = file
+  editorLanguage.value = 'json'
+  editorVisible.value = true
+}
+
+async function saveEditorContent() {
+  if (currentEditFile.value === 'data.json' || currentEditFile.value === 'manage.json') {
+    const content = editorContent.value.trim()
+    await saveFile(currentEditFile.value, content)
+  } else if (currentEditFile.value.endsWith('.css')) {
+    try {
+      let themeFileName
+      if (buildInThemesList.includes(currentTheme.value)) {
+        themeFileName = `custom-${currentTheme.value}`
+      } else {
+        themeFileName = currentTheme.value
+      }
+      window.electron.sendRPC(IRPCActionType.THEME_WRITE_THEME, themeFileName, editorContent.value)
+      message.success(t('pages.settings.advanced.saveFileSuccess'))
+      setTimeout(async () => {
+        await loadThemes()
+        await window.electron.triggerRPC(IRPCActionType.THEME_APPLY_THEME, themeFileName)
+      }, 1000)
+    } catch (error) {
+      console.error('Failed to save theme:', error)
+      message.error(t('pages.settings.advanced.saveFileFailed'))
+    }
+  }
+
+  editorVisible.value = false
+}
+
+async function saveFile(file: string, content: string) {
+  let dataToSave = content
+  try {
+    dataToSave = JSON.stringify(JSON.parse(content), null, 2)
+  } catch (error) {
+    console.error('Invalid JSON content:', error)
+    message.error(t('pages.settings.advanced.invalidJson'))
+    return
+  }
+  try {
+    window.electron.sendRPC(IRPCActionType.WRITE_FILE_CONTENT, file, dataToSave)
+    message.success(t('pages.settings.advanced.saveFileSuccess'))
+    setTimeout(() => {
+      window.electron.sendRPC(IRPCActionType.RELOAD_WINDOW)
+    }, 1000)
+  } catch (error) {
+    console.error('Failed to save file:', error)
+    message.error(t('pages.settings.advanced.saveFileFailed'))
+  }
 }
 
 function openDirectory(directory?: string, inStorePath = true) {
@@ -2006,12 +2200,22 @@ function handleMiniWindowOntop(val: ICheckBoxValueType) {
   window.electron.sendRPC(IRPCActionType.MINI_WINDOW_ON_TOP, val)
 }
 
+async function handleCustomBgImg() {
+  const result = await window.electron.triggerRPC<string[]>(IRPCActionType.MANAGE_OPEN_FILE_SELECT_DIALOG)
+  if (result && result[0]) {
+    const fileName = await window.electron.triggerRPC<string>(IRPCActionType.COPY_CUSTOM_IMG_TO_THEMES_DIR, result[0])
+    formOfSetting.value.customBgImgPath = `theme://./image/${fileName}`
+    saveConfig(configPaths.settings.customBgImgPath, formOfSetting.value.customBgImgPath)
+    await window.electron.triggerRPC(IRPCActionType.THEME_APPLY_THEME, currentTheme.value)
+  }
+}
+
 async function handleMiniIconPath() {
   const result = await window.electron.triggerRPC<string[]>(IRPCActionType.MANAGE_OPEN_FILE_SELECT_DIALOG)
   if (result && result[0]) {
     formOfSetting.value.customMiniIcon = result[0]
     saveConfig(configPaths.settings.customMiniIcon, formOfSetting.value.customMiniIcon)
-    window.electron.sendRPC(IRPCActionType.UPDATE_MINI_WINDOW_ICON, formOfSetting.value.customMiniIcon)
+    window.electron.sendRPC(IRPCActionType.RELOAD_WINDOW)
   }
 }
 
