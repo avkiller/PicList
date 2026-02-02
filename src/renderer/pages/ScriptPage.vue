@@ -12,6 +12,24 @@
           </div>
         </div>
         <div class="flex flex-wrap gap-3 overflow-visible">
+          <CustomButton
+            type="secondary"
+            :icon="StoreIcon"
+            :text="t('pages.scripts.marketplace.browseMarketplace')"
+            @click="openMarketplace"
+          />
+          <CustomButton
+            type="primary"
+            :icon="FolderOpen"
+            :text="t('pages.scripts.openScriptFolder')"
+            @click="handleOpenScriptFolder"
+          />
+        </div>
+      </div>
+      <div
+        class="flex w-full flex-row items-center justify-between gap-4 overflow-visible rounded-2xl border border-border-secondary px-6 py-2 shadow-md max-md:items-stretch max-md:p-5"
+      >
+        <div class="flex flex-wrap gap-3 overflow-visible">
           <div class="flex max-w-[220px] min-w-[180px] flex-1 flex-col gap-1">
             <MultiSelect
               v-model:choosed="choosedCat"
@@ -21,9 +39,9 @@
           </div>
           <CustomButton
             type="primary"
-            :icon="FolderOpen"
-            :text="t('pages.scripts.openScriptFolder')"
-            @click="handleOpenScriptFolder"
+            :icon="Edit2Icon"
+            :text="t('pages.scripts.editENVFile')"
+            @click="openEditPage(['.env'])"
           />
         </div>
       </div>
@@ -72,8 +90,15 @@
                     <Trash2 :size="14" />
                   </button>
                   <button
+                    class="action-btn bg-accent/50 text-white! hover:bg-accent!"
+                    :title="t('pages.scripts.marketplace.shareScript')"
+                    @click.stop="openShareDialog(item)"
+                  >
+                    <Share2Icon :size="14" />
+                  </button>
+                  <button
                     v-if="item.category === 'manualTrigger'"
-                    class="action-btn bg-accent/50 text-white!"
+                    class="action-btn bg-accent/50 text-white! hover:bg-accent!"
                     :title="t('pages.scripts.runScript')"
                     @click.stop="runScript(item.filePath)"
                   >
@@ -84,8 +109,8 @@
                     v-if="item.category !== 'manualTrigger' && item.category !== 'uploader.advancedplist'"
                     class="action-btn border-none"
                     :class="{
-                      'bg-success/40': !item.enabled,
-                      'bg-error/40': item.enabled,
+                      'bg-success/50 hover:bg-success!': !item.enabled,
+                      'bg-error/50 hover:bg-error!': item.enabled,
                     }"
                     :title="item.enabled ? t('pages.scripts.disableScript') : t('pages.scripts.enableScript')"
                     @click.stop="toggleScript(item.filePath)"
@@ -195,15 +220,316 @@
         <CustomButton type="primary" :text="t('common.confirm')" @click="handleNewScriptNameConfirm" />
       </template>
     </CustomModal>
+
+    <CustomModal
+      v-if="marketplaceVisible"
+      v-model:visible="marketplaceVisible"
+      :title="t('pages.scripts.marketplace.title')"
+    >
+      <div class="flex h-full w-full flex-col gap-4 p-4">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="relative flex flex-1 items-center">
+            <SearchIcon class="absolute left-3 z-1 text-secondary" :size="18" />
+            <input
+              v-model="marketplaceSearch"
+              type="text"
+              class="w-full rounded-lg border border-border bg-bg-secondary px-10 py-2 text-sm text-main placeholder:text-secondary focus:border-accent focus:outline-none"
+              :placeholder="t('pages.scripts.marketplace.searchPlaceholder')"
+            />
+          </div>
+          <div class="flex items-center gap-2">
+            <template v-if="githubAuth.isAuthenticated">
+              <span class="text-sm text-secondary">
+                {{ t('pages.scripts.marketplace.loggedInAs', { username: githubAuth.username }) }}
+              </span>
+              <CustomButton
+                type="secondary"
+                :icon="LogOutIcon"
+                :text="t('pages.scripts.marketplace.logout')"
+                @click="handleGitHubLogout"
+              />
+            </template>
+            <template v-else>
+              <CustomButton
+                type="secondary"
+                :icon="null"
+                :text="t('pages.scripts.marketplace.loginWithGitHub')"
+                @click="handleGitHubLogin"
+              >
+                <template #icon>
+                  <BaseSvg name="GitHub" :size="18" color="black" />
+                </template>
+              </CustomButton>
+            </template>
+            <CustomButton
+              type="secondary"
+              :icon="ExternalLinkIcon"
+              :text="t('pages.scripts.marketplace.openMarketplaceRepo')"
+              @click="openMarketplaceRepo"
+            />
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <MultiSelect
+            v-model:choosed="marketplaceCategoryFilter"
+            :zero-placeholder="t('pages.scripts.marketplace.allCategories')"
+            :all-list="supportedScriptCategories"
+          />
+        </div>
+
+        <div v-if="marketplaceLoading" class="flex flex-1 flex-col items-center justify-center gap-4">
+          <div class="h-10 w-10 animate-spin rounded-full border-4 border-border border-t-accent" />
+          <span class="text-sm text-secondary">{{ t('pages.scripts.marketplace.loadingScripts') }}</span>
+        </div>
+
+        <div v-else-if="marketplaceError" class="flex flex-1 flex-col items-center justify-center gap-4">
+          <XCircleIcon :size="48" class="text-danger" />
+          <span class="text-sm text-danger">{{ t('pages.scripts.marketplace.loadFailed') }}</span>
+          <CustomButton
+            type="primary"
+            :icon="RefreshCwIcon"
+            :text="t('pages.scripts.marketplace.retry')"
+            @click="fetchMarketplaceScripts"
+          />
+        </div>
+
+        <div v-else class="flex-1 overflow-hidden rounded-lg border border-border">
+          <div class="no-scrollbar h-full overflow-auto p-4">
+            <div
+              v-if="filteredMarketplaceScripts.length === 0"
+              class="flex h-full flex-col items-center justify-center gap-4"
+            >
+              <PackageIcon :size="48" class="text-secondary opacity-50" />
+              <span class="text-sm text-secondary">{{ t('pages.scripts.marketplace.noScriptsFound') }}</span>
+            </div>
+            <div
+              v-else-if="!scriptContentOfMarketplaceVisible"
+              class="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4"
+            >
+              <div
+                v-for="script in filteredMarketplaceScripts"
+                :key="script.downloadUrl"
+                class="flex flex-col gap-3 rounded-xl border border-border-secondary p-4 transition-all hover:border-accent hover:shadow-md"
+              >
+                <div class="flex items-start justify-between">
+                  <div class="flex items-center gap-2">
+                    <FileCode :size="20" class="text-accent" />
+                    <span class="font-semibold text-main">{{ script.name }}</span>
+                  </div>
+                  <span class="rounded bg-bg-tertiary px-2 py-0.5 text-xs text-secondary">v{{ script.version }}</span>
+                </div>
+                <p class="line-clamp-2 min-h-[40px] text-sm text-secondary">{{ script.description || '-' }}</p>
+                <div class="flex items-center gap-2 text-xs text-tertiary">
+                  <UserIcon :size="12" />
+                  <span>{{ script.author }}</span>
+                  <span class="mx-1">•</span>
+                  <span class="rounded bg-gray-400 px-1.5 py-0.5 text-white">
+                    {{ supportedScriptCategories.find(cat => cat.type === script.category)?.name || script.category }}
+                  </span>
+                </div>
+                <div class="mt-auto flex gap-2 pt-2">
+                  <button
+                    class="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-accent/20 px-4 py-2 text-sm font-semibold text-accent"
+                    @click="openScriptDetails(script.content || '')"
+                  >
+                    <Edit2Icon :size="16" />
+                    {{ t('pages.scripts.marketplace.showScriptCode') }}
+                  </button>
+                  <button
+                    v-if="!isScriptDownloaded(script)"
+                    class="flex w-full items-center justify-center gap-2 rounded-lg bg-success/90 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-success disabled:opacity-50"
+                    :disabled="downloadingScripts.has(script.downloadUrl)"
+                    @click="downloadMarketplaceScript(script)"
+                  >
+                    <template v-if="downloadingScripts.has(script.downloadUrl)">
+                      <div class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      {{ t('pages.scripts.marketplace.downloading') }}
+                    </template>
+                    <template v-else>
+                      <DownloadIcon :size="16" />
+                      {{ t('pages.scripts.marketplace.download') }}
+                    </template>
+                  </button>
+                  <button
+                    v-if="isScriptDownloaded(script)"
+                    class="flex w-full items-center justify-center gap-2 rounded-lg border border-success bg-success/20 px-4 py-2 text-sm font-semibold text-success"
+                    disabled
+                  >
+                    <CheckIcon :size="16" />
+                    {{ t('pages.scripts.marketplace.downloaded') }}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div v-else class="flex h-full flex-col gap-4">
+              <Editor v-model="marketplaceScriptContent" language="javascript" :read-only="true" />
+              <CustomButton
+                class="mt-4"
+                type="primary"
+                :text="t('common.cancel')"
+                @click="
+                  () => {
+                    scriptContentOfMarketplaceVisible = false
+                    marketplaceScriptContent = ''
+                  }
+                "
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </CustomModal>
+
+    <CustomModal
+      v-if="shareDialogVisible"
+      v-model:visible="shareDialogVisible"
+      :title="t('pages.scripts.marketplace.shareScript')"
+      height="auto"
+      width="500px"
+    >
+      <div class="flex flex-col gap-4 p-6">
+        <div v-if="!githubAuth.isAuthenticated" class="flex flex-col items-center gap-4 py-8">
+          <BaseSvg name="GitHub" :size="18" color="black" />
+          <p class="text-center text-sm text-secondary">{{ t('pages.scripts.marketplace.loginRequired') }}</p>
+          <CustomButton
+            type="primary"
+            :icon="null"
+            :text="t('pages.scripts.marketplace.loginWithGitHub')"
+            @click="handleGitHubLogin"
+          >
+            <template #icon>
+              <BaseSvg name="GitHub" :size="18" color="black" />
+            </template>
+          </CustomButton>
+        </div>
+        <template v-else>
+          <SettingCard class="w-full">
+            <CustomInput
+              v-model="shareMetadata.name"
+              :title="t('pages.scripts.marketplace.scriptName')"
+              :placeholder="t('pages.scripts.marketplace.scriptName')"
+            />
+          </SettingCard>
+          <SettingCard class="w-full">
+            <CustomInput
+              v-model="shareMetadata.author"
+              :title="t('pages.scripts.marketplace.scriptAuthor')"
+              :placeholder="t('pages.scripts.marketplace.scriptAuthor')"
+            />
+          </SettingCard>
+          <SettingCard class="w-full">
+            <CustomInput
+              v-model="shareMetadata.description"
+              :title="t('pages.scripts.marketplace.scriptDescription')"
+              :placeholder="t('pages.scripts.marketplace.scriptDescription')"
+            />
+          </SettingCard>
+          <SettingCard class="w-full">
+            <CustomInput
+              v-model="shareMetadata.version"
+              :title="t('pages.scripts.marketplace.scriptVersion')"
+              :placeholder="t('pages.scripts.marketplace.scriptVersion')"
+            />
+          </SettingCard>
+        </template>
+      </div>
+      <template #footer>
+        <CustomButton type="secondary" :text="t('common.cancel')" @click="shareDialogVisible = false" />
+        <CustomButton
+          v-if="githubAuth.isAuthenticated"
+          type="primary"
+          :text="sharingScript ? t('pages.scripts.marketplace.sharing') : t('pages.scripts.marketplace.share')"
+          :disabled="sharingScript"
+          @click="handleShareScript"
+        />
+      </template>
+    </CustomModal>
+
+    <CustomModal
+      v-if="deviceFlowDialogVisible"
+      v-model:visible="deviceFlowDialogVisible"
+      :title="t('pages.scripts.marketplace.loginWithGitHub')"
+      width="500px"
+      height="auto"
+    >
+      <div class="flex flex-col items-center gap-6 p-6">
+        <BaseSvg name="GitHub" :size="18" color="black" />
+        <p class="text-center text-secondary">
+          {{ t('pages.scripts.marketplace.deviceFlowInstructions') }}
+        </p>
+        <div class="flex flex-col items-center gap-2">
+          <span class="text-sm text-secondary">{{ t('pages.scripts.marketplace.yourCode') }}</span>
+          <div class="flex items-center gap-2">
+            <code class="rounded-lg bg-bg-tertiary px-6 py-3 text-2xl font-bold tracking-widest text-accent">
+              {{ deviceFlowState.userCode }}
+            </code>
+            <button
+              class="rounded-lg bg-bg-secondary p-2 transition-colors hover:bg-bg-tertiary"
+              :title="t('pages.scripts.marketplace.copyCode')"
+              @click="copyUserCode"
+            >
+              <CheckIcon v-if="false" :size="20" class="text-success" />
+              <svg
+                v-else
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="text-secondary"
+              >
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="h-5 w-5 animate-spin rounded-full border-2 border-border border-t-accent" />
+          <span class="text-sm text-secondary">{{ t('pages.scripts.marketplace.waitingForAuth') }}</span>
+        </div>
+      </div>
+      <template #footer>
+        <CustomButton type="secondary" :text="t('common.cancel')" @click="cancelDeviceFlow" />
+      </template>
+    </CustomModal>
   </div>
 </template>
 
 <script lang="ts" setup>
 import dayjs from 'dayjs'
-import { CheckCircle2, Clock, FileCode, FolderOpen, Pencil, Play, Plus, Trash2, XIcon } from 'lucide-vue-next'
+import {
+  CheckCircle2,
+  CheckIcon,
+  Clock,
+  DownloadIcon,
+  Edit2Icon,
+  ExternalLinkIcon,
+  FileCode,
+  FolderOpen,
+  LogOutIcon,
+  PackageIcon,
+  Pencil,
+  Play,
+  Plus,
+  RefreshCwIcon,
+  SearchIcon,
+  Share2Icon,
+  StoreIcon,
+  Trash2,
+  UserIcon,
+  XCircleIcon,
+  XIcon,
+} from 'lucide-vue-next'
 import { computed, onBeforeMount, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import BaseSvg from '@/assets/svg/BaseSvg.vue'
 import CustomButton from '@/components/common/CustomButton.vue'
 import CustomInput from '@/components/common/CustomInput.vue'
 import CustomModal from '@/components/common/CustomModal.vue'
@@ -231,6 +557,81 @@ const editingScriptName = ref<string[]>([])
 const newScriptNameVisible = ref(false)
 const newScriptName = ref('')
 const newScriptCategory = ref('manualTrigger')
+
+// Marketplace related state
+interface IScriptMeta {
+  name: string
+  author: string
+  description: string
+  version: string
+  fileName: string
+  category: string
+  content: string | null
+  downloadUrl: string
+}
+
+interface IGitHubAuth {
+  isAuthenticated: boolean
+  username: string | null
+}
+
+interface IDeviceFlowState {
+  isActive: boolean
+  userCode: string | null
+  verificationUri: string | null
+  expiresAt: number | null
+  pollingInterval: NodeJS.Timeout | null
+}
+
+const marketplaceVisible = ref(false)
+const marketplaceLoading = ref(false)
+const marketplaceError = ref(false)
+const marketplaceScripts = ref<IScriptMeta[]>([])
+const marketplaceSearch = ref('')
+const marketplaceScriptContent = ref('')
+const marketplaceCategoryFilter = ref<string[]>([])
+const downloadingScripts = ref<Set<string>>(new Set())
+const githubAuth = ref<IGitHubAuth>({ isAuthenticated: false, username: null })
+
+// Device Flow state
+const deviceFlowState = ref<IDeviceFlowState>({
+  isActive: false,
+  userCode: null,
+  verificationUri: null,
+  expiresAt: null,
+  pollingInterval: null,
+})
+const deviceFlowDialogVisible = ref(false)
+const scriptContentOfMarketplaceVisible = ref(false)
+const shareDialogVisible = ref(false)
+const sharingScript = ref(false)
+const scriptToShare = ref<IStringKeyMap | null>(null)
+const shareMetadata = ref({
+  name: '',
+  author: '',
+  description: '',
+  version: '1.0.0',
+})
+
+const filteredMarketplaceScripts = computed(() => {
+  let scripts = marketplaceScripts.value
+
+  if (marketplaceSearch.value) {
+    const search = marketplaceSearch.value.toLowerCase()
+    scripts = scripts.filter(
+      s =>
+        s.name.toLowerCase().includes(search) ||
+        s.description.toLowerCase().includes(search) ||
+        s.author.toLowerCase().includes(search),
+    )
+  }
+
+  if (marketplaceCategoryFilter.value.length > 0) {
+    scripts = scripts.filter(s => marketplaceCategoryFilter.value.includes(s.category))
+  }
+
+  return scripts
+})
 
 const supportedScriptCategories = [
   { type: 'onSoftwareOpen', name: t('pages.scripts.scriptsTypes.onSoftwareOpen') },
@@ -414,11 +815,239 @@ async function toggleScript(scriptPath: string[]) {
   await getScriptsMap()
 }
 
+function openScriptDetails(content: string) {
+  marketplaceScriptContent.value = content
+  scriptContentOfMarketplaceVisible.value = true
+}
+
+async function openMarketplace() {
+  marketplaceVisible.value = true
+  await checkGitHubAuth()
+  await fetchMarketplaceScripts()
+}
+
+async function fetchMarketplaceScripts() {
+  marketplaceLoading.value = true
+  marketplaceError.value = false
+
+  try {
+    const scripts = await window.electron.triggerRPC<IScriptMeta[]>(IRPCActionType.SCRIPT_MARKETPLACE_FETCH_LIST)
+    marketplaceScripts.value = scripts || []
+  } catch (error) {
+    console.error('Failed to fetch marketplace scripts:', error)
+    marketplaceError.value = true
+  } finally {
+    marketplaceLoading.value = false
+  }
+}
+
+function isScriptDownloaded(script: IScriptMeta): boolean {
+  const categoryPath = script.category.replace(/\./g, '/')
+  const scriptPath = `${categoryPath}/${script.fileName}`
+  const isDownloaded = existingPathsSet.value.has(scriptPath)
+  return isDownloaded
+}
+
+async function downloadMarketplaceScript(script: IScriptMeta) {
+  downloadingScripts.value.add(script.downloadUrl)
+
+  try {
+    const result = await window.electron.triggerRPC<boolean>(
+      IRPCActionType.SCRIPT_MARKETPLACE_DOWNLOAD,
+      getRawData(script),
+    )
+    if (result) {
+      message.success(t('pages.scripts.marketplace.downloadSuccess'))
+      await getScriptsMap()
+    } else {
+      message.error(t('pages.scripts.marketplace.downloadFailed'))
+    }
+  } catch (error) {
+    console.error('Failed to download script:', error)
+    message.error(t('pages.scripts.marketplace.downloadFailed'))
+  } finally {
+    downloadingScripts.value.delete(script.downloadUrl)
+  }
+}
+
+async function checkGitHubAuth() {
+  try {
+    const auth = await window.electron.triggerRPC<IGitHubAuth>(IRPCActionType.SCRIPT_MARKETPLACE_CHECK_GITHUB_AUTH)
+    if (auth) {
+      githubAuth.value = auth
+    }
+  } catch (error) {
+    console.error('Failed to check GitHub auth:', error)
+  }
+}
+
+async function handleGitHubLogin() {
+  try {
+    const result = await window.electron.triggerRPC<{
+      userCode: string
+      verificationUri: string
+      expiresIn: number
+    } | null>(IRPCActionType.SCRIPT_MARKETPLACE_GITHUB_LOGIN)
+
+    if (result) {
+      deviceFlowState.value = {
+        isActive: true,
+        userCode: result.userCode,
+        verificationUri: result.verificationUri,
+        expiresAt: Date.now() + result.expiresIn * 1000,
+        pollingInterval: null,
+      }
+      deviceFlowDialogVisible.value = true
+
+      startDeviceFlowPolling()
+    } else {
+      message.error(t('pages.scripts.marketplace.loginFailed'))
+    }
+  } catch (error) {
+    console.error('Failed to initiate GitHub login:', error)
+    message.error(t('pages.scripts.marketplace.loginFailed'))
+  }
+}
+
+function startDeviceFlowPolling() {
+  if (deviceFlowState.value.pollingInterval) {
+    clearInterval(deviceFlowState.value.pollingInterval)
+  }
+
+  const poll = async () => {
+    if (deviceFlowState.value.expiresAt && Date.now() > deviceFlowState.value.expiresAt) {
+      stopDeviceFlowPolling()
+      message.error(t('pages.scripts.marketplace.deviceCodeExpired'))
+      deviceFlowDialogVisible.value = false
+      return
+    }
+
+    try {
+      const result = await window.electron.triggerRPC<{
+        success: boolean
+        username?: string
+        error?: string
+        nextInterval?: number
+      }>(IRPCActionType.SCRIPT_MARKETPLACE_GITHUB_POLL)
+
+      if (result?.success) {
+        stopDeviceFlowPolling()
+        githubAuth.value = { isAuthenticated: true, username: result.username || null }
+        deviceFlowDialogVisible.value = false
+        message.success(t('pages.scripts.marketplace.loginSuccess'))
+        return
+      }
+
+      if (result?.error === 'authorization_pending' || result?.error === 'slow_down') {
+        const delay = (result.nextInterval || 5) * 1000
+        deviceFlowState.value.pollingInterval = setTimeout(poll, delay)
+      } else {
+        stopDeviceFlowPolling()
+        deviceFlowDialogVisible.value = false
+        message.error(`${t('pages.scripts.marketplace.loginFailed')}: ${result?.error}`)
+      }
+    } catch (error) {
+      console.error('Failed to poll device flow:', error)
+      deviceFlowState.value.pollingInterval = setTimeout(poll, 5000)
+    }
+  }
+
+  poll()
+}
+
+function stopDeviceFlowPolling() {
+  if (deviceFlowState.value.pollingInterval) {
+    clearInterval(deviceFlowState.value.pollingInterval)
+    deviceFlowState.value.pollingInterval = null
+  }
+  deviceFlowState.value.isActive = false
+}
+
+async function cancelDeviceFlow() {
+  stopDeviceFlowPolling()
+  await window.electron.triggerRPC(IRPCActionType.SCRIPT_MARKETPLACE_GITHUB_CANCEL)
+  deviceFlowDialogVisible.value = false
+}
+
+function copyUserCode() {
+  if (deviceFlowState.value.userCode) {
+    window.electron.clipboard.writeText(deviceFlowState.value.userCode)
+    message.success(t('pages.scripts.marketplace.codeCopied'))
+  }
+}
+
+async function handleGitHubLogout() {
+  try {
+    await window.electron.triggerRPC(IRPCActionType.SCRIPT_MARKETPLACE_GITHUB_LOGOUT)
+    githubAuth.value = { isAuthenticated: false, username: null }
+    message.success(t('pages.scripts.marketplace.logoutSuccess'))
+  } catch (error) {
+    console.error('Failed to logout:', error)
+  }
+}
+
+function openMarketplaceRepo() {
+  window.electron.sendRPC(IRPCActionType.OPEN_URL, 'https://github.com/Kuingsmile/piclist-ScriptsHub')
+}
+
+function openShareDialog(script: IStringKeyMap) {
+  scriptToShare.value = script
+  shareMetadata.value = {
+    name: script.fileName.replace('.js', ''),
+    author: githubAuth.value.username || '',
+    description: '',
+    version: '1.0.0',
+  }
+  shareDialogVisible.value = true
+}
+
+async function handleShareScript() {
+  if (!scriptToShare.value) return
+
+  if (
+    !shareMetadata.value.name ||
+    !shareMetadata.value.author ||
+    !shareMetadata.value.description ||
+    !shareMetadata.value.version
+  ) {
+    message.error(t('pages.scripts.marketplace.metadataRequired'))
+    return
+  }
+
+  sharingScript.value = true
+
+  try {
+    const result = await window.electron.triggerRPC<{ success: boolean; prUrl?: string; error?: string }>(
+      IRPCActionType.SCRIPT_MARKETPLACE_SHARE,
+      getRawData(scriptToShare.value.filePath),
+      getRawData(shareMetadata.value),
+    )
+
+    if (result?.success) {
+      message.success(t('pages.scripts.marketplace.shareSuccess'))
+      shareDialogVisible.value = false
+      if (result.prUrl) {
+        window.electron.sendRPC(IRPCActionType.OPEN_URL, result.prUrl)
+      }
+    } else {
+      message.error(`${t('pages.scripts.marketplace.shareFailed')}: ${result?.error || 'Unknown error'}`)
+    }
+  } catch (error) {
+    console.error('Failed to share script:', error)
+    message.error(t('pages.scripts.marketplace.shareFailed'))
+  } finally {
+    sharingScript.value = false
+  }
+}
+
 onBeforeMount(async () => {
   getScriptsMap()
+  await checkGitHubAuth()
 })
 
-onBeforeUnmount(() => {})
+onBeforeUnmount(() => {
+  stopDeviceFlowPolling()
+})
 </script>
 
 <script lang="ts">
