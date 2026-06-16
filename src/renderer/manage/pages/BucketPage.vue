@@ -313,7 +313,7 @@
           <template #default="{ item, index }">
             <!-- Grid View -->
             <div
-              class="group/image m-0 box-border flex h-[calc(100%-8px)] w-full cursor-pointer flex-col overflow-hidden rounded-lg border-2 border-border shadow-sm transition-all duration-fast ease-apple hover:-translate-y-[2px] hover:border-accent hover:shadow-md [.selected]:border-2 [.selected]:border-accent [.selected]:shadow-md"
+              class="group/image m-0 box-border flex h-[calc(100%-8px)] w-full cursor-pointer flex-col overflow-hidden rounded-lg border-2 border-border shadow-sm transition-all duration-fast ease-apple hover:translate-y-[-2px] hover:border-accent hover:shadow-md [.selected]:border-2 [.selected]:border-accent [.selected]:shadow-md"
               :class="{ selected: item.checked }"
               @click="item.checked = !item.checked"
             >
@@ -327,7 +327,7 @@
                 >
                   <img
                     v-if="isShowThumbnail && item.isImage"
-                    :src="item.url"
+                    :src="getThumbnailUrl(item.url)"
                     class="h-full w-full object-contain transition-all duration-fast ease-apple"
                     @error="() => {}"
                   />
@@ -503,10 +503,7 @@
       class="image-preview-modal"
     >
       <div class="flex-1 p-4">
-        <img
-          :src="ImagePreviewList[getCurrentPreviewIndex]"
-          style="max-width: 100%; max-height: 70vh; object-fit: contain"
-        />
+        <img :src="ImagePreviewList[getCurrentPreviewIndex]" class="max-h-[70vh] max-w-full object-contain" />
       </div>
     </CustomModal>
 
@@ -640,7 +637,7 @@
     <!-- Loading Indicators -->
     <div v-if="isLoadingData" class="animate-slide-right fixed right-[25px] bottom-[25px] z-9999 duration-300 ease-out">
       <div
-        class="flex min-w-[240px] items-center gap-3 rounded-lg bg-accent/85 px-4 py-3.5 shadow-lg transition-all duration-200 ease-apple hover:-translate-y-[2px] hover:bg-accent/95 hover:shadow-xl"
+        class="flex min-w-[240px] items-center gap-3 rounded-lg bg-accent/85 px-4 py-3.5 shadow-lg transition-all duration-200 ease-apple hover:translate-y-[-2px] hover:bg-accent/95 hover:shadow-xl"
       >
         <div
           class="mr-0 inline-block h-[18px] w-[18px] shrink-0 animate-spin rounded-full border-2 border-t-2 border-black/30 border-t-white"
@@ -661,7 +658,7 @@
       class="animate-slide-right fixed top-[50px] right-[25px] z-9999 duration-300 ease-out"
     >
       <div
-        class="flex min-w-[240px] items-center gap-3 rounded-lg bg-accent/85 px-4 py-3.5 shadow-lg transition-all duration-200 ease-apple hover:-translate-y-[2px] hover:bg-accent/95 hover:shadow-xl"
+        class="flex min-w-[240px] items-center gap-3 rounded-lg bg-accent/85 px-4 py-3.5 shadow-lg transition-all duration-200 ease-apple hover:translate-y-[-2px] hover:bg-accent/95 hover:shadow-xl"
       >
         <div
           class="mr-0 inline-block h-[18px] w-[18px] shrink-0 animate-spin rounded-full border-2 border-t-2 border-black/30 border-t-white"
@@ -1048,7 +1045,7 @@
       :title="t('pages.manage.bucket.preview')"
     >
       <div class="flex h-full w-full">
-        <div class="notes-body" style="user-select: text" v-html="markDownContent" />
+        <div class="notes-body select-text" v-html="markDownContent" />
       </div>
     </CustomModal>
 
@@ -1131,7 +1128,6 @@
 </template>
 
 <script lang="ts" setup>
-import { useLocalStorage } from '@vueuse/core'
 import {
   ArrowUpDownIcon,
   ChevronDownIcon,
@@ -1153,7 +1149,8 @@ import {
   Trash2Icon,
   UploadIcon,
   XIcon,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
+import { useLocalStorage } from '@vueuse/core'
 import { marked } from 'marked'
 import { v4 as uuidv4 } from 'uuid'
 import { computed, onBeforeMount, onBeforeUnmount, reactive, ref, useTemplateRef, watch } from 'vue'
@@ -1189,6 +1186,7 @@ import {
 } from '@/manage/utils/common'
 import { getConfig, saveConfig } from '@/manage/utils/dataSender'
 import { textFileExt } from '@/manage/utils/textfile'
+import { appendThumbnailSuffix } from '@/manage/utils/thumbnailUrl'
 import { videoExt } from '@/manage/utils/videofile'
 import { trimPath } from '@/utils/common'
 import { useDragEventListeners } from '@/utils/drag'
@@ -1334,6 +1332,7 @@ const advancedRenameList = computed(() => ({
     { label: t('pages.settings.upload.placeholder.md5'), value: '{md5}' },
     { label: t('pages.settings.upload.placeholder.md5-16'), value: '{md5-16}' },
     { label: t('pages.settings.upload.placeholder.uuid'), value: '{uuid}' },
+    { label: t('pages.settings.upload.placeholder.ulid'), value: '{ulid}' },
     { label: t('pages.settings.upload.placeholder.sha1'), value: '{sha1}' },
     { label: t('pages.settings.upload.placeholder.sha1-n'), value: '{sha1-n}' },
     { label: t('pages.settings.upload.placeholder.sha256'), value: '{sha256}' },
@@ -1402,6 +1401,7 @@ const calculateAllFileSize = computed(
     '0',
 )
 const isShowThumbnail = computed(() => manageStore.config.settings.isShowThumbnail ?? false)
+const thumbnailSuffix = computed(() => manageStore.config.settings.thumbnailSuffix ?? '')
 const isUsePreSignedUrl = computed(() => manageStore.config.settings.isUsePreSignedUrl ?? false)
 const isAutoRefresh = computed(() => manageStore.config.settings.isAutoRefresh ?? false)
 const isIgnoreCase = computed(() => manageStore.config.settings.isIgnoreCase ?? false)
@@ -1466,6 +1466,10 @@ watch(
 )
 
 const getExtension = (fileName: string) => window.node.path.extname(fileName).slice(1)
+
+function getThumbnailUrl(url: string) {
+  return appendThumbnailSuffix(url, thumbnailSuffix.value)
+}
 
 function getList() {
   if (!searchText.value) {
@@ -1820,7 +1824,7 @@ async function handleClickFile(item: any) {
   const options = {} as any
   if (currentPicBedName.value === 'webdavplist') {
     options.headers = {
-      Authorization: `Basic ${window.node.buffer.from(`${manageStore.config.picBed[configMap.value.alias].username}:${manageStore.config.picBed[configMap.value.alias].password}`).toString('base64')}`,
+      Authorization: `Basic ${btoa(`${manageStore.config.picBed[configMap.value.alias].username}:${manageStore.config.picBed[configMap.value.alias].password}`)}`,
     }
   }
   if (item.isImage) {

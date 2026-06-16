@@ -56,20 +56,30 @@
                 :placeholder="t('pages.manage.setting.copyFormat.customTips')"
               />
             </SettingCard>
-            <SettingCard v-for="item in switchFieldsConfigList" :key="item.configName" class="mb-4" p1>
-              <CustomSwitch v-model="form[item.configName]" small no-border :tips="item.tooltip">
-                <template #custom-title>
-                  <span v-for="(segment, index) in item.segments" :key="index" :class="segment.class">
-                    {{ segment.text }}
-                  </span>
-                </template>
-                <template #switch-text>
-                  <span class="text-sm text-secondary">{{
-                    form[item.configName] ? item.activeText : item.inactiveText
-                  }}</span>
-                </template>
-              </CustomSwitch>
-            </SettingCard>
+            <template v-for="item in switchFieldsConfigList" :key="item.configName">
+              <SettingCard class="mb-4 flex flex-col justify-center" p1>
+                <CustomSwitch v-model="form[item.configName]" small no-border :tips="item.tooltip">
+                  <template #custom-title>
+                    <span v-for="(segment, index) in item.segments" :key="index" :class="segment.class">
+                      {{ segment.text }}
+                    </span>
+                  </template>
+                  <template #switch-text>
+                    <span class="text-sm text-secondary">{{
+                      form[item.configName] ? item.activeText : item.inactiveText
+                    }}</span>
+                  </template>
+                </CustomSwitch>
+              </SettingCard>
+              <SettingCard v-if="item.configName === 'isShowThumbnail' && form.isShowThumbnail" class="mb-4">
+                <CustomInput
+                  v-model.trim="form.thumbnailSuffix"
+                  :title="t('pages.manage.setting.thumbnailSuffixTitle')"
+                  :placeholder="t('pages.manage.setting.thumbnailSuffixPlaceholder')"
+                  :tips="t('pages.manage.setting.thumbnailSuffixTips')"
+                />
+              </SettingCard>
+            </template>
           </SettingSection>
 
           <SettingSection
@@ -144,7 +154,7 @@
 </template>
 
 <script lang="ts" setup>
-import { Download, Edit2Icon, FileText, FolderIcon, Settings, Trash2Icon } from 'lucide-vue-next'
+import { Download, Edit2Icon, FileText, FolderIcon, Settings, Trash2Icon } from '@lucide/vue'
 import { computed, nextTick, onBeforeMount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -171,6 +181,7 @@ const form = ref<IStringKeyMap>({
   customRename: false,
   isAutoRefresh: false,
   isShowThumbnail: false,
+  thumbnailSuffix: '',
   isUsePreSignedUrl: false,
   isIgnoreCase: false,
   isForceCustomUrlHttps: false,
@@ -290,6 +301,7 @@ const advancedRenameList = computed(() => ({
     { label: t('pages.settings.upload.placeholder.md5'), value: '{md5}' },
     { label: t('pages.settings.upload.placeholder.md5-16'), value: '{md5-16}' },
     { label: t('pages.settings.upload.placeholder.uuid'), value: '{uuid}' },
+    { label: t('pages.settings.upload.placeholder.ulid'), value: '{ulid}' },
     { label: t('pages.settings.upload.placeholder.sha1'), value: '{sha1}' },
     { label: t('pages.settings.upload.placeholder.sha1-n'), value: '{sha1-n}' },
     { label: t('pages.settings.upload.placeholder.sha256'), value: '{sha256}' },

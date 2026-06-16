@@ -766,7 +766,45 @@
 
             <SettingCard
               v-if="
-                ((activeForm.compress.reSizeHeight || 0) > 0 && (activeForm.compress.reSizeWidth || 0) === 0) ||
+                activeForm.compress.isReSize &&
+                (activeForm.compress.reSizeHeight || 0) > 0 &&
+                (activeForm.compress.reSizeWidth || 0) === 0
+              "
+              class="flex flex-col justify-center"
+            >
+              <CustomSwitch
+                v-model="activeForm.compress.longEdgeAsHeight"
+                :title="t('pages.imageProcess.transform.longEdgeAsHeight')"
+                class="custom-switch"
+                no-border
+                small
+              />
+
+              <PerPicbedSetting
+                v-if="!configId"
+                :map-field="compressForm.longEdgeAsHeightMap"
+                :default-value="defaultCompressSetting.longEdgeAsHeight"
+                field-name="longEdgeAsHeight"
+                :global-value="compressForm.longEdgeAsHeight"
+                input-type="checkbox"
+                @map-change="
+                  (picbedType, value) =>
+                    safeSetMapValue(
+                      compressForm,
+                      'longEdgeAsHeight',
+                      picbedType,
+                      value,
+                      defaultCompressSetting.longEdgeAsHeight,
+                    )
+                "
+              />
+            </SettingCard>
+
+            <SettingCard
+              v-if="
+                (activeForm.compress.isReSize &&
+                  (activeForm.compress.reSizeHeight || 0) > 0 &&
+                  (activeForm.compress.reSizeWidth || 0) === 0) ||
                 ((activeForm.compress.reSizeWidth || 0) > 0 && (activeForm.compress.reSizeHeight || 0) === 0)
               "
               class="flex flex-col justify-center"
@@ -948,7 +986,6 @@
 </template>
 
 <script lang="ts" setup>
-import { useStorage } from '@vueuse/core'
 import {
   Droplets,
   Edit,
@@ -962,7 +999,8 @@ import {
   RotateCw,
   Settings,
   Sliders,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
+import { useStorage } from '@vueuse/core'
 import type {
   availableConvertFormat,
   availableWatermarkPosition,
@@ -1060,6 +1098,7 @@ const advancedRenameList = computed(() => ({
     { label: t('pages.settings.upload.placeholder.md5'), value: '{md5}' },
     { label: t('pages.settings.upload.placeholder.md5-16'), value: '{md5-16}' },
     { label: t('pages.settings.upload.placeholder.uuid'), value: '{uuid}' },
+    { label: t('pages.settings.upload.placeholder.ulid'), value: '{ulid}' },
     { label: t('pages.settings.upload.placeholder.sha1'), value: '{sha1}' },
     { label: t('pages.settings.upload.placeholder.sha1-n'), value: '{sha1-n}' },
     { label: t('pages.settings.upload.placeholder.sha256'), value: '{sha256}' },
@@ -1139,6 +1178,7 @@ const defaultCompressSetting = {
   skipReSizeOfSmallImg: false,
   isReSizeByPercent: false,
   reSizePercent: 50,
+  longEdgeAsHeight: false,
   isRotate: false,
   rotateDegree: 0,
   isRemoveExif: false,
@@ -1173,6 +1213,7 @@ const compressForm = ref<IBuildInCompressOptions>({
   skipReSizeOfSmallImgMap: {},
   isReSizeByPercentMap: {},
   reSizePercentMap: {},
+  longEdgeAsHeightMap: {},
   isRotateMap: {},
   rotateDegreeMap: {},
   isRemoveExifMap: {},

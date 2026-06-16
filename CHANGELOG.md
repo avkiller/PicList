@@ -1,3 +1,63 @@
+##  (2026-06-14)
+
+* :arrow_up: Upgrade(custom): upgrade deps 1eca4d7
+* :arrow_up: Upgrade(custom): upgrade deps, remove deprecated deps 3ce5811
+* :bug: Fix(custom): fix several ui issue 9acab0d
+* :bug: Fix(custom): remove vue devtools install 9a39023, closes #529
+* :hammer: Refactor(custom): change i18n field c7f027e
+* :hammer: Refactor(custom): remove debug log 8d7f77b
+* :hammer: Refactor(custom): remove unintended logs c35a32d
+* :package: Chore(custom): change vite dev setting cda1372
+* :package: Chore(custom): update vscode setting 6bbc08f
+* :package: Chore(custom): update winget file 65ec8ef
+* :pencil: Docs(custom): prepare for 3.5.0 ecd59c6
+* :pencil: Docs(custom): update 3.5.0 changelog db2b21f
+* :sparkles: Feature(custom): add support for ULID in advanced rename 13f4c49
+* :sparkles: Feature(custom): add thumbnail suffix functionality and related settings 74cf3ea, closes #539
+* :sparkles: Feature(custom): support jxl image preview in gallery 26d9c49, closes #531
+* :sparkles: Feature(custom): support upload absolute file path text in clipboard d3458e6, closes #538
+* Fix typora macos (#542) a7d07a9, closes #542
+
+
+
+##  (2026-05-09)
+
+* :arrow_up: Upgrade(custom): upgrade deps and devdeps a25b3c6
+* :arrow_up: Upgrade(custom): upgrade deps and fix lint error ae2fa03
+* :arrow_up: Upgrade(custom): upgrade uuid package for security issue ecf4a01
+* :arrow_up: Upgrade(custom): upgrade vue-router/dpdm to latest version 93e07c9
+* :bug: Fix(custom): fix codemirror version bug 39eda83
+* :bug: Fix(custom): fix extra-vue.d.ts file name 30f2b42
+* :bug: Fix(custom): fix i18n issue in cloud page a038969
+* :bug: Fix(custom): fix i18n issue in setting page 14dfd57
+* :bug: Fix(custom): fix per-config rename setting bugs 97f7cd8, closes #510 #508
+* :bug: Fix(custom): wait for tary windows loading before send clipboard data 68f4596, closes #481
+* :hammer: Refactor(custom): use i18next for main process 888bbbd
+* :package: Chore(custom): fix eslint plugin settings 6e76152
+* :package: Chore(custom): update ESLint and TypeScript dependencies; add dist_electron to ignores 9ae2763
+* :package: Chore(custom): update winget file 229fc9c
+* :pencil: Docs(custom): update change  log for 3.4.0 130a390
+* :pencil: Docs(custom): update changelog c8e7399
+* :sparkles: Feature(custom): add longEdgeAsHeight setting for resize 0394bf1
+* :sparkles: Feature(custom): add upload max concurrency and upload interval setting for api 2441360, closes #487
+* :sparkles: Feature(custom): add watch for dontShowAgain to manage update tip visibility 64c59a4, closes #484
+* :sparkles: Feature(custom): allow localhost access for IPv6 in POST request handling a4a2fb9
+* :sparkles: Feature(custom): migrate sm.ms to s.ee b541563
+* :sparkles: Feature(custom): optimize ext name get for local file b02ee17
+* :sparkles: Feature(custom): optimize upload api copy 62f00d5
+* :sparkles: Feature(custom): optimize version style in plugin page 4263843
+* :sparkles: Feature(custom): support sha1,timestampS, fix rename bug in cloud and gallery 5e48e80
+* :sparkles: Feature(custom): support watch file in clipboard c8771cf, closes #486
+* :sparkles: Feature(custom): update core version 54d9fc3
+* :sparkles: Feature(custom): update endpoint area for aliyun, qiniu, tencent cos d452859
+* :sparkles: Feature(custom): update linux clipboard script for wayland 596d7af
+* :sparkles: Feature(custom): update piclist-core 64f1f90
+* :sparkles: Feature(custom): update s.ee website, optimize ui c1b86a1
+* :sparkles: Feature(custom): uppercase image ext is now recognized as image in manage db1b58f
+* :zap: Perf(custom): speed up software start up e99e68e, closes #489
+
+
+
 ##  (2026-02-11)
 
 * :bug: Fix(custom): add fallback for webcontent f199694

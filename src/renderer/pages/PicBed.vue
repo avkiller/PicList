@@ -99,7 +99,7 @@
       <CustomModal
         v-if="imageProcessDialogVisible"
         v-model:visible="imageProcessDialogVisible"
-        :title="t('pages.imageProcess.title')"
+        title=" "
         :description="t('pages.imageProcess.subtitle-PerPicbed')"
       >
         <ImageProcessSetting :config-id="uuidValue" :current-picbed-name="currentPicbedType" />
@@ -109,8 +109,8 @@
 </template>
 
 <script lang="ts" setup>
+import { Check, Cloud, Copy, ExternalLink, FileJson, FolderOpen, Import, RotateCcw, Settings } from '@lucide/vue'
 import dayjs from 'dayjs'
-import { Check, Cloud, Copy, ExternalLink, FileJson, FolderOpen, Import, RotateCcw, Settings } from 'lucide-vue-next'
 import { v4 as uuid } from 'uuid'
 import { onBeforeMount, ref, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -276,8 +276,14 @@ async function handleCopyApi() {
       message.error(t('pages.picBedConfigs.noConfigs'))
       return
     }
-
-    const apiUrl = `http://${host === '0.0.0.0' ? '127.0.0.1' : host}:${port}/upload?picbed=${$route.params.type}&configName=${picBedConfig._configName}${serverKey ? `&key=${serverKey}` : ''}`
+    const urlSearchParams = new URLSearchParams({
+      picbed: $route.params.type as string,
+      configName: picBedConfig._configName,
+    })
+    if (serverKey) {
+      urlSearchParams.append('key', serverKey as string)
+    }
+    const apiUrl = `http://${host === '0.0.0.0' ? '127.0.0.1' : host}:${port}/upload?${urlSearchParams.toString()}`
 
     try {
       window.electron.clipboard.writeText(apiUrl)

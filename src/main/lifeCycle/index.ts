@@ -13,7 +13,6 @@ import { createTray, setDockMenu } from 'apis/app/system'
 import { uploadChoosedFiles, uploadClipboardFiles } from 'apis/app/uploader/apis'
 import windowManager from 'apis/app/window/windowManager'
 import { app, globalShortcut, net, Notification, protocol, screen } from 'electron'
-import { installExtension, VUEJS_DEVTOOLS_BETA } from 'electron-devtools-installer'
 import fs from 'fs-extra'
 
 import busEventList from '~/events/busEventList'
@@ -46,6 +45,24 @@ const defaultStartMode = {
   darwin: ISartMode.QUIET,
   win32: ISartMode.MAIN,
   linux: ISartMode.MINI,
+}
+
+const isPointInRect = (point: Electron.Point, rect: Electron.Rectangle) =>
+  point.x >= rect.x && point.x < rect.x + rect.width && point.y >= rect.y && point.y < rect.y + rect.height
+
+const isLikelyDockActivation = () => {
+  if (process.platform !== 'darwin') return true
+
+  const cursorPoint = screen.getCursorScreenPoint()
+  const display = screen.getDisplayNearestPoint(cursorPoint)
+  const isInWorkArea = isPointInRect(cursorPoint, display.workArea)
+  const isInMenuBar =
+    cursorPoint.y >= display.bounds.y &&
+    cursorPoint.y < display.workArea.y &&
+    cursorPoint.x >= display.workArea.x &&
+    cursorPoint.x < display.workArea.x + display.workArea.width
+
+  return !isInWorkArea && !isInMenuBar
 }
 
 const handleStartUpFiles = (argv: string[], cwd: string) => {
@@ -91,13 +108,6 @@ class LifeCycle {
 
   #onReady() {
     const readyFunction = async () => {
-      if (isDevelopment) {
-        try {
-          await installExtension(VUEJS_DEVTOOLS_BETA)
-        } catch (e: any) {
-          logger.error('Vue Devtools failed to install:', e)
-        }
-      }
       protocol.handle('theme', request => {
         const requestUrl = request.url
         const urlObj = new URL(requestUrl)
@@ -229,12 +239,14 @@ class LifeCycle {
     app.on('second-instance', (_, commandLine, workingDirectory) => {
       logger.info('detect second instance')
       const result = handleStartUpFiles(commandLine, workingDirectory)
+      logger.info('handleStartUpFiles result:', String(result))
       if (!result) {
         windowManager.create(IWindowList.SETTING_WINDOW)
       }
     })
     app.on('activate', () => {
-      if (!windowManager.has(IWindowList.SETTING_WINDOW)) {
+      logger.info('activate is called')
+      if (!windowManager.has(IWindowList.SETTING_WINDOW) && isLikelyDockActivation()) {
         windowManager.create(IWindowList.SETTING_WINDOW)
       }
     })
